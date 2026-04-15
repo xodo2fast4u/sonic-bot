@@ -1,8 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { dirname, resolve } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const ENV_PATH = resolve(process.cwd(), ".env");
 
 const updateEnvFile = (key, value) => {

@@ -21,7 +21,11 @@
     "@cacheable/node-cache": "^3.0.0",
     "@hapi/boom": "^10.0.1",
     "baileys": "^7.0.0-rc.9",
-    "pino": "^10.3.1",
-    "better-sqlite3": "^12.8.0"
+    "better-sqlite3": "^12.9.0",
+    "pino": "^10.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.0"
   }
 }

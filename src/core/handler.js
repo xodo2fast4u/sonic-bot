@@ -1,6 +1,6 @@
 import { config, emoji as e } from "../config/config.js";
 import { commands } from "../commands/index.js";
-import { getText, send, jid, resolveSender } from "../utils/utils.js";
+import { getText, send, resolveSender } from "../utils/utils.js";
 import { checkGlobalCooldown, formatCooldown } from "../utils/cooldown.js";
 
 export const handleMessage = async (sonic, msg) => {
