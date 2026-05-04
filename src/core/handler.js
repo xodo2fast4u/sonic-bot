@@ -2,6 +2,7 @@ import { config, emoji as e } from "../config/config.js";
 import { commands } from "../commands/index.js";
 import { getText, send, resolveSender } from "../utils/utils.js";
 import { checkGlobalCooldown, formatCooldown } from "../utils/cooldown.js";
+import logger from "../utils/logger.js";
 
 export const handleMessage = async (sonic, msg) => {
   if (!msg.message || msg.key.remoteJid === "status@broadcast") return;
@@ -9,10 +10,7 @@ export const handleMessage = async (sonic, msg) => {
   const text = getText(msg);
   if (!text.startsWith(config.prefix)) return;
 
-  const [cmdName, ...args] = text
-    .slice(config.prefix.length)
-    .trim()
-    .split(/\s+/);
+  const [cmdName, ...args] = text.slice(config.prefix.length).trim().split(/\s+/);
   const cmd = commands.get(cmdName?.toLowerCase());
 
   if (!cmd) return;
@@ -61,7 +59,7 @@ export const handleMessage = async (sonic, msg) => {
   try {
     await cmd.run(helpers, args);
   } catch (err) {
-    console.error(`Error [${cmdName}]:`, err.message);
+    logger.error(`Error [${cmdName}]:`, err.message);
     await send.text(sonic, msg, `❌ Error: ${err.message}`);
   }
 };

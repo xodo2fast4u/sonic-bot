@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
+import logger from "../utils/logger.js";
 
 const ENV_PATH = resolve(process.cwd(), ".env");
 
@@ -57,5 +58,5 @@ export const getOwner = () => ownerNumber;
 export const setOwner = (number) => {
   ownerNumber = number.replace(/[^0-9]/g, "");
   updateEnvFile("OWNER_NUMBER", ownerNumber);
-  console.log(`👑 Owner set to: ${ownerNumber}`);
+  logger.info(`👑 Owner set to: ${ownerNumber}`);
 };

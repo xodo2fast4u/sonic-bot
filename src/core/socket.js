@@ -6,12 +6,10 @@ import {
 } from "baileys";
 import { useSqliteAuthState } from "../database/use-sqlite-file-auth-state.js";
 import NodeCache from "@cacheable/node-cache";
-import pino from "pino";
 import readline from "readline";
 import { config, getOwner, setOwner } from "../config/config.js";
 import { handleMessage } from "../core/handler.js";
-
-const logger = pino({ level: "silent" });
+import logger from "../utils/logger.js";
 const msgRetryCache = new NodeCache();
 
 const rl = readline.createInterface({
@@ -32,11 +30,14 @@ export const startSocket = async () => {
   const { state, saveCreds } = await useSqliteAuthState(config.authDir);
   const { version } = await fetchLatestBaileysVersion();
 
-  console.log(`🔌 WA v${version.join(".")}`);
+  logger.info(`🔌 WA v${version.join(".")}`);
 
   const sonic = makeWASocket({
     version,
     logger,
+    connectTimeoutMs: 60000,
+    keepAliveIntervalMs: 30000,
+    maxMsgRetryCount: 10,
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, logger),
@@ -54,7 +55,7 @@ export const startSocket = async () => {
     const cleanPhone = phone.replace(/[^0-9]/g, "");
 
     const code = await sonic.requestPairingCode(cleanPhone);
-    console.log(`\n🔑 Pairing Code: ${code}\n`);
+    logger.info(`\n🔑 Pairing Code: ${code}\n`);
 
     if (!getOwner()) setOwner(cleanPhone);
   }
@@ -66,16 +67,16 @@ export const startSocket = async () => {
       if (connection === "close") {
         const code = lastDisconnect?.error?.output?.statusCode;
         if (code === DisconnectReason.loggedOut) {
-          console.log("🔴 Logged out. Delete auth_session and restart.");
+          logger.fatal("🔴 Logged out. Delete sonic_session and restart.");
           process.exit(1);
         }
-        console.log("🔄 Reconnecting");
+        logger.info("🔄 Reconnecting");
         startSocket();
       }
 
       if (connection === "open") {
         rl.close();
-        console.log(`
+        logger.info(`
 ╔══════════════════════════════════╗
 ║  🦔 ${config.botName.toUpperCase()} CONNECTED!
 ║  Prefix: ${config.prefix}
@@ -96,7 +97,7 @@ export const startSocket = async () => {
       if (type !== "notify") return;
 
       for (const msg of messages) {
-        await handleMessage(sonic, msg).catch(console.error);
+        await handleMessage(sonic, msg).catch((err) => logger.error(err));
       }
     }
 

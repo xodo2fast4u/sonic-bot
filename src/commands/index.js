@@ -1,6 +1,7 @@
 import { readdir } from "fs/promises";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import logger from "../utils/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const commands = new Map();
@@ -19,13 +20,13 @@ const loadCommands = async () => {
         }
       }
 
-      console.log(`📂 Loaded: ${folder.name}`);
+      logger.info(`📂 Loaded: ${folder.name}`);
     } catch (err) {
-      console.error(`❌ Failed to load ${folder.name}:`, err.message);
+      logger.error(`❌ Failed to load ${folder.name}:`, err.message);
     }
   }
 
-  console.log(`📦 Total: ${commands.size} command aliases\n`);
+  logger.info(`📦 Total: ${commands.size} command aliases\n`);
 };
 
 await loadCommands();
