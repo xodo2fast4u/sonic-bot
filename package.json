@@ -19,7 +19,6 @@
   "type": "module",
   "dependencies": {
     "@cacheable/node-cache": "^3.0.0",
-    "@hapi/boom": "^10.0.1",
     "baileys": "^7.0.0-rc.9",
     "better-sqlite3": "^12.9.0",
     "pino": "^10.3.1"
