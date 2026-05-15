@@ -1,23 +1,19 @@
-import { emoji as e } from "../../config/config.js";
-import { send, jid } from "../../utils/utils.js";
-import { checkPerms } from "./_utils.js";
+import { emoji as e } from '../../config/config.js'
+import { send, jid } from '../../utils/utils.js'
+import { checkPerms } from './_utils.js'
 
 export default {
-  cmd: ["ginfo"],
-  desc: "Group information",
+  cmd: ['ginfo'],
+  desc: 'Group information',
 
   run: async ({ sonic, msg }, args) => {
-    const meta = await checkPerms(sonic, msg);
-    if (!meta) return;
+    const meta = await checkPerms(sonic, msg)
+    if (!meta) return
 
-    const admins = meta.participants.filter((p) => p.admin).length;
-    const created = new Date(meta.creation * 1000).toLocaleDateString();
+    const admins = meta.participants.filter(p => p.admin).length
+    const created = new Date(meta.creation * 1000).toLocaleDateString()
 
-    const ownerDisplay = meta.ownerPn
-      ? jid.fromUser(meta.ownerPn)
-      : meta.owner
-        ? jid.fromUser(meta.owner)
-        : "Unknown";
+    const ownerDisplay = meta.ownerPn ? jid.fromUser(meta.ownerPn) : meta.owner ? jid.fromUser(meta.owner) : 'Unknown'
 
     await send.text(
       sonic,
@@ -29,8 +25,8 @@ export default {
 ┃ ${e.admin} Admins: ${admins}
 ┃ ${e.admin} Owner: +${ownerDisplay}
 ┃ ${e.time} Created: ${created}
-┃ ${e.info} Desc: ${meta.desc || "None"}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
-    );
+┃ ${e.info} Desc: ${meta.desc || 'None'}
+╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim()
+    )
   },
-};
+}

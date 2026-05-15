@@ -8,21 +8,29 @@
   </a>
 </p>
 
-Sonic WhatsApp bot streamlines group management, enhances user engagement and delivers instant responses at lightning speed. This professional grade bot transforms WhatsApp into a powerful platform for community management and user interaction.
+Sonic WhatsApp bot streamlines group management, enhances user engagement and
+delivers instant responses at lightning speed. This professional grade bot
+transforms WhatsApp into a powerful platform for community management and user
+interaction.
 
 ## Disclaimer
 
-**IMPORTANT**: Sonic is provided for educational and personal use purposes only. Please ensure you:
+**IMPORTANT**: Sonic is provided for educational and personal use purposes only.
+Please ensure you:
 
 - **Use responsibly**: Do not spam, harass or send unwanted messages to users
 - **Respect privacy**: Handle user data with care and respect their privacy
-- **No commercial use**: Sonic is not intended for commercial purposes without proper authorization
+- **No commercial use**: Sonic is not intended for commercial purposes without
+  proper authorization
 - **Legal compliance**: Ensure your use complies with local laws and regulations
 
-The developers are not responsible for any misuse of sonic or any consequences arising from its use. Users are solely responsible for their actions and must ensure they have proper consent before adding sonic to groups or sending messages.
+The developers are not responsible for any misuse of sonic or any consequences
+arising from its use. Users are solely responsible for their actions and must
+ensure they have proper consent before adding sonic to groups or sending
+messages.
 
-> [!WARNING]
-> WhatsApp may suspend or ban accounts that violate their terms of service. Use sonic at your own risk.
+> [!WARNING] WhatsApp may suspend or ban accounts that violate their terms of
+> service. Use sonic at your own risk.
 
 ## Features
 
@@ -36,7 +44,8 @@ The developers are not responsible for any misuse of sonic or any consequences a
 
 ## Prerequisites for Local Installation
 
-Before cloning and running Sonic on your laptop or computer ensure you have the following installed:
+Before cloning and running Sonic on your laptop or computer ensure you have the
+following installed:
 
 ### Windows
 
@@ -46,14 +55,18 @@ Before cloning and running Sonic on your laptop or computer ensure you have the 
 
 ### macOS
 
-- [Node.js & npm](https://nodejs.org/) (Download the installer or use Homebrew: `brew install node`)
-- [Git](https://git-scm.com/download/mac) (or install via Homebrew: `brew install git`)
+- [Node.js & npm](https://nodejs.org/) (Download the installer or use Homebrew:
+  `brew install node`)
+- [Git](https://git-scm.com/download/mac) (or install via Homebrew:
+  `brew install git`)
 - Terminal app (built-in)
 
 ### Linux
 
-- [Node.js & npm](https://nodejs.org/en/download) (Follow the official instructions)
-- [Git](https://git-scm.com/install/linux) (Follow the official instructions for your distribution)
+- [Node.js & npm](https://nodejs.org/en/download) (Follow the official
+  instructions)
+- [Git](https://git-scm.com/install/linux) (Follow the official instructions for
+  your distribution)
 - Terminal app (built-in)
 
 **Verify installation:**
@@ -64,7 +77,8 @@ npm --version
 git --version
 ```
 
-Once these are installed, you can proceed to clone the repository and follow the installation steps in Below.
+Once these are installed, you can proceed to clone the repository and follow the
+installation steps in Below.
 
 ## Quick Start
 
@@ -111,7 +125,8 @@ Once these are installed, you can proceed to clone the repository and follow the
 
 ## Configuration
 
-Sonic uses a `.env` file for configuration. It will be created automatically or you can create it manually:
+Sonic uses a `.env` file for configuration. It will be created automatically or
+you can create it manually:
 
 ```env
 # Sonic Configuration
@@ -138,12 +153,12 @@ BOT_NAME=Sonic             # Bot display name
 
    ```javascript
    export default {
-     cmd: ["command", "alias"], // Command names an alias is optional
-     desc: "Command description", // Help text
-     run: async (text) => {
+     cmd: ['command', 'alias'], // Command names an alias is optional
+     desc: 'Command description', // Help text
+     run: async text => {
        // Your command logic here
      },
-   };
+   }
    ```
 
 3. **Use utilities**:
@@ -157,16 +172,16 @@ BOT_NAME=Sonic             # Bot display name
 ### Example Command
 
 ```javascript
-import { emoji as e } from "../../config.js";
+import { emoji as e } from '../../config.js'
 
 export default {
-  cmd: ["hello"],
-  desc: "Greet the bot",
+  cmd: ['hello'],
+  desc: 'Greet the bot',
 
-  run: async (text) => {
-    await text(`${e.sonic} Hello! I'm Sonic!`);
+  run: async text => {
+    await text(`${e.sonic} Hello! I'm Sonic!`)
   },
-};
+}
 ```
 
 ## Security & Privacy
@@ -216,7 +231,8 @@ Run Sonic on your Android device using Termux:
 
 ### Optiklink
 
-You can deploy Sonic on [Optiklink](https://optiklink.net/home) for cloud-based hosting:
+You can deploy Sonic on [Optiklink](https://optiklink.net/home) for cloud-based
+hosting:
 
 1. **Sign up** and create a new project
 2. **Deploy Sonic**
@@ -224,7 +240,8 @@ You can deploy Sonic on [Optiklink](https://optiklink.net/home) for cloud-based 
    - Upload Sonic zip
    - Unzip and move content to root
    - Set environment variables (`PREFIX`, `OWNER_NUMBER`, `BOT_NAME`)
-3. **Configure .env** via Optiklink's environment settings or let Sonic auto-create it
+3. **Configure .env** via Optiklink's environment settings or let Sonic
+   auto-create it
 4. **Run**
    - Optiklink will start your bot and keep it running 24/7
    - Monitor logs and bot status from the dashboard

@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
+    "allowUnusedLabels": true,
+    "allowUnreachableCode": true,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitThis": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedSideEffectImports": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/types/*": ["./types/*"],
+      "@/core/*": ["./src/core/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/database/*": ["./src/database/*"],
+      "@/commands/*": ["./src/commands/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/cache/*": ["./src/cache/*"]
+    },
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "types": ["node"]
+  },
+  "include": ["types/**/*"],
+  "exclude": [
+    "src/**/*",
+    "node_modules",
+    "dist",
+    "**/*.test.js",
+    "**/*.spec.js",
+    "**/*.config.js"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
+}

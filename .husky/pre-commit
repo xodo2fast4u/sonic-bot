@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx lint-staged
+
+echo "Running TypeScript type checking..."
+npm run type-check
+
+echo "Running tests..."
+npm test
+
+echo "Checking for console.log statements..."
+if git diff --cached --name-only | grep -v "\.test\.js$" | grep -v "\.spec\.js$" | xargs grep -l "console\.log" > /dev/null 2>&1; then
+  echo "Found console.log statements in staged files. Please remove them before committing."
+  exit 1
+fi
+
+echo "Checking for TODO/FIXME comments..."
+if git diff --cached --name-only | xargs grep -l "TODO\|FIXME" > /dev/null 2>&1; then
+  echo "Found TODO or FIXME comments in staged files. Consider creating issues instead."
+  read -p "Continue anyway? (y/N): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+  fi
+fi
+
+echo "Pre-commit checks passed!"

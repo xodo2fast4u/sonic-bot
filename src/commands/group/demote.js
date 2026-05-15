@@ -1,7 +1,7 @@
-import { participantAction } from "./_utils.js";
+import { participantAction } from './_utils.js'
 
 export default {
-  cmd: ["demote", "unadmin"],
-  desc: "Remove admin from member",
-  run: participantAction("demote", "Demoted"),
-};
+  cmd: ['demote', 'unadmin'],
+  desc: 'Remove admin from member',
+  run: participantAction('demote', 'Demoted'),
+}

@@ -1,10 +1,9 @@
 {
   "name": "sonic-bot",
-  "version": "1.0.0",
-  "description": "Sonic",
+  "version": "3.0.0",
+  "description": "Sonic WhatsApp bot turns quiet WhatsApp groups into places people actually show up—interactive economy and games for members, faster admin workflows, less manual babysitting.",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --env-file=.env src/index.js"
   },
   "keywords": [
@@ -18,13 +17,15 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@cacheable/node-cache": "^3.0.0",
-    "baileys": "^7.0.0-rc.9",
+    "@cacheable/node-cache": "^3.0.1",
+    "baileys": "^7.0.0-rc10",
     "better-sqlite3": "^12.9.0",
-    "pino": "^10.3.1"
+    "pino": "^10.3.1",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.2.0"
+    "@types/node": "^22.0.0",
+    "eslint": "^10.3.0"
   }
 }

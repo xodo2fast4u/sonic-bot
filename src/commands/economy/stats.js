@@ -1,13 +1,13 @@
-import { emoji as e } from "../../config/config.js";
-import { getEconomyStats } from "../../database/database.js";
-import { formatCoins } from "./_utils.js";
+import { emoji as e } from '../../config/config.js'
+import { getEconomyStats } from '../../database/database.js'
+import { formatCoins } from './_utils.js'
 
 export default {
-  cmd: ["stats"],
-  desc: "View economy statistics",
+  cmd: ['stats'],
+  desc: 'View economy statistics',
 
   run: async ({ text }) => {
-    const stats = getEconomyStats();
+    const stats = getEconomyStats()
 
     await text(
       `
@@ -17,7 +17,7 @@ export default {
 ┃ ${e.star} Total Cash: ${formatCoins(stats.total_cash || 0)}
 ┃ ${e.bolt} Total Bank: ${formatCoins(stats.total_bank || 0)}
 ┃ ${e.rocket} Total Wealth: ${formatCoins(stats.total_wealth || 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
-    );
+╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim()
+    )
   },
-};
+}

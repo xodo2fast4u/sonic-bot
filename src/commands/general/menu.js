@@ -1,12 +1,12 @@
-import { config, emoji as e } from "../../config/config.js";
-import { format } from "../../utils/utils.js";
+import { config, emoji as e } from '../../config/config.js'
+import { format } from '../../utils/utils.js'
 
 export default {
-  cmd: ["menu", "help"],
-  desc: "Show bot menu",
+  cmd: ['menu'],
+  desc: 'Show bot menu',
 
   run: async ({ text }) => {
-    const { prefix: p, botName, version } = config;
+    const { prefix: p, botName, version } = config
 
     await text(
       `
@@ -61,7 +61,7 @@ export default {
 ┃ ${p}ephemeral / ${p}join
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
-${e.rocket} *Gotta go fast!* ${e.sonic}`.trim(),
-    );
+${e.rocket} *Gotta go fast!* ${e.sonic}`.trim()
+    )
   },
-};
+}

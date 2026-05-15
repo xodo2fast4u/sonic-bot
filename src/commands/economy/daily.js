@@ -1,23 +1,23 @@
-import { emoji as e } from "../../config/config.js";
-import { addCoins } from "../../database/database.js";
-import { COOLDOWN } from "../../utils/cooldown.js";
-import { random, formatCoins, checkEconCooldown } from "./_utils.js";
-import { jid } from "../../utils/utils.js"
+import { emoji as e } from '../../config/config.js'
+import { addCoins } from '../../database/database.js'
+import { COOLDOWN } from '../../utils/cooldown.js'
+import { random, formatCoins, checkEconCooldown } from './_utils.js'
+import { resolveSender } from '../../utils/utils.js'
 
 export default {
-  cmd: ["daily", "claim"],
-  desc: "Claim daily reward",
+  cmd: ['daily', 'claim'],
+  desc: 'Claim daily reward',
 
   run: async ({ text, sonic, msg }) => {
-    const sender = jid.getSender(msg);
+    const sender = resolveSender(msg)
 
-    if (!(await checkEconCooldown(sonic, msg, "daily", COOLDOWN.DAILY))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'daily', COOLDOWN.DAILY))) return
 
-    const base = 100;
-    const bonus = random(0, 100);
-    const total = base + bonus;
+    const base = 100
+    const bonus = random(0, 100)
+    const total = base + bonus
 
-    const newBalance = addCoins(sender, total);
+    const newBalance = addCoins(sender, total)
 
     await text(
       `
@@ -30,7 +30,7 @@ export default {
 ┃ ${e.ring} Balance: ${formatCoins(newBalance)}
 ┃
 ┃ Come back tomorrow! ${e.sonic}
-╰━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
-    );
+╰━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim()
+    )
   },
-};
+}

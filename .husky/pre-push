@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running full test suite..."
+npm run test:coverage
+
+echo "Running security audit..."
+npm audit --audit-level=moderate
+
+echo "Checking bundle size..."
+npm run analyze || echo "Bundle analysis not available"
+
+echo "Pre-push checks passed!"

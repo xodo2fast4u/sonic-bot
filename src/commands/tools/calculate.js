@@ -1,37 +1,35 @@
-import { emoji as e } from "../../config/config.js";
+import { emoji as e } from '../../config/config.js'
 
 export default {
-  cmd: ["calculate"],
-  desc: "Calculate a math expression",
+  cmd: ['calculate'],
+  desc: 'Calculate a math expression',
 
   run: async ({ text }, args) => {
     if (!args.length) {
-      await text(
-        `${e.cross} Please provide a math expression to calculate.\nExample: !calculate 2 + 2`,
-      );
-      return;
+      await text(`${e.cross} Please provide a math expression to calculate.\nExample: !calculate 2 + 2`)
+      return
     }
 
-    const expression = args.join(" ");
+    const expression = args.join(' ')
 
     try {
-      const sanitized = expression.replace(/[^0-9+\-*/.().\s]/g, "").trim();
+      const sanitized = expression.replace(/[^0-9+\-*/.().\s]/g, '').trim()
 
       if (!sanitized) {
-        await text(`${e.cross} Invalid expression provided.`);
-        return;
+        await text(`${e.cross} Invalid expression provided.`)
+        return
       }
 
-      const result = Function('"use strict"; return (' + sanitized + ")")();
+      const result = Function('"use strict"; return (' + sanitized + ')')()
 
-      if (typeof result !== "number" || isNaN(result)) {
-        await text(`${e.cross} Invalid calculation result.`);
-        return;
+      if (typeof result !== 'number' || isNaN(result)) {
+        await text(`${e.cross} Invalid calculation result.`)
+        return
       }
 
-      await text(`${e.check} *${sanitized}* = *${result}*`);
+      await text(`${e.check} *${sanitized}* = *${result}*`)
     } catch (error) {
-      await text(`${e.cross} Error calculating expression: ${error.message}`);
+      await text(`${e.cross} Error calculating expression: ${error.message}`)
     }
   },
-};
+}

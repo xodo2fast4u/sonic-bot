@@ -1,11 +1,11 @@
-import { emoji as e } from "../../config/config.js";
-import { format } from "../../utils/utils.js";
+import { emoji as e } from '../../config/config.js'
+import { format } from '../../utils/utils.js'
 
 export default {
-  cmd: ["runtime"],
-  desc: "Bot uptime",
+  cmd: ['runtime'],
+  desc: 'Bot uptime',
 
   run: async ({ text }) => {
-    await text(`${e.time} *Uptime:* ${format.getUptime()}`);
+    await text(`${e.time} *Uptime:* ${format.getUptime()}`)
   },
-};
+}
