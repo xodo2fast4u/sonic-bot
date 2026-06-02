@@ -36,44 +36,44 @@ We use automated tools to enforce consistent formatting:
 #### Key Rules
 
 - Use 2 spaces for indentation (no tabs)
-- Maximum line length: 120 characters
+- Maximum line length: 100 characters
 - Use single quotes for strings
 - No semicolons at end of statements
 - Use trailing commas in multi-line objects/arrays
 - One variable declaration per line
 
 ```javascript
-// Good
-const userName = 'Sonic'
-const isActive = true
+/* Good */
+const userName = 'Sonic';
+const isActive = true;
 const config = {
   prefix: '!',
   timeout: 5000,
-}
+};
 
-// Bad
-const userName = 'Sonic'
-var isActive = true
-const config = { prefix: '!', timeout: 5000 }
+/* Bad */
+const userName = 'Sonic';
+var isActive = true;
+const config = { prefix: '!', timeout: 5000 };
 ```
 
 ### Functions
 
 ```javascript
-// Good - Arrow functions for callbacks
-const getUser = async userId => {
-  return await userRepository.findById(userId)
-}
+/* Good, Arrow functions for callbacks */
+const getUser = async (userId) => {
+  return await userRepository.findById(userId);
+};
 
-// Good - Function declarations for main functions
+/* Good, Function declarations for main functions */
 function startBot() {
-  console.log('🦔 Starting Sonic Bot...')
+  console.log('🦔 Starting Sonic Bot...');
 }
 
-// Bad - Function expressions
+/* Bad, Function expressions */
 const getUser = async function (userId) {
-  return await userRepository.findById(userId)
-}
+  return await userRepository.findById(userId);
+};
 ```
 
 ## File Organization
@@ -100,16 +100,16 @@ src/
 ### Module Structure
 
 ```javascript
-// Good module structure
-import { container } from '../core/container.js'
-import { Logger } from '../utils/logger.js'
+/* Good module structure */
+import { container } from '../core/container.js';
+import { Logger } from '../utils/logger.js';
 
 /**
  * Brief description of what this module does
  */
 export class UserService {
   constructor() {
-    this.logger = container.resolve('logger')
+    this.logger = container.resolve('logger');
   }
 
   /**
@@ -118,7 +118,7 @@ export class UserService {
    * @returns {Promise<User>} User object
    */
   async getUser(userId) {
-    // Implementation
+    /* Implementation */
   }
 }
 ```
@@ -132,15 +132,15 @@ export class UserService {
 - Avoid abbreviations unless widely understood
 
 ```javascript
-// Good
-const userBalance = 1000
-const isActiveSession = true
-const calculateTotalAmount = () => {}
+/* Good */
+const userBalance = 1000;
+const isActiveSession = true;
+const calculateTotalAmount = () => {};
 
-// Bad
-const ub = 1000
-const actSess = true
-const calc = () => {}
+/* Bad */
+const ub = 1000;
+const actSess = true;
+const calc = () => {};
 ```
 
 ### Classes
@@ -149,12 +149,12 @@ const calc = () => {}
 - Use descriptive names that represent the concept
 
 ```javascript
-// Good
+/* Good */
 class UserRepository {}
 class CommandRegistry {}
 class CacheManager {}
 
-// Bad
+/* Bad */
 class userRepo {}
 class cmdReg {}
 class cache {}
@@ -166,18 +166,18 @@ class cache {}
 - Group related constants in objects
 
 ```javascript
-// Good
+/* Good */
 const COOLDOWN_DURATIONS = {
   GLOBAL: 5000,
   WORK: 3600000,
   DAILY: 86400000,
-}
+};
 
-const MAX_MESSAGE_LENGTH = 4096
+const MAX_MESSAGE_LENGTH = 4096;
 
-// Bad
-const cooldown = 5000
-const maxLen = 4096
+/* Bad */
+const cooldown = 5000;
+const maxLen = 4096;
 ```
 
 ### Private Members
@@ -188,11 +188,11 @@ const maxLen = 4096
 ```javascript
 class UserService {
   constructor() {
-    this._cache = new Map()
+    this._cache = new Map();
   }
 
   _validateUser(user) {
-    // Private validation logic
+    /* Private validation logic */
   }
 }
 ```
@@ -216,7 +216,7 @@ All public functions, classes, and modules should have JSDoc comments:
  * console.log(wealth); // 1500
  */
 async getTotalWealth(userId, options = {}) {
-  // Implementation
+  /* Implementation */
 }
 ```
 
@@ -227,13 +227,17 @@ async getTotalWealth(userId, options = {}) {
 - Use TODO/FIXME sparingly and create issues instead
 
 ```javascript
-// Good - Explains complex business logic
-// Calculate compound interest based on daily rate (APR/365)
-const dailyRate = apr / 365
+/*
+ * Good, Explains complex business logic
+ * Calculate compound interest based on daily rate (APR/365)
+ */
+const dailyRate = apr / 365;
 
-// Bad - Obvious explanation
-// Increment counter by 1
-counter++
+/*
+ * Bad, Obvious explanation
+ * Increment counter by 1
+ */
+counter++;
 ```
 
 ## Testing
@@ -241,24 +245,24 @@ counter++
 ### Test Structure
 
 ```javascript
-// Good test structure
+/* Good test structure */
 describe('UserService', () => {
   beforeEach(() => {
-    // Setup before each test
-  })
+    /* Setup before each test */
+  });
 
   describe('getUser', () => {
     it('should return user when found', async () => {
-      const user = await userService.getUser('123')
-      expect(user.id).toBe('123')
-    })
+      const user = await userService.getUser('123');
+      expect(user.id).toBe('123');
+    });
 
     it('should return null when not found', async () => {
-      const user = await userService.getUser('999')
-      expect(user).toBeNull()
-    })
-  })
-})
+      const user = await userService.getUser('999');
+      expect(user).toBeNull();
+    });
+  });
+});
 ```
 
 ### Test Naming
@@ -325,13 +329,13 @@ refactor(database): implement connection pooling
 - Sanitize data before database operations
 
 ```javascript
-// Good - Validate input
+/* Good, Validate input */
 if (!userId || typeof userId !== 'string') {
-  throw new ValidationError('userId', userId, 'must be non-empty string')
+  throw new ValidationError('userId', userId, 'must be non-empty string');
 }
 
-// Bad - No validation
-const user = await getUser(userId)
+/* Bad, No validation */
+const user = await getUser(userId);
 ```
 
 ### Error Handling
@@ -341,7 +345,7 @@ const user = await getUser(userId)
 - Log errors with context but not sensitive data
 
 ```javascript
-// Good
+/* Good */
 try {
   await processPayment(userId, amount);
 } catch (error) {
@@ -354,7 +358,7 @@ try {
   throw new PaymentError('Payment processing failed');
 }
 
-// Bad - Exposes sensitive data
+/* Bad, Exposes sensitive data */
 catch (error) {
   throw new Error(`Failed for ${userId} with card ${creditCard}`);
 }
@@ -376,19 +380,19 @@ catch (error) {
 - Cache frequently accessed data
 
 ```javascript
-// Good - Use transaction and caching
+/* Good, Use transaction and caching */
 const result = await db.transaction(async () => {
-  await updateUserBalance(userId, -amount)
-  await updateUserBalance(recipientId, amount)
-  await logTransaction(userId, recipientId, amount)
-})
+  await updateUserBalance(userId, -amount);
+  await updateUserBalance(recipientId, amount);
+  await logTransaction(userId, recipientId, amount);
+});
 
-await cache.invalidate(`user:${userId}`)
+await cache.invalidate(`user:${userId}`);
 
-// Bad - No transaction or caching
-await updateUserBalance(userId, -amount)
-await updateUserBalance(recipientId, amount)
-await logTransaction(userId, recipientId, amount)
+/* Bad, No transaction or caching */
+await updateUserBalance(userId, -amount);
+await updateUserBalance(recipientId, amount);
+await logTransaction(userId, recipientId, amount);
 ```
 
 ### Async Operations
@@ -398,25 +402,25 @@ await logTransaction(userId, recipientId, amount)
 - Implement timeouts for external calls
 
 ```javascript
-// Good
+/* Good */
 async function fetchUserData(userId) {
   try {
     const response = await fetch(`/api/users/${userId}`, {
       signal: AbortSignal.timeout(5000),
-    })
-    return await response.json()
+    });
+    return await response.json();
   } catch (error) {
     if (error.name === 'AbortError') {
-      throw new TimeoutError('User data fetch timeout')
+      throw new TimeoutError('User data fetch timeout');
     }
-    throw error
+    throw error;
   }
 }
 
-// Bad - No error handling or timeout
+/* Bad, No error handling or timeout */
 async function fetchUserData(userId) {
-  const response = await fetch(`/api/users/${userId}`)
-  return await response.json()
+  const response = await fetch(`/api/users/${userId}`);
+  return await response.json();
 }
 ```
 
@@ -473,10 +477,7 @@ async function fetchUserData(userId) {
 Recommended extensions for VS Code:
 
 - ESLint extension
-- Prettier extension
-- TypeScript extension
 - GitLens
-- Thunder Client (for API testing)
 
 ## Questions?
 

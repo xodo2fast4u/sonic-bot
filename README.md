@@ -132,7 +132,6 @@ you can create it manually:
 # Sonic Configuration
 PREFIX=!                    # Command prefix
 OWNER_NUMBER=27724913058   # Bot owner number not necessary to be filled will be auto filled once paired
-BOT_NAME=Sonic             # Bot display name
 ```
 
 ### Configuration Options
@@ -141,7 +140,6 @@ BOT_NAME=Sonic             # Bot display name
 | -------------- | ------------------------------- | ------- |
 | `PREFIX`       | Command prefix for bot commands | `!`     |
 | `OWNER_NUMBER` | Bot owner WhatsApp number       | Empty   |
-| `BOT_NAME`     | Bot display name                | `Sonic` |
 
 ## Development
 
@@ -216,7 +214,9 @@ Run Sonic on your Android device using Termux:
    ```bash
    git clone https://github.com/xodo2fast4u/sonic-bot.git
    cd sonic-bot
-   npm install or npm i
+   npm install
+   #or 
+   npm i
    ```
 4. **Run Sonic**
    ```bash
@@ -239,11 +239,11 @@ hosting:
    - Choose Node.js runtime
    - Upload Sonic zip
    - Unzip and move content to root
-   - Set environment variables (`PREFIX`, `OWNER_NUMBER`, `BOT_NAME`)
+   - Set environment variables (`PREFIX`, `OWNER_NUMBER`)
 3. **Configure .env** via Optiklink's environment settings or let Sonic
    auto-create it
 4. **Run**
-   - Optiklink will start your bot and keep it running 24/7
+   - Start the bot and Optiklink will keep it running 24/7
    - Monitor logs and bot status from the dashboard
 
 **Benefits:**
