@@ -153,10 +153,10 @@ OWNER_NUMBER=27724913058   # Bot owner number not necessary to be filled will be
    export default {
      cmd: ['command', 'alias'], // Command names an alias is optional
      desc: 'Command description', // Help text
-     run: async text => {
+     run: async (text) => {
        // Your command logic here
      },
-   }
+   };
    ```
 
 3. **Use utilities**:
@@ -170,16 +170,16 @@ OWNER_NUMBER=27724913058   # Bot owner number not necessary to be filled will be
 ### Example Command
 
 ```javascript
-import { emoji as e } from '../../config.js'
+import { emoji as e } from '../../config.js';
 
 export default {
   cmd: ['hello'],
   desc: 'Greet the bot',
 
-  run: async text => {
-    await text(`${e.sonic} Hello! I'm Sonic!`)
+  run: async (text) => {
+    await text(`${e.sonic} Hello! I'm Sonic!`);
   },
-}
+};
 ```
 
 ## Security & Privacy
@@ -215,7 +215,7 @@ Run Sonic on your Android device using Termux:
    git clone https://github.com/xodo2fast4u/sonic-bot.git
    cd sonic-bot
    npm install
-   #or 
+   #or
    npm i
    ```
 4. **Run Sonic**
