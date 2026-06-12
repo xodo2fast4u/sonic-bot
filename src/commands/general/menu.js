@@ -1,12 +1,12 @@
-import { config, emoji as e } from '../../config/config.js'
-import { format } from '../../utils/utils.js'
+import { config, emoji as e } from '../../config/config.js';
+import { format } from '../../utils/utils.js';
 
 export default {
   cmd: ['menu'],
   desc: 'Show bot menu',
 
   run: async ({ text }) => {
-    const { prefix: p, botName, version } = config
+    const { prefix: p, botName, version } = config;
 
     await text(
       `
@@ -47,6 +47,20 @@ export default {
 ┃ ${p}calculate - Do maths
 ┃ ${p}weather - Check the weather
 ┃ ${p}search - Search the web
+┃ ${p}bible - Bible verse
+┃ ${p}decode - Decode text
+┃ ${p}define - Define word
+┃ ${p}directions - Get directions
+┃ ${p}encode - Encode text
+┃ ${p}image - Get image
+┃ ${p}name - Name info
+┃ ${p}songrecommendation - Music suggestion
+┃ ${p}wiki - Wikipedia search
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━ ${e.ring} *NEWSLETTER* ━━━╮
+┃ ${p}newsletteractions - Newsletter actions
+┃ ${p}newslettermanage - Manage newsletter
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.group} *GROUP* ━━━╮
@@ -59,9 +73,12 @@ export default {
 ┃ ${p}lock / ${p}unlock
 ┃ ${p}setname / ${p}setdesc
 ┃ ${p}ephemeral / ${p}join
+┃ ${p}groupcreate / ${p}grouplist
+┃ ${p}groupmode / ${p}groupv4
+┃ ${p}groupinviteinfo / ${p}grouprequest
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
-${e.rocket} *Gotta go fast!* ${e.sonic}`.trim()
-    )
+${e.rocket} *Gotta go fast!* ${e.sonic}`.trim(),
+    );
   },
-}
+};

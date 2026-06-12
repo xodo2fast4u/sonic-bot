@@ -16,7 +16,7 @@
     "group engagement"
   ],
   "author": "xodobyte",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@cacheable/node-cache": "^3.0.1",
