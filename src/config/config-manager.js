@@ -1,6 +1,6 @@
-import { readFileSync, existsSync } from 'fs'
-import { resolve } from 'path'
-import { container } from '../core/container.js'
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+import { container } from '../core/container.js';
 
 const CONFIG_SCHEMA = {
   prefix: {
@@ -26,7 +26,7 @@ const CONFIG_SCHEMA = {
     type: 'string',
     required: true,
     pattern: /^\d+\.\d+\.\d+$/,
-    default: '1.0.0',
+    default: '3.0.0',
   },
   authDir: {
     type: 'string',
@@ -45,7 +45,7 @@ const CONFIG_SCHEMA = {
     enum: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
     default: 'info',
   },
-}
+};
 
 export const CONSTANTS = Object.freeze({
   DB_CONNECTION_TIMEOUT: 30000,
@@ -75,7 +75,7 @@ export const CONSTANTS = Object.freeze({
 
   RATE_LIMIT_WINDOW: 60000, // 1 minute
   RATE_LIMIT_MAX_REQUESTS: 30,
-})
+});
 
 const ENVIRONMENT_CONFIGS = {
   development: {
@@ -96,96 +96,96 @@ const ENVIRONMENT_CONFIGS = {
     enableDebugCommands: true,
     enableHotReload: false,
   },
-}
+};
 
 class ConfigValidator {
   static validate(config, schema = CONFIG_SCHEMA) {
-    const errors = []
-    const validated = {}
+    const errors = [];
+    const validated = {};
 
     for (const [key, rules] of Object.entries(schema)) {
-      const value = config[key]
+      const value = config[key];
 
       if (rules.required && (value === undefined || value === null)) {
-        errors.push(`Missing required field: ${key}`)
-        continue
+        errors.push(`Missing required field: ${key}`);
+        continue;
       }
 
-      const finalValue = value !== undefined ? value : rules.default
+      const finalValue = value !== undefined ? value : rules.default;
 
       if (finalValue !== undefined && rules.type && typeof finalValue !== rules.type) {
-        errors.push(`Invalid type for ${key}: expected ${rules.type}, got ${typeof finalValue}`)
-        continue
+        errors.push(`Invalid type for ${key}: expected ${rules.type}, got ${typeof finalValue}`);
+        continue;
       }
 
       if (typeof finalValue === 'string') {
         if (rules.minLength && finalValue.length < rules.minLength) {
-          errors.push(`${key} must be at least ${rules.minLength} characters`)
-          continue
+          errors.push(`${key} must be at least ${rules.minLength} characters`);
+          continue;
         }
         if (rules.maxLength && finalValue.length > rules.maxLength) {
-          errors.push(`${key} must be at most ${rules.maxLength} characters`)
-          continue
+          errors.push(`${key} must be at most ${rules.maxLength} characters`);
+          continue;
         }
         if (rules.pattern && !rules.pattern.test(finalValue)) {
-          errors.push(`Invalid format for ${key}`)
-          continue
+          errors.push(`Invalid format for ${key}`);
+          continue;
         }
         if (rules.enum && !rules.enum.includes(finalValue)) {
-          errors.push(`${key} must be one of: ${rules.enum.join(', ')}`)
-          continue
+          errors.push(`${key} must be one of: ${rules.enum.join(', ')}`);
+          continue;
         }
       }
 
-      validated[key] = finalValue
+      validated[key] = finalValue;
     }
 
-    return { valid: errors.length === 0, errors, config: validated }
+    return { valid: errors.length === 0, errors, config: validated };
   }
 }
 
 export class ConfigManager {
   constructor() {
-    this.config = null
-    this.envConfig = null
-    this.logger = null
+    this.config = null;
+    this.envConfig = null;
+    this.logger = null;
   }
 
   async initialize() {
-    this.logger = container.resolve('logger')
+    this.logger = container.resolve('logger');
 
-    const envConfig = this.loadEnvironmentConfig()
+    const envConfig = this.loadEnvironmentConfig();
 
-    const validation = ConfigValidator.validate(envConfig)
+    const validation = ConfigValidator.validate(envConfig);
 
     if (!validation.valid) {
-      throw new Error(`Configuration validation failed:\n${validation.errors.join('\n')}`)
+      throw new Error(`Configuration validation failed:\n${validation.errors.join('\n')}`);
     }
 
     this.config = Object.freeze({
       ...validation.config,
       ...ENVIRONMENT_CONFIGS[validation.config.environment],
       constants: CONSTANTS,
-    })
+    });
 
     this.logger.info('Configuration loaded and validated', {
       environment: this.config.environment,
       logLevel: this.config.logLevel,
-    })
+    });
   }
 
   loadEnvironmentConfig() {
-    const envPath = resolve(process.cwd(), '.env')
-    let envVars = {}
+    const envPath = resolve(process.cwd(), '.env');
+    let envVars = {};
 
     if (existsSync(envPath)) {
-      const envContent = readFileSync(envPath, 'utf-8')
+      const envContent = readFileSync(envPath, 'utf-8');
       envVars = Object.fromEntries(
         envContent
           .split('\n')
-          .filter(line => line.includes('='))
-          .map(line => line.split('=').map(s => s.trim()))
-      )
+          .filter((line) => line.includes('='))
+          .map((line) => line.split('=').map((s) => s.trim())),
+      );
     }
 
     return {
@@ -196,34 +196,34 @@ export class ConfigManager {
       authDir: process.env.AUTH_DIR || envVars.AUTH_DIR,
       environment: process.env.NODE_ENV || envVars.NODE_ENV || 'development',
       logLevel: process.env.LOG_LEVEL || envVars.LOG_LEVEL,
-    }
+    };
   }
 
   get(key) {
     if (!this.config) {
-      throw new Error('Configuration not initialized')
+      throw new Error('Configuration not initialized');
     }
-    return this.config[key]
+    return this.config[key];
   }
 
   getAll() {
     if (!this.config) {
-      throw new Error('Configuration not initialized')
+      throw new Error('Configuration not initialized');
     }
-    return this.config
+    return this.config;
   }
 
   isFeatureEnabled(feature) {
-    return this.get(feature) === true
+    return this.get(feature) === true;
   }
 
   constant(key) {
-    return this.get('constants')[key]
+    return this.get('constants')[key];
   }
 }
 
-container.singleton('configManager', () => new ConfigManager())
+container.singleton('configManager', () => new ConfigManager());
 
-export const config = () => container.resolve('configManager').getAll()
-export const get = key => container.resolve('configManager').get(key)
-export const constant = key => container.resolve('configManager').constant(key)
+export const config = () => container.resolve('configManager').getAll();
+export const get = (key) => container.resolve('configManager').get(key);
+export const constant = (key) => container.resolve('configManager').constant(key);

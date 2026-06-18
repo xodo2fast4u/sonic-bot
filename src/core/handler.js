@@ -1,24 +1,24 @@
-import { isJidStatusBroadcast } from 'baileys'
-import { config, emoji as e } from '../config/config.js'
-import { commands } from '../commands/index.js'
-import { getText, send, resolveSender } from '../utils/utils.js'
-import { checkGlobalCooldown, formatCooldown } from '../utils/cooldown.js'
-import logger from '../utils/logger.js'
+import { isJidStatusBroadcast } from 'baileys';
+import { config, emoji as e } from '../config/config.js';
+import { commands } from '../commands/index.js';
+import { getText, send, resolveSender } from '../utils/utils.js';
+import { checkGlobalCooldown, formatCooldown } from '../utils/cooldown.js';
+import logger from '../utils/logger.js';
 
 export const handleMessage = async (sonic, msg) => {
-  if (!msg.message || isJidStatusBroadcast(msg.key.remoteJid)) return
+  if (!msg.message || isJidStatusBroadcast(msg.key.remoteJid)) return;
 
-  const text = getText(msg)
-  if (!text.startsWith(config.prefix)) return
+  const text = getText(msg);
+  if (!text.startsWith(config.prefix)) return;
 
-  const [cmdName, ...args] = text.slice(config.prefix.length).trim().split(/\s+/)
-  const cmd = commands.get(cmdName?.toLowerCase())
+  const [cmdName, ...args] = text.slice(config.prefix.length).trim().split(/\s+/);
+  const cmd = commands.get(cmdName?.toLowerCase());
 
-  if (!cmd) return
+  if (!cmd) return;
 
-  const sender = resolveSender(msg)
+  const sender = resolveSender(msg);
 
-  const cooldown = checkGlobalCooldown(sender)
+  const cooldown = checkGlobalCooldown(sender);
 
   /*
    * Different cooldown actions provide flexibility in spam control: warnings inform
@@ -31,33 +31,33 @@ export const handleMessage = async (sonic, msg) => {
         await send.text(
           sonic,
           msg,
-          `${e.time} Slow down! Wait *${formatCooldown(cooldown.remaining)}* before using another command.`
-        )
-        return
+          `${e.time} Slow down! Wait *${formatCooldown(cooldown.remaining)}* before using another command.`,
+        );
+        return;
 
       case 'react':
-        await send.react(sonic, msg, '⏳')
-        return
+        await send.react(sonic, msg, '⏳');
+        return;
 
       case 'ignore':
-        return
+        return;
     }
   }
 
   const helpers = {
-    text: message => send.text(sonic, msg, message),
+    text: (message) => send.text(sonic, msg, message),
     mention: (text, mentions) => send.mention(sonic, msg, text, mentions),
     react: (emoji, key) => send.react(sonic, msg, emoji, key),
     edit: (key, text) => send.edit(sonic, msg, key, text),
     image: (url, caption) => send.image(sonic, msg, url, caption),
     sonic,
     msg,
-  }
+  };
 
   try {
-    await cmd.run(helpers, args)
+    await cmd.run(helpers, args);
   } catch (err) {
-    logger.error(`Error [${cmdName}]:`, err.message)
-    await send.text(sonic, msg, `❌ Error: ${err.message}`)
+    logger.error(`Error [${cmdName}]:`, err.message);
+    await send.text(sonic, msg, `❌ Error: ${err.message}`);
   }
-}
+};

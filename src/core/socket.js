@@ -30,7 +30,7 @@ export const startSocket = async () => {
   const { state, saveCreds } = await useSqliteAuthState(config.authDir);
   const { version, isLatest } = await fetchLatestBaileysVersion();
 
-  logger.info(`🔌 WA v${(version.join('.'), isLatest)}, using Latest WA version`);
+  logger.info(`🔌 WA v${version.join('.')} (latest: ${isLatest}), using Latest WA version`);
 
   const sonic = makeWASocket({
     version,
@@ -39,7 +39,7 @@ export const startSocket = async () => {
     keepAliveIntervalMs: 30000,
     logger,
     defaultQueryTimeoutMs: 60000,
-    retryReqeustDelayMs: 300,
+    retryRequestDelayMs: 300,
     maxMsgRetryCount: 10,
     auth: {
       creds: state.creds,
@@ -50,7 +50,7 @@ export const startSocket = async () => {
     patchMessageBeforeSending: (msg) => msg,
     shouldHistorySyncMessage: () => false,
     shouldIgnoreJid: () => false,
-    linkPreviewImageThumbnailWisth: 192,
+    linkPreviewImageThumbnailWidth: 192,
     generateHighQualityLinkPreview: true,
     enableAutoSessionRecreation: true,
     enableRecentMessageCache: true,

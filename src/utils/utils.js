@@ -10,34 +10,34 @@ import {
   isJidBot,
   jidNormalizedUser,
   extractMessageContent,
-} from 'baileys'
-import { getOwner } from '../config/config.js'
-import { state } from '../core/state.js'
+} from 'baileys';
+import { getOwner } from '../config/config.js';
+import { state } from '../core/state.js';
 
-const userDigitsFromJid = jidStr => jidDecode(jidStr)?.user || ''
+const userDigitsFromJid = (jidStr) => jidDecode(jidStr)?.user || '';
 
 export const jid = {
-  decode: rawJid => jidDecode(rawJid),
+  decode: (rawJid) => jidDecode(rawJid),
 
   encode: (user, server, device, agent) => jidEncode(user, server, device, agent),
 
-  toUser: num => jidEncode(num?.replace(/[^0-9]/g, ''), 's.whatsapp.net'),
+  toUser: (num) => jidEncode(num?.replace(/[^0-9]/g, ''), 's.whatsapp.net'),
 
   fromUser: userDigitsFromJid,
 
-  isGroup: jidStr => isJidGroup(jidStr),
+  isGroup: (jidStr) => isJidGroup(jidStr),
 
-  isPN: jidStr => isPnUser(jidStr),
+  isPN: (jidStr) => isPnUser(jidStr),
 
-  isLID: jidStr => isLidUser(jidStr),
+  isLID: (jidStr) => isLidUser(jidStr),
 
-  isNewsletter: jidStr => isJidNewsletter(jidStr),
+  isNewsletter: (jidStr) => isJidNewsletter(jidStr),
 
-  isStatus: jidStr => isJidStatusBroadcast(jidStr),
+  isStatus: (jidStr) => isJidStatusBroadcast(jidStr),
 
-  isBot: jidStr => isJidBot(jidStr),
+  isBot: (jidStr) => isJidBot(jidStr),
 
-  isMetaAI: jidStr => isJidMetaAI(jidStr),
+  isMetaAI: (jidStr) => isJidMetaAI(jidStr),
 
   /*
    * Determine the sender of a message. In groups, the participant field holds the sender.
@@ -45,36 +45,42 @@ export const jid = {
    * as a fallback to maintain consistency across different message sources.
    */
 
-  getSender: msg => {
-    const key = msg.key
+  getSender: (msg) => {
+    const key = msg.key;
 
     if (isJidGroup(key.remoteJid)) {
       if (key.participant && isLidUser(key.participant) && key.participantAlt) {
-        return key.participantAlt
+        return key.participantAlt;
       }
-      return key.participant || key.participantAlt
+      return key.participant || key.participantAlt;
     }
 
     if (key.remoteJid && isLidUser(key.remoteJid) && key.remoteJidAlt) {
-      return key.remoteJidAlt
+      return key.remoteJidAlt;
     }
-    return key.remoteJid
+    return key.remoteJid;
   },
 
-  getParticipantNumber: participant => {
+  getParticipantNumber: (participant) => {
     if (participant.phoneNumber) {
-      return userDigitsFromJid(participant.phoneNumber)
+      return userDigitsFromJid(participant.phoneNumber);
     }
-    return userDigitsFromJid(participant.id)
+    return userDigitsFromJid(participant.id);
   },
 
-  normalize: jidStr => jidNormalizedUser(jidStr) || '',
-}
+  normalize: (jidStr) => jidNormalizedUser(jidStr) || '',
+};
 
-export const getText = msg => {
-  const m = extractMessageContent(msg.message)
-  return m?.conversation || m?.extendedTextMessage?.text || m?.imageMessage?.caption || m?.videoMessage?.caption || ''
-}
+export const getText = (msg) => {
+  const m = extractMessageContent(msg.message);
+  return (
+    m?.conversation ||
+    m?.extendedTextMessage?.text ||
+    m?.imageMessage?.caption ||
+    m?.videoMessage?.caption ||
+    ''
+  );
+};
 
 /*
  * Extract the target JID for an interactive message: the mentioned user, or the sender
@@ -82,80 +88,81 @@ export const getText = msg => {
  * to handle cases where the original JID format differs.
  */
 
-export const getTarget = msg => {
-  const m = extractMessageContent(msg.message)
-  const ctx = m?.extendedTextMessage?.contextInfo
+export const getTarget = (msg) => {
+  const m = extractMessageContent(msg.message);
+  const ctx = m?.extendedTextMessage?.contextInfo;
 
   if (ctx?.mentionedJid?.length) {
-    return ctx.mentionedJid[0]
+    return ctx.mentionedJid[0];
   }
 
   if (ctx?.participant) {
     if (isLidUser(ctx.participant) && ctx.quotedParticipantAlt) {
-      return ctx.quotedParticipantAlt
+      return ctx.quotedParticipantAlt;
     }
-    return ctx.participant
+    return ctx.participant;
   }
 
-  return null
-}
+  return null;
+};
 
-export const isOwner = userJid => {
-  const owner = getOwner()
-  if (!owner) return false
+export const isOwner = (userJid) => {
+  const owner = getOwner();
+  if (!owner) return false;
 
-  const userNum = jid.fromUser(userJid)
+  const userNum = jid.fromUser(userJid);
 
-  const ownerNum = owner.replace(/[^0-9]/g, '')
+  const ownerNum = owner.replace(/[^0-9]/g, '');
 
-  return userNum === ownerNum
-}
+  return userNum === ownerNum;
+};
 
 /*
  * Resolve the sender of a message with fallback chain.
  * jid.getSender handles LID/group logic internally, but this adds
  * an additional fallback for edge cases where the primary method fails.
  */
-export const resolveSender = msg => {
-  return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid
-}
+export const resolveSender = (msg) => {
+  return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid;
+};
 
 export const format = {
   getUptime: () => {
-    const seconds = (Date.now() - state.startTime) / 1000
-    return format.uptime(seconds)
+    const seconds = (Date.now() - state.startTime) / 1000;
+    return format.uptime(seconds);
   },
 
-  uptime: seconds => {
+  uptime: (seconds) => {
     const units = [
       [86400, 'd'],
       [3600, 'h'],
       [60, 'm'],
       [1, 's'],
-    ]
+    ];
     return (
       units
         .map(([div, unit]) => {
-          const val = Math.floor(seconds / div)
-          seconds %= div
-          return val ? `${val}${unit}` : ''
+          const val = Math.floor(seconds / div);
+          seconds %= div;
+          return val ? `${val}${unit}` : '';
         })
         .filter(Boolean)
         .join(' ') || '0s'
-    )
+    );
   },
 
-  bytes: bytes => {
-    if (!bytes) return '0 B'
-    const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    return `${(bytes / 1024 ** i).toFixed(2)} ${['B', 'KB', 'MB', 'GB'][i]}`
+  bytes: (bytes) => {
+    if (!bytes) return '0 B';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / 1024 ** i).toFixed(2)} ${['B', 'KB', 'MB', 'GB'][i]}`;
   },
-}
+};
 
 export const send = {
   text: (sonic, msg, text) => sonic.sendMessage(msg.key.remoteJid, { text }, { quoted: msg }),
 
-  mention: (sonic, msg, text, mentions) => sonic.sendMessage(msg.key.remoteJid, { text, mentions }, { quoted: msg }),
+  mention: (sonic, msg, text, mentions) =>
+    sonic.sendMessage(msg.key.remoteJid, { text, mentions }, { quoted: msg }),
 
   edit: (sonic, msg, key, text) => sonic.sendMessage(msg.key.remoteJid, { text, edit: key }),
 
@@ -166,4 +173,4 @@ export const send = {
 
   image: (sonic, msg, url, caption = '') =>
     sonic.sendMessage(msg.key.remoteJid, { image: { url }, caption }, { quoted: msg }),
-}
+};

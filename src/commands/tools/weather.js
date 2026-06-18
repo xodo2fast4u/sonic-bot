@@ -1,39 +1,39 @@
-import { emoji as e } from '../../config/config.js'
+import { emoji as e } from '../../config/config.js';
 
 export default {
   cmd: ['weather'],
   desc: 'Get current weather and forecast for a location',
   run: async ({ text }, args) => {
     if (!args.length) {
-      await text(`${e.cross} Please provide a location.\nExample: !weather New York`)
-      return
+      await text(`${e.cross} Please provide a location.\nExample: !weather New York`);
+      return;
     }
 
-    const location = args.join(' ')
+    const location = args.join(' ');
 
     try {
-      const res = await fetch(`http://wttr.in/${encodeURIComponent(location)}?format=j1`)
+      const res = await fetch(`http://wttr.in/${encodeURIComponent(location)}?format=j1`);
 
       if (!res.ok) {
-        await text(`${e.cross} Failed to fetch weather data.`)
-        return
+        await text(`${e.cross} Failed to fetch weather data.`);
+        return;
       }
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!data?.current_condition?.[0]) {
-        await text(`${e.cross} Could not find weather data for *${location}*.`)
-        return
+        await text(`${e.cross} Could not find weather data for *${location}*.`);
+        return;
       }
 
-      const c = data.current_condition[0]
-      const today = data.weather?.[0]
-      const tomorrow = data.weather?.[1]
-      const astronomy = today?.astronomy?.[0] || {}
-      const hourly = today?.hourly?.[4] || {}
+      const c = data.current_condition[0];
+      const today = data.weather?.[0];
+      const tomorrow = data.weather?.[1];
+      const astronomy = today?.astronomy?.[0] || {};
+      const hourly = today?.hourly?.[4] || {};
 
-      const loc = data.nearest_area?.[0]?.areaName?.[0]?.value || location
-      const country = data.nearest_area?.[0]?.country?.[0]?.value || ''
+      const loc = data.nearest_area?.[0]?.areaName?.[0]?.value || location;
+      const country = data.nearest_area?.[0]?.country?.[0]?.value || '';
 
       const forecast = tomorrow?.hourly?.[4]
         ? {
@@ -42,23 +42,31 @@ export default {
             max: tomorrow.maxtempC,
             chance: tomorrow.hourly[4].chanceofrain,
           }
-        : null
+        : null;
 
-      const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-      let dayText = 'Unknown'
-      let timeStr = 'Unknown'
+      const weekday = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ];
+      let dayText = 'Unknown';
+      let timeStr = 'Unknown';
 
-      const localtime = data.time_zone?.[0]?.localtime || c.localObsDateTime || ''
+      const localtime = data.time_zone?.[0]?.localtime || c.localObsDateTime || '';
       if (localtime) {
         const [dateStr, rawTime] = localtime
           .replace(/(AM|PM)$/i, '')
           .trim()
-          .split(' ')
+          .split(' ');
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-          const [y, mo, d] = dateStr.split('-').map(Number)
-          dayText = weekday[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()]
+          const [y, mo, d] = dateStr.split('-').map(Number);
+          dayText = weekday[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()];
         }
-        if (rawTime) timeStr = rawTime
+        if (rawTime) timeStr = rawTime;
       }
 
       const msg = `
@@ -86,11 +94,11 @@ export default {
 🌡️ Min/Max: ${forecast?.min ?? 'N/A'}°C / ${forecast?.max ?? 'N/A'}°C
 🌥️ Condition: ${forecast?.condition ?? 'N/A'}
 🌧️ Rain Chance: ${forecast?.chance ?? 'N/A'}%
-      `.trim()
+      `.trim();
 
-      await text(msg)
+      await text(msg);
     } catch (err) {
-      await text(`${e.cross} Error fetching weather data: ${err.message}`)
+      await text(`${e.cross} Error fetching weather data: ${err.message}`);
     }
   },
-}
+};

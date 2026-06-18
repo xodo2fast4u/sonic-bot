@@ -1,16 +1,16 @@
-process.env.NODE_ENV = 'test'
+process.env.NODE_ENV = 'test';
 
-const originalConsole = { ...console }
+const originalConsole = { ...console };
 
 beforeEach(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => {})
-  jest.spyOn(console, 'warn').mockImplementation(() => {})
-  jest.spyOn(console, 'error').mockImplementation(() => {})
-})
+  jest.spyOn(console, 'log').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
 
 afterEach(() => {
-  jest.restoreAllMocks()
-})
+  jest.restoreAllMocks();
+});
 
 global.testUtils = {
   createMockMessage: (overrides = {}) => ({
@@ -48,23 +48,23 @@ global.testUtils = {
     ...overrides,
   }),
 
-  waitFor: (ms = 0) => new Promise(resolve => setTimeout(resolve, ms)),
+  waitFor: (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms)),
 
   createMockContainer: () => {
-    const services = new Map()
+    const services = new Map();
 
     return {
       register: (name, factory) => services.set(name, factory),
-      resolve: name => {
-        const factory = services.get(name)
+      resolve: (name) => {
+        const factory = services.get(name);
         if (!factory) {
-          throw new Error(`Service ${name} not registered`)
+          throw new Error(`Service ${name} not registered`);
         }
-        return typeof factory === 'function' ? factory() : factory
+        return typeof factory === 'function' ? factory() : factory;
       },
-      has: name => services.has(name),
+      has: (name) => services.has(name),
       clear: () => services.clear(),
-    }
+    };
   },
 
   createMockLogger: () => ({
@@ -80,40 +80,40 @@ global.testUtils = {
   }),
 
   createMockCache: () => {
-    const cache = new Map()
+    const cache = new Map();
 
     return {
-      get: jest.fn(key => cache.get(key) || null),
+      get: jest.fn((key) => cache.get(key) || null),
       set: jest.fn((key, value) => cache.set(key, value)),
-      delete: jest.fn(key => cache.delete(key)),
+      delete: jest.fn((key) => cache.delete(key)),
       clear: jest.fn(() => cache.clear()),
-      has: jest.fn(key => cache.has(key)),
+      has: jest.fn((key) => cache.has(key)),
       keys: jest.fn(() => Array.from(cache.keys())),
       size: jest.fn(() => cache.size),
-    }
+    };
   },
 
   createMockDatabase: () => ({
     execute: jest.fn(),
     get: jest.fn(),
     all: jest.fn(),
-    transaction: jest.fn(callback => callback()),
+    transaction: jest.fn((callback) => callback()),
     close: jest.fn(),
   }),
 
   expectRejection: async (promise, expectedError) => {
-    await expect(promise).rejects.toThrow(expectedError)
+    await expect(promise).rejects.toThrow(expectedError);
   },
 
   expectResolution: async (promise, expectedValue) => {
-    await expect(promise).resolves.toBe(expectedValue)
+    await expect(promise).resolves.toBe(expectedValue);
   },
-}
+};
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
-})
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
-process.on('uncaughtException', error => {
-  console.error('Uncaught Exception:', error)
-})
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});

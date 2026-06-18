@@ -1,6 +1,6 @@
-import pino from 'pino'
-import { AsyncLocalStorage } from 'async_hooks'
-import { container } from '../core/container.js'
+import pino from 'pino';
+import { AsyncLocalStorage } from 'async_hooks';
+import { container } from '../core/container.js';
 
 class PerformanceMetrics {
   constructor() {
@@ -9,52 +9,52 @@ class PerformanceMetrics {
       database: new Map(),
       network: new Map(),
       errors: new Map(),
-    }
-    this.startTime = Date.now()
+    };
+    this.startTime = Date.now();
   }
 
   recordCommand(command, duration, success = true) {
     if (!this.metrics.commands.has(command)) {
-      this.metrics.commands.set(command, { count: 0, totalTime: 0, errors: 0 })
+      this.metrics.commands.set(command, { count: 0, totalTime: 0, errors: 0 });
     }
 
-    const metric = this.metrics.commands.get(command)
-    metric.count++
-    metric.totalTime += duration
-    if (!success) metric.errors++
+    const metric = this.metrics.commands.get(command);
+    metric.count++;
+    metric.totalTime += duration;
+    if (!success) metric.errors++;
   }
 
   recordDatabase(operation, duration, success = true) {
     if (!this.metrics.database.has(operation)) {
-      this.metrics.database.set(operation, { count: 0, totalTime: 0, errors: 0 })
+      this.metrics.database.set(operation, { count: 0, totalTime: 0, errors: 0 });
     }
 
-    const metric = this.metrics.database.get(operation)
-    metric.count++
-    metric.totalTime += duration
-    if (!success) metric.errors++
+    const metric = this.metrics.database.get(operation);
+    metric.count++;
+    metric.totalTime += duration;
+    if (!success) metric.errors++;
   }
 
   recordNetwork(operation, duration, success = true) {
     if (!this.metrics.network.has(operation)) {
-      this.metrics.network.set(operation, { count: 0, totalTime: 0, errors: 0 })
+      this.metrics.network.set(operation, { count: 0, totalTime: 0, errors: 0 });
     }
 
-    const metric = this.metrics.network.get(operation)
-    metric.count++
-    metric.totalTime += duration
-    if (!success) metric.errors++
+    const metric = this.metrics.network.get(operation);
+    metric.count++;
+    metric.totalTime += duration;
+    if (!success) metric.errors++;
   }
 
   recordError(errorType) {
     if (!this.metrics.errors.has(errorType)) {
-      this.metrics.errors.set(errorType, 0)
+      this.metrics.errors.set(errorType, 0);
     }
-    this.metrics.errors.set(errorType, this.metrics.errors.get(errorType) + 1)
+    this.metrics.errors.set(errorType, this.metrics.errors.get(errorType) + 1);
   }
 
   getMetrics() {
-    const uptime = Date.now() - this.startTime
+    const uptime = Date.now() - this.startTime;
 
     return {
       uptime,
@@ -66,7 +66,7 @@ class PerformanceMetrics {
             avgTime: metric.totalTime / metric.count,
             errorRate: metric.errors / metric.count,
           },
-        ])
+        ]),
       ),
       database: Object.fromEntries(
         Array.from(this.metrics.database.entries()).map(([op, metric]) => [
@@ -76,7 +76,7 @@ class PerformanceMetrics {
             avgTime: metric.totalTime / metric.count,
             errorRate: metric.errors / metric.count,
           },
-        ])
+        ]),
       ),
       network: Object.fromEntries(
         Array.from(this.metrics.network.entries()).map(([op, metric]) => [
@@ -86,10 +86,10 @@ class PerformanceMetrics {
             avgTime: metric.totalTime / metric.count,
             errorRate: metric.errors / metric.count,
           },
-        ])
+        ]),
       ),
       errors: Object.fromEntries(this.metrics.errors),
-    }
+    };
   }
 
   reset() {
@@ -98,7 +98,7 @@ class PerformanceMetrics {
       database: new Map(),
       network: new Map(),
       errors: new Map(),
-    }
+    };
   }
 }
 
@@ -108,30 +108,30 @@ export class EnhancedLogger {
       level: config.logLevel || 'info',
       prettyPrint: config.environment !== 'production',
       ...config,
-    }
+    };
 
-    this.metrics = new PerformanceMetrics()
-    this.pino = this.createPinoLogger()
-    this.contextStore = new Map()
-    this.asyncLocalStorage = new AsyncLocalStorage()
+    this.metrics = new PerformanceMetrics();
+    this.pino = this.createPinoLogger();
+    this.contextStore = new Map();
+    this.asyncLocalStorage = new AsyncLocalStorage();
   }
 
   createPinoLogger() {
     const pinoConfig = {
       level: this.config.level,
       formatters: {
-        level: label => ({ level: label }),
-        log: object => {
-          const { correlationId, ...rest } = object
+        level: (label) => ({ level: label }),
+        log: (object) => {
+          const { correlationId, ...rest } = object;
           return {
             ...rest,
             correlationId,
             timestamp: new Date().toISOString(),
             service: 'sonic-bot',
-          }
+          };
         },
       },
-    }
+    };
 
     if (this.config.prettyPrint) {
       pinoConfig.transport = {
@@ -141,46 +141,46 @@ export class EnhancedLogger {
           translateTime: 'HH:MM:ss Z',
           ignore: 'pid,hostname',
         },
-      }
+      };
     }
 
-    return pino(pinoConfig)
+    return pino(pinoConfig);
   }
 
   log(level, message, data = {}, correlationId = null) {
     const logData = {
       ...data,
       correlationId: correlationId || this.getCurrentCorrelationId(),
-    }
+    };
 
-    this.pino[level](logData, message)
+    this.pino[level](logData, message);
   }
 
   fatal(message, data = {}, correlationId = null) {
-    this.log('fatal', message, data, correlationId)
+    this.log('fatal', message, data, correlationId);
   }
 
   error(message, data = {}, correlationId = null) {
-    this.log('error', message, data, correlationId)
+    this.log('error', message, data, correlationId);
     if (data.error?.constructor) {
-      this.metrics.recordError(data.error.constructor.name)
+      this.metrics.recordError(data.error.constructor.name);
     }
   }
 
   warn(message, data = {}, correlationId = null) {
-    this.log('warn', message, data, correlationId)
+    this.log('warn', message, data, correlationId);
   }
 
   info(message, data = {}, correlationId = null) {
-    this.log('info', message, data, correlationId)
+    this.log('info', message, data, correlationId);
   }
 
   debug(message, data = {}, correlationId = null) {
-    this.log('debug', message, data, correlationId)
+    this.log('debug', message, data, correlationId);
   }
 
   trace(message, data = {}, correlationId = null) {
-    this.log('trace', message, data, correlationId)
+    this.log('trace', message, data, correlationId);
   }
 
   logPerformance(operation, duration, success = true, data = {}) {
@@ -189,17 +189,17 @@ export class EnhancedLogger {
       duration,
       success,
       ...data,
-    })
+    });
 
     if (operation.startsWith('command:')) {
-      const command = operation.replace('command:', '')
-      this.metrics.recordCommand(command, duration, success)
+      const command = operation.replace('command:', '');
+      this.metrics.recordCommand(command, duration, success);
     } else if (operation.startsWith('db:')) {
-      const dbOp = operation.replace('db:', '')
-      this.metrics.recordDatabase(dbOp, duration, success)
+      const dbOp = operation.replace('db:', '');
+      this.metrics.recordDatabase(dbOp, duration, success);
     } else if (operation.startsWith('network:')) {
-      const netOp = operation.replace('network:', '')
-      this.metrics.recordNetwork(netOp, duration, success)
+      const netOp = operation.replace('network:', '');
+      this.metrics.recordNetwork(netOp, duration, success);
     }
   }
 
@@ -210,20 +210,20 @@ export class EnhancedLogger {
       argsCount: args?.length || 0,
       duration,
       success,
-    }
+    };
 
     if (error) {
-      logData.error = error.message
-      logData.errorType = error.constructor.name
+      logData.error = error.message;
+      logData.errorType = error.constructor.name;
     }
 
     if (success) {
-      this.info(`Command executed: ${command}`, logData)
+      this.info(`Command executed: ${command}`, logData);
     } else {
-      this.error(`Command failed: ${command}`, logData)
+      this.error(`Command failed: ${command}`, logData);
     }
 
-    this.logPerformance(`command:${command}`, duration, success)
+    this.logPerformance(`command:${command}`, duration, success);
   }
 
   logDatabase(operation, table, duration, success, error = null) {
@@ -232,19 +232,19 @@ export class EnhancedLogger {
       table,
       duration,
       success,
-    }
+    };
 
     if (error) {
-      logData.error = error.message
+      logData.error = error.message;
     }
 
     if (success) {
-      this.debug(`Database operation: ${operation}`, logData)
+      this.debug(`Database operation: ${operation}`, logData);
     } else {
-      this.error(`Database operation failed: ${operation}`, logData)
+      this.error(`Database operation failed: ${operation}`, logData);
     }
 
-    this.logPerformance(`db:${operation}`, duration, success)
+    this.logPerformance(`db:${operation}`, duration, success);
   }
 
   logNetwork(operation, endpoint, duration, success, error = null) {
@@ -253,89 +253,89 @@ export class EnhancedLogger {
       endpoint,
       duration,
       success,
-    }
+    };
 
     if (error) {
-      logData.error = error.message
-      logData.statusCode = error.status
+      logData.error = error.message;
+      logData.statusCode = error.status;
     }
 
     if (success) {
-      this.debug(`Network operation: ${operation}`, logData)
+      this.debug(`Network operation: ${operation}`, logData);
     } else {
-      this.error(`Network operation failed: ${operation}`, logData)
+      this.error(`Network operation failed: ${operation}`, logData);
     }
 
-    this.logPerformance(`network:${operation}`, duration, success)
+    this.logPerformance(`network:${operation}`, duration, success);
   }
 
   setContext(correlationId, data = {}) {
     this.contextStore.set(correlationId, {
       ...data,
       startTime: Date.now(),
-    })
+    });
   }
 
   getContext(correlationId) {
-    return this.contextStore.get(correlationId)
+    return this.contextStore.get(correlationId);
   }
 
   clearContext(correlationId) {
-    this.contextStore.delete(correlationId)
+    this.contextStore.delete(correlationId);
   }
 
   getCurrentCorrelationId() {
-    const context = this.asyncLocalStorage.getStore()
-    return context?.correlationId || null
+    const context = this.asyncLocalStorage.getStore();
+    return context?.correlationId || null;
   }
 
   withCorrelationId(correlationId, callback) {
-    const context = { correlationId }
-    return this.asyncLocalStorage.run(context, callback)
+    const context = { correlationId };
+    return this.asyncLocalStorage.run(context, callback);
   }
 
   setCorrelationId(correlationId) {
-    const currentContext = this.asyncLocalStorage.getStore() || {}
-    currentContext.correlationId = correlationId
-    this.asyncLocalStorage.enterWith(currentContext)
+    const currentContext = this.asyncLocalStorage.getStore() || {};
+    currentContext.correlationId = correlationId;
+    this.asyncLocalStorage.enterWith(currentContext);
   }
 
   getMetrics() {
-    return this.metrics.getMetrics()
+    return this.metrics.getMetrics();
   }
 
   resetMetrics() {
-    this.metrics.reset()
+    this.metrics.reset();
   }
 
   child(context) {
-    const childLogger = Object.create(this)
-    childLogger.pino = this.pino.child(context)
-    return childLogger
+    const childLogger = Object.create(this);
+    childLogger.pino = this.pino.child(context);
+    return childLogger;
   }
 
   timer(operation) {
-    const startTime = process.hrtime.bigint()
+    const startTime = process.hrtime.bigint();
 
     return {
       end: (success = true, data = {}) => {
-        const endTime = process.hrtime.bigint()
-        const duration = Number(endTime - startTime) / 1000000 // Convert to milliseconds
+        const endTime = process.hrtime.bigint();
+        const duration = Number(endTime - startTime) / 1000000; // Convert to milliseconds
 
-        this.logPerformance(operation, duration, success, data)
-        return duration
+        this.logPerformance(operation, duration, success, data);
+        return duration;
       },
-    }
+    };
   }
 }
 
 export function createLogger(config = {}) {
-  return new EnhancedLogger(config)
+  return new EnhancedLogger(config);
 }
 
-container.singleton('logger', c => {
-  const configManager = c.resolve('configManager')
-  return createLogger(configManager.getAll())
-})
+container.singleton('logger', (c) => {
+  const configManager = c.resolve('configManager');
+  return createLogger(configManager.getAll());
+});
 
-export const logger = () => container.resolve('logger')
+export const logger = () => container.resolve('logger');

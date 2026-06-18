@@ -1,4 +1,8 @@
 node_modules
 package-lock.json
 bun.lock
-.env
+sonic_session.db
+sonic_session.db-shm
+sonic_session.db-wal
+sonic-logs.txt
+src/data

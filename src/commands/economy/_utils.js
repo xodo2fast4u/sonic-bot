@@ -1,7 +1,7 @@
-import { emoji as e } from '../../config/config.js'
-import { send, resolveSender } from '../../utils/utils.js'
-import { checkCommandCooldown, formatCooldown } from '../../utils/cooldown.js'
-import { getUser } from '../../database/database.js'
+import { emoji as e } from '../../config/config.js';
+import { send, resolveSender } from '../../utils/utils.js';
+import { checkCommandCooldown, formatCooldown } from '../../utils/cooldown.js';
+import { getUser } from '../../database/database.js';
 
 export const JOBS = [
   {
@@ -61,7 +61,13 @@ export const JOBS = [
     emoji: '🎨',
     min: 20,
     max: 120,
-    messages: ['sold a painting', 'completed a commission', 'designed a logo', 'created digital art', 'drew portraits'],
+    messages: [
+      'sold a painting',
+      'completed a commission',
+      'designed a logo',
+      'created digital art',
+      'drew portraits',
+    ],
   },
   {
     name: 'Musician',
@@ -128,25 +134,29 @@ export const JOBS = [
       'went supersonic',
     ],
   },
-]
+];
 
-export const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+export const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-export const randomFrom = arr => arr[Math.floor(Math.random() * arr.length)]
+export const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-export const formatCoins = amount => `${e.ring} ${amount.toLocaleString()}`
+export const formatCoins = (amount) => `${e.ring} ${amount.toLocaleString()}`;
 
 export const checkEconCooldown = async (sonic, msg, command, duration) => {
-  const sender = resolveSender(msg)
-  const cd = checkCommandCooldown(sender, command, duration)
+  const sender = resolveSender(msg);
+  const cd = checkCommandCooldown(sender, command, duration);
 
   if (!cd.allowed) {
-    await send.text(sonic, msg, `${e.time} You can use this command again in *${formatCooldown(cd.remaining)}*`)
-    return false
+    await send.text(
+      sonic,
+      msg,
+      `${e.time} You can use this command again in *${formatCooldown(cd.remaining)}*`,
+    );
+    return false;
   }
 
-  return true
-}
+  return true;
+};
 
 /**
  * Helper to display profile/wallet information with automatic mention handling
@@ -155,16 +165,21 @@ export const checkEconCooldown = async (sonic, msg, command, duration) => {
  * @param {string} selfContent - Content to show when viewing own profile
  * @param {string} otherContent - Content to show when viewing someone else's profile
  */
-export const sendProfileDisplay = async ({ text, mention, msg }, target, selfContent, otherContent) => {
-  const ownerJid = resolveSender(msg)
-  const isSelf = target === ownerJid
+export const sendProfileDisplay = async (
+  { text, mention, msg },
+  target,
+  selfContent,
+  otherContent,
+) => {
+  const ownerJid = resolveSender(msg);
+  const isSelf = target === ownerJid;
 
   if (isSelf) {
-    return text(selfContent)
+    return text(selfContent);
   } else {
-    return mention(otherContent, [target])
+    return mention(otherContent, [target]);
   }
-}
+};
 
 /**
  * Factory for bank-related actions (deposit/withdraw)
@@ -174,20 +189,22 @@ export const sendProfileDisplay = async ({ text, mention, msg }, target, selfCon
  */
 export const bankAction = (dbFunc, sourceKey, title) => {
   return async ({ text, msg }, args) => {
-    const sender = resolveSender(msg)
-    const user = getUser(sender)
+    const sender = resolveSender(msg);
+    const user = getUser(sender);
 
-    const amount = args[0]?.toLowerCase() === 'all' ? user[sourceKey] : parseInt(args[0])
+    const amount = args[0]?.toLowerCase() === 'all' ? user[sourceKey] : parseInt(args[0]);
 
     if (!amount || amount <= 0) {
-      return text(`${e.cross} Provide amount! Example: !${title.toLowerCase()} 100 or !${title.toLowerCase()} all`)
+      return text(
+        `${e.cross} Provide amount! Example: !${title.toLowerCase()} 100 or !${title.toLowerCase()} all`,
+      );
     }
 
-    const result = dbFunc(sender, amount)
+    const result = dbFunc(sender, amount);
 
     if (!result.success) {
-      const errorMsg = title === 'DEPOSIT' ? 'Insufficient cash!' : 'Insufficient bank balance!'
-      return text(`${e.cross} ${errorMsg} You have ${formatCoins(user[sourceKey])}`)
+      const errorMsg = title === 'DEPOSIT' ? 'Insufficient cash!' : 'Insufficient bank balance!';
+      return text(`${e.cross} ${errorMsg} You have ${formatCoins(user[sourceKey])}`);
     }
 
     await text(
@@ -198,7 +215,7 @@ export const bankAction = (dbFunc, sourceKey, title) => {
 ┃
 ┃ ${e.star} Cash: ${formatCoins(result.balance)}
 ┃ ${e.bolt} Bank: ${formatCoins(result.bank)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim()
-    )
-  }
-}
+╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+    );
+  };
+};

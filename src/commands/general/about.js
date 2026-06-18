@@ -1,4 +1,4 @@
-import { config, emoji as e } from '../../config/config.js'
+import { config, emoji as e } from '../../config/config.js';
 
 export default {
   cmd: ['about'],
@@ -13,7 +13,7 @@ export default {
 ┃ ${e.info} A WhatsApp bot with economic features
 ┃ ${e.bolt} Fast, reliable & feature-rich
 ┃ ${e.admin} Owner: @${config.ownerNumber}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim()
-    )
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+    );
   },
-}
+};

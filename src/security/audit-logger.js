@@ -1,50 +1,50 @@
-import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs'
-import { readdir, readFile, stat } from 'fs/promises'
-import { join } from 'path'
-import { container } from '../core/container.js'
+import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
+import { readdir, readFile, stat } from 'fs/promises';
+import { join } from 'path';
+import { container } from '../core/container.js';
 
 export class AuditLogger {
   constructor() {
-    this.logger = null
-    this.configManager = null
-    this.sessionManager = null
-    this.auditFile = null
-    this.buffer = []
-    this.bufferSize = 100
-    this.flushInterval = 5000
-    this.flushTimer = null
-    this.sensitiveFields = ['password', 'token', 'key', 'secret', 'auth']
+    this.logger = null;
+    this.configManager = null;
+    this.sessionManager = null;
+    this.auditFile = null;
+    this.buffer = [];
+    this.bufferSize = 100;
+    this.flushInterval = 5000;
+    this.flushTimer = null;
+    this.sensitiveFields = ['password', 'token', 'key', 'secret', 'auth'];
   }
 
   async initialize() {
-    this.logger = container.resolve('logger')
-    this.configManager = container.resolve('configManager')
-    this.sessionManager = container.resolve('sessionManager')
+    this.logger = container.resolve('logger');
+    this.configManager = container.resolve('configManager');
+    this.sessionManager = container.resolve('sessionManager');
 
-    const auditDir = this.configManager.constant('AUDIT_LOG_DIR') || './logs/audit'
+    const auditDir = this.configManager.constant('AUDIT_LOG_DIR') || './logs/audit';
     if (!existsSync(auditDir)) {
-      mkdirSync(auditDir, { recursive: true })
+      mkdirSync(auditDir, { recursive: true });
     }
 
-    const date = new Date().toISOString().split('T')[0]
-    this.auditFile = join(auditDir, `audit-${date}.jsonl`)
+    const date = new Date().toISOString().split('T')[0];
+    this.auditFile = join(auditDir, `audit-${date}.jsonl`);
 
-    this.startFlushTimer()
+    this.startFlushTimer();
 
     this.logger.info('Audit logger initialized', {
       auditFile: this.auditFile,
       bufferSize: this.bufferSize,
       flushInterval: this.flushInterval,
-    })
+    });
   }
 
   async log(event, options = {}) {
-    const auditEvent = this.createAuditEvent(event, options)
+    const auditEvent = this.createAuditEvent(event, options);
 
-    this.buffer.push(auditEvent)
+    this.buffer.push(auditEvent);
 
     if (this.buffer.length >= this.bufferSize) {
-      await this.flush()
+      await this.flush();
     }
 
     this.logger.info('Audit event logged', {
@@ -53,7 +53,7 @@ export class AuditLogger {
       action: auditEvent.action,
       resource: auditEvent.resource,
       correlationId: auditEvent.correlationId,
-    })
+    });
   }
 
   async logAuthAttempt(userId, success, method, details = {}) {
@@ -68,7 +68,7 @@ export class AuditLogger {
         method,
         ...details,
       },
-    })
+    });
   }
 
   async logPermissionChange(userId, permission, action, grantedBy, details = {}) {
@@ -82,7 +82,7 @@ export class AuditLogger {
         grantedBy,
         ...details,
       },
-    })
+    });
   }
 
   async logSensitiveDataAccess(userId, resource, action, details = {}) {
@@ -95,7 +95,7 @@ export class AuditLogger {
       details: {
         ...this.sanitizeDetails(details),
       },
-    })
+    });
   }
 
   async logCommandExecution(userId, command, args, success, duration, details = {}) {
@@ -110,7 +110,7 @@ export class AuditLogger {
         duration,
         ...this.sanitizeDetails(details),
       },
-    })
+    });
   }
 
   async logDataModification(userId, resource, action, changes, details = {}) {
@@ -124,7 +124,7 @@ export class AuditLogger {
         changes: this.sanitizeChanges(changes),
         ...this.sanitizeDetails(details),
       },
-    })
+    });
   }
 
   async logSecurityEvent(event, severity = 'medium', details = {}) {
@@ -134,7 +134,7 @@ export class AuditLogger {
       action: event,
       resource: 'system',
       details: this.sanitizeDetails(details),
-    })
+    });
   }
 
   async logAdminAction(userId, action, resource, details = {}) {
@@ -145,7 +145,7 @@ export class AuditLogger {
       action,
       resource,
       details: this.sanitizeDetails(details),
-    })
+    });
   }
 
   async logError(error, context = {}) {
@@ -162,7 +162,7 @@ export class AuditLogger {
         },
         ...this.sanitizeDetails(context),
       },
-    })
+    });
   }
 
   async logApiAccess(userId, method, endpoint, statusCode, duration, details = {}) {
@@ -177,7 +177,7 @@ export class AuditLogger {
         duration,
         ...this.sanitizeDetails(details),
       },
-    })
+    });
   }
 
   async logConfigChange(userId, configKey, oldValue, newValue, details = {}) {
@@ -192,12 +192,14 @@ export class AuditLogger {
         newValue: this.sanitizeValue(newValue),
         ...this.sanitizeDetails(details),
       },
-    })
+    });
   }
 
   createAuditEvent(event, options) {
-    const now = Date.now()
-    const session = this.sessionManager ? this.sessionManager.getSession(event.userId, false) : null
+    const now = Date.now();
+    const session = this.sessionManager
+      ? this.sessionManager.getSession(event.userId, false)
+      : null;
 
     return {
       timestamp: now,
@@ -221,11 +223,11 @@ export class AuditLogger {
         memory: process.memoryUsage(),
         version: this.configManager?.constant('VERSION'),
       },
-    }
+    };
   }
 
   generateCorrelationId() {
-    return `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   getClientIP(event) {
@@ -240,18 +242,18 @@ export class AuditLogger {
       event?.request?.socket?.remoteAddress,
       event?.context?.ip,
       event?.context?.clientIP,
-    ]
+    ];
 
     for (const ip of sources) {
       if (ip && typeof ip === 'string' && ip.trim() !== '') {
         if (ip.includes(',')) {
-          return ip.split(',')[0].trim()
+          return ip.split(',')[0].trim();
         }
-        return ip.trim()
+        return ip.trim();
       }
     }
 
-    return null
+    return null;
   }
 
   getUserAgent(event) {
@@ -267,114 +269,116 @@ export class AuditLogger {
       event?.context?.clientUserAgent,
       event?.message?.pushName,
       event?.message?.notifyName,
-    ]
+    ];
 
     for (const userAgent of sources) {
       if (userAgent && typeof userAgent === 'string' && userAgent.trim() !== '') {
-        return userAgent.trim()
+        return userAgent.trim();
       }
     }
 
-    return 'WhatsApp Bot Client'
+    return 'WhatsApp Bot Client';
   }
 
   sanitizeDetails(details) {
-    const sanitized = {}
+    const sanitized = {};
 
     for (const [key, value] of Object.entries(details)) {
       if (typeof value === 'string' && this.isSensitiveField(key)) {
-        sanitized[key] = '[REDACTED]'
+        sanitized[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null) {
-        sanitized[key] = this.sanitizeObject(value)
+        sanitized[key] = this.sanitizeObject(value);
       } else {
-        sanitized[key] = value
+        sanitized[key] = value;
       }
     }
 
-    return sanitized
+    return sanitized;
   }
 
   isSensitiveField(field) {
-    const lowerField = field.toLowerCase()
-    return this.sensitiveFields.some(sensitive => lowerField.includes(sensitive))
+    const lowerField = field.toLowerCase();
+    return this.sensitiveFields.some((sensitive) => lowerField.includes(sensitive));
   }
 
   sanitizeObject(obj) {
-    const sanitized = {}
+    const sanitized = {};
 
     for (const [key, value] of Object.entries(obj)) {
       if (this.isSensitiveField(key)) {
-        sanitized[key] = '[REDACTED]'
+        sanitized[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        sanitized[key] = this.sanitizeObject(value)
+        sanitized[key] = this.sanitizeObject(value);
       } else if (Array.isArray(value)) {
-        sanitized[key] = value.map(item => (typeof item === 'object' ? this.sanitizeObject(item) : item))
+        sanitized[key] = value.map((item) =>
+          typeof item === 'object' ? this.sanitizeObject(item) : item,
+        );
       } else {
-        sanitized[key] = value
+        sanitized[key] = value;
       }
     }
 
-    return sanitized
+    return sanitized;
   }
 
   sanitizeArgs(args) {
-    return args.map(arg => {
+    return args.map((arg) => {
       if (typeof arg === 'string' && arg.length > 100) {
-        return arg.substring(0, 100) + '...'
+        return arg.substring(0, 100) + '...';
       }
-      return arg
-    })
+      return arg;
+    });
   }
 
   sanitizeValue(value) {
     if (typeof value === 'string') {
-      return value.length > 500 ? value.substring(0, 500) + '...' : value
+      return value.length > 500 ? value.substring(0, 500) + '...' : value;
     }
-    return value
+    return value;
   }
 
   sanitizeChanges(changes) {
-    const sanitized = {}
+    const sanitized = {};
 
     for (const [key, change] of Object.entries(changes)) {
       sanitized[key] = {
         ...change,
         oldValue: this.sanitizeValue(change.oldValue),
         newValue: this.sanitizeValue(change.newValue),
-      }
+      };
     }
 
-    return sanitized
+    return sanitized;
   }
 
   async flush() {
     if (this.buffer.length === 0) {
-      return
+      return;
     }
 
-    const events = [...this.buffer]
-    this.buffer = []
+    const events = [...this.buffer];
+    this.buffer = [];
 
     try {
-      const logLines = events.map(event => JSON.stringify(event)).join('\n')
-      appendFileSync(this.auditFile, logLines + '\n')
+      const logLines = events.map((event) => JSON.stringify(event)).join('\n');
+      appendFileSync(this.auditFile, logLines + '\n');
 
-      this.logger.debug(`Flushed ${events.length} audit events to ${this.auditFile}`)
+      this.logger.debug(`Flushed ${events.length} audit events to ${this.auditFile}`);
     } catch (error) {
       this.logger.error('Failed to flush audit events', {
         error: error.message,
         eventsCount: events.length,
         auditFile: this.auditFile,
-      })
+      });
 
       for (const event of events) {
         try {
-          appendFileSync(this.auditFile, JSON.stringify(event) + '\n')
+          appendFileSync(this.auditFile, JSON.stringify(event) + '\n');
         } catch (retryError) {
           this.logger.error('Failed to write audit event', {
             error: retryError.message,
             event,
-          })
+          });
         }
       }
     }
@@ -382,25 +386,25 @@ export class AuditLogger {
 
   startFlushTimer() {
     if (this.flushTimer) {
-      clearInterval(this.flushTimer)
+      clearInterval(this.flushTimer);
     }
 
     this.flushTimer = setInterval(() => {
-      this.flush().catch(error => {
-        this.logger.error('Audit flush timer error', { error: error.message })
-      })
-    }, this.flushInterval)
+      this.flush().catch((error) => {
+        this.logger.error('Audit flush timer error', { error: error.message });
+      });
+    }, this.flushInterval);
   }
 
   stopFlushTimer() {
     if (this.flushTimer) {
-      clearInterval(this.flushTimer)
-      this.flushTimer = null
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
     }
   }
 
   async forceFlush() {
-    await this.flush()
+    await this.flush();
   }
 
   getStats() {
@@ -411,14 +415,14 @@ export class AuditLogger {
       auditFile: this.auditFile,
       sensitiveFields: this.sensitiveFields,
       uptime: process.uptime(),
-    }
+    };
   }
 
   async queryAuditLogs(filters = {}) {
-    const { startDate, endDate, userId, eventType, severity, limit = 100, offset = 0 } = filters
+    const { startDate, endDate, userId, eventType, severity, limit = 100, offset = 0 } = filters;
 
     try {
-      const auditDir = this.configManager?.constant('AUDIT_LOG_DIR') || './logs/audit'
+      const auditDir = this.configManager?.constant('AUDIT_LOG_DIR') || './logs/audit';
 
       if (!existsSync(auditDir)) {
         return {
@@ -427,67 +431,67 @@ export class AuditLogger {
           limit,
           offset,
           filters,
-        }
+        };
       }
 
-      const files = await readdir(auditDir)
+      const files = await readdir(auditDir);
       const auditFiles = files
-        .filter(file => file.startsWith('audit-') && file.endsWith('.jsonl'))
-        .sort((a, b) => b.localeCompare(a))
+        .filter((file) => file.startsWith('audit-') && file.endsWith('.jsonl'))
+        .sort((a, b) => b.localeCompare(a));
 
-      let allEvents = []
+      let allEvents = [];
 
       for (const file of auditFiles) {
-        const filePath = join(auditDir, file)
-        const content = await readFile(filePath, 'utf8')
+        const filePath = join(auditDir, file);
+        const content = await readFile(filePath, 'utf8');
 
         const lines = content
           .trim()
           .split('\n')
-          .filter(line => line.trim())
+          .filter((line) => line.trim());
 
         for (const line of lines) {
           try {
-            const event = JSON.parse(line)
-            allEvents.push(event)
+            const event = JSON.parse(line);
+            allEvents.push(event);
           } catch (parseError) {
             this.logger?.warn('Failed to parse audit log line', {
               file,
               line: line.substring(0, 100),
               error: parseError.message,
-            })
+            });
           }
         }
       }
 
-      let filteredEvents = allEvents
+      let filteredEvents = allEvents;
 
       if (startDate) {
-        const start = new Date(startDate).getTime()
-        filteredEvents = filteredEvents.filter(event => event.timestamp >= start)
+        const start = new Date(startDate).getTime();
+        filteredEvents = filteredEvents.filter((event) => event.timestamp >= start);
       }
 
       if (endDate) {
-        const end = new Date(endDate).getTime()
-        filteredEvents = filteredEvents.filter(event => event.timestamp <= end)
+        const end = new Date(endDate).getTime();
+        filteredEvents = filteredEvents.filter((event) => event.timestamp <= end);
       }
 
       if (userId) {
-        filteredEvents = filteredEvents.filter(event => event.userId === userId)
+        filteredEvents = filteredEvents.filter((event) => event.userId === userId);
       }
 
       if (eventType) {
-        filteredEvents = filteredEvents.filter(event => event.type === eventType)
+        filteredEvents = filteredEvents.filter((event) => event.type === eventType);
       }
 
       if (severity) {
-        filteredEvents = filteredEvents.filter(event => event.severity === severity)
+        filteredEvents = filteredEvents.filter((event) => event.severity === severity);
       }
 
-      filteredEvents.sort((a, b) => b.timestamp - a.timestamp)
+      filteredEvents.sort((a, b) => b.timestamp - a.timestamp);
 
-      const total = filteredEvents.length
-      const paginatedEvents = filteredEvents.slice(offset, offset + limit)
+      const total = filteredEvents.length;
+      const paginatedEvents = filteredEvents.slice(offset, offset + limit);
 
       return {
         events: paginatedEvents,
@@ -496,12 +500,12 @@ export class AuditLogger {
         offset,
         filters,
         hasMore: offset + limit < total,
-      }
+      };
     } catch (error) {
       this.logger?.error('Failed to query audit logs', {
         error: error.message,
         filters,
-      })
+      });
 
       return {
         events: [],
@@ -510,7 +514,7 @@ export class AuditLogger {
         offset,
         filters,
         error: error.message,
-      }
+      };
     }
   }
 
@@ -523,104 +527,107 @@ export class AuditLogger {
       topUsers: [],
       securityEvents: [],
       errors: [],
-    }
+    };
   }
 
   async exportAuditLogs(format = 'json', filters = {}) {
-    const logs = await this.queryAuditLogs(filters)
+    const logs = await this.queryAuditLogs(filters);
 
     switch (format.toLowerCase()) {
       case 'json':
-        return JSON.stringify(logs, null, 2)
+        return JSON.stringify(logs, null, 2);
       case 'csv':
-        return this.convertToCSV(logs.events)
+        return this.convertToCSV(logs.events);
       case 'xml':
-        return this.convertToXML(logs.events)
+        return this.convertToXML(logs.events);
       default:
-        throw new Error(`Unsupported export format: ${format}`)
+        throw new Error(`Unsupported export format: ${format}`);
     }
   }
 
   convertToCSV(events) {
     if (events.length === 0) {
-      return ''
+      return '';
     }
 
-    const headers = Object.keys(events[0]).join(',')
-    const rows = events.map(event =>
+    const headers = Object.keys(events[0]).join(',');
+    const rows = events.map((event) =>
       Object.values(event)
-        .map(value => (typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value))
-        .join(',')
-    )
+        .map((value) => (typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value))
+        .join(','),
+    );
 
-    return [headers, ...rows].join('\n')
+    return [headers, ...rows].join('\n');
   }
 
   convertToXML(events) {
     if (events.length === 0) {
-      return '<?xml version="1.0" encoding="UTF-8"?><events></events>'
+      return '<?xml version="1.0" encoding="UTF-8"?><events></events>';
     }
 
     const xmlEvents = events
-      .map(event => {
+      .map((event) => {
         const xmlElement = Object.entries(event)
           .map(([key, value]) => {
             const xmlValue =
               typeof value === 'string'
                 ? value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                : JSON.stringify(value)
-            return `<${key}>${xmlValue}</${key}>`
+                : JSON.stringify(value);
+            return `<${key}>${xmlValue}</${key}>`;
           })
-          .join('')
+          .join('');
 
-        return `<event>${xmlElement}</event>`
+        return `<event>${xmlElement}</event>`;
       })
-      .join('\n')
+      .join('\n');
 
-    return `<?xml version="1.0" encoding="UTF-8"?><events>${xmlEvents}</events>`
+    return `<?xml version="1.0" encoding="UTF-8"?><events>${xmlEvents}</events>`;
   }
 
   async rotateLogs() {
-    await this.forceFlush()
+    await this.forceFlush();
 
-    const date = new Date().toISOString().split('T')[0]
-    this.auditFile = this.auditFile.replace(/audit-\d{4}-\d{2}-\d{2}\.jsonl$/, `audit-${date}.jsonl`)
+    const date = new Date().toISOString().split('T')[0];
+    this.auditFile = this.auditFile.replace(
+      /audit-\d{4}-\d{2}-\d{2}\.jsonl$/,
+      `audit-${date}.jsonl`,
+    );
 
     this.logger.info('Audit log rotated', {
       newFile: this.auditFile,
-    })
+    });
   }
 
   async cleanOldLogs(retentionDays = 30) {
-    const auditDir = this.configManager?.constant('AUDIT_LOG_DIR') || './logs/audit'
-    const fs = await import('fs/promises')
+    const auditDir = this.configManager?.constant('AUDIT_LOG_DIR') || './logs/audit';
+    const fs = await import('fs/promises');
 
     try {
-      const files = await fs.readdir(auditDir)
-      const cutoffTime = Date.now() - retentionDays * 24 * 60 * 60 * 1000
+      const files = await fs.readdir(auditDir);
+      const cutoffTime = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
 
       for (const file of files) {
         if (file.startsWith('audit-') && file.endsWith('.jsonl')) {
-          const filePath = join(auditDir, file)
-          const stats = await fs.stat(filePath)
+          const filePath = join(auditDir, file);
+          const stats = await fs.stat(filePath);
 
           if (stats.mtime.getTime() < cutoffTime) {
-            await fs.unlink(filePath)
-            this.logger.info('Deleted old audit log', { file })
+            await fs.unlink(filePath);
+            this.logger.info('Deleted old audit log', { file });
           }
         }
       }
     } catch (error) {
-      this.logger.error('Failed to clean old audit logs', { error: error.message })
+      this.logger.error('Failed to clean old audit logs', { error: error.message });
     }
   }
 
   async destroy() {
-    this.stopFlushTimer()
-    await this.forceFlush()
+    this.stopFlushTimer();
+    await this.forceFlush();
 
-    this.logger.info('Audit logger destroyed')
+    this.logger.info('Audit logger destroyed');
   }
 }
 
-container.singleton('auditLogger', () => new AuditLogger())
+container.singleton('auditLogger', () => new AuditLogger());

@@ -1,56 +1,60 @@
-import { areJidsSameUser } from 'baileys'
-import { emoji as e } from '../../config/config.js'
-import { jid, send, getTarget, resolveSender } from '../../utils/utils.js'
-import logger from '../../utils/logger.js'
+import { areJidsSameUser } from 'baileys';
+import { emoji as e } from '../../config/config.js';
+import { jid, send, getTarget, resolveSender } from '../../utils/utils.js';
+import logger from '../../utils/logger.js';
 
-const getAdminIds = metadata => {
-  return metadata.participants.filter(p => p.admin).map(p => p.id)
-}
+const getAdminIds = (metadata) => {
+  return metadata.participants.filter((p) => p.admin).map((p) => p.id);
+};
 
 export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false } = {}) => {
-  const groupJid = msg.key.remoteJid
+  const groupJid = msg.key.remoteJid;
 
-  const sender = resolveSender(msg)
+  const sender = resolveSender(msg);
 
   if (!jid.isGroup(groupJid)) {
-    await send.text(sonic, msg, `${e.cross} Group command only!`)
-    return null
+    await send.text(sonic, msg, `${e.cross} Group command only!`);
+    return null;
   }
 
-  const metadata = await sonic.groupMetadata(groupJid)
-  const adminIds = getAdminIds(metadata)
+  const metadata = await sonic.groupMetadata(groupJid);
+  const adminIds = getAdminIds(metadata);
 
-  const botJid = sonic.user?.id
+  const botJid = sonic.user?.id;
 
   if (admin) {
-    const isAdmin = adminIds.some(id => areJidsSameUser(id, sender) || jid.fromUser(id) === jid.fromUser(sender))
+    const isAdmin = adminIds.some(
+      (id) => areJidsSameUser(id, sender) || jid.fromUser(id) === jid.fromUser(sender),
+    );
 
     if (!isAdmin) {
-      await send.text(sonic, msg, `${e.cross} Admin only!`)
-      return null
+      await send.text(sonic, msg, `${e.cross} Admin only!`);
+      return null;
     }
   }
 
   if (botAdmin) {
-    const isBotAdmin = adminIds.some(id => areJidsSameUser(id, botJid) || jid.fromUser(id) === jid.fromUser(botJid))
+    const isBotAdmin = adminIds.some(
+      (id) => areJidsSameUser(id, botJid) || jid.fromUser(id) === jid.fromUser(botJid),
+    );
 
     if (!isBotAdmin) {
-      await send.text(sonic, msg, `${e.cross} I need admin rights!`)
-      return null
+      await send.text(sonic, msg, `${e.cross} I need admin rights!`);
+      return null;
     }
   }
 
-  return metadata
-}
+  return metadata;
+};
 
 export const requireTarget = async (sonic, msg) => {
-  const target = getTarget(msg)
+  const target = getTarget(msg);
   if (!target) {
-    await send.text(sonic, msg, `${e.cross} Mention or reply to a user!`)
-    return null
+    await send.text(sonic, msg, `${e.cross} Mention or reply to a user!`);
+    return null;
   }
-  return target
-}
+  return target;
+};
 
 /*
  * Factory function creates similar command handlers with different actions,
@@ -59,39 +63,45 @@ export const requireTarget = async (sonic, msg) => {
 export const participantAction =
   (action, successMsg) =>
   async ({ sonic, msg }, args) => {
-    const meta = await checkPerms(sonic, msg, { admin: true, botAdmin: true })
-    if (!meta) return
+    const meta = await checkPerms(sonic, msg, { admin: true, botAdmin: true });
+    if (!meta) return;
 
-    let target
+    let target;
     if (action === 'add') {
-      if (!args[0]) return send.text(sonic, msg, `${e.warn} Provide a number!`)
-      target = jid.toUser(args[0])
+      if (!args[0]) return send.text(sonic, msg, `${e.warn} Provide a number!`);
+      target = jid.toUser(args[0]);
 
       /*
        * onWhatsApp check prevents attempting to add non-existent numbers which
        * would fail anyway but waste API calls and confuse users with generic errors.
        */
-      const [check] = await sonic.onWhatsApp(target).catch(() => [])
-      if (!check?.exists) return send.text(sonic, msg, `${e.cross} Not on WhatsApp!`)
+      const [check] = await sonic.onWhatsApp(target).catch(() => []);
+      if (!check?.exists) return send.text(sonic, msg, `${e.cross} Not on WhatsApp!`);
     } else {
-      target = await requireTarget(sonic, msg)
-      if (!target) return
+      target = await requireTarget(sonic, msg);
+      if (!target) return;
     }
 
     try {
-      const [result] = await sonic.groupParticipantsUpdate(msg.key.remoteJid, [target], action)
+      const [result] = await sonic.groupParticipantsUpdate(msg.key.remoteJid, [target], action);
 
       if (result.status === '200') {
-        await send.mention(sonic, msg, `${e.check} ${successMsg} @${jid.fromUser(target)}`, [target])
+        await send.mention(sonic, msg, `${e.check} ${successMsg} @${jid.fromUser(target)}`, [
+          target,
+        ]);
       } else {
-        await send.text(sonic, msg, `${e.cross} Failed to ${action} member.`)
+        await send.text(sonic, msg, `${e.cross} Failed to ${action} member.`);
       }
     } catch (err) {
-      logger.error(`[group:${action}]`, err)
-      const is403 = err.output?.statusCode === 403 || err.statusCode === 403
-      await send.text(sonic, msg, `${e.cross} ${is403 ? 'Privacy settings prevent this.' : 'Failed.'}`)
+      logger.error(`[group:${action}]`, err);
+      const is403 = err.output?.statusCode === 403 || err.statusCode === 403;
+      await send.text(
+        sonic,
+        msg,
+        `${e.cross} ${is403 ? 'Privacy settings prevent this.' : 'Failed.'}`,
+      );
     }
-  }
+  };
 
 /*
  * Factory function creates similar setting toggle handlers with different settings,
@@ -100,13 +110,13 @@ export const participantAction =
 export const settingAction =
   (setting, successMsg) =>
   async ({ sonic, msg }) => {
-    if (!(await checkPerms(sonic, msg, { admin: true, botAdmin: true }))) return
+    if (!(await checkPerms(sonic, msg, { admin: true, botAdmin: true }))) return;
 
     try {
-      await sonic.groupSettingUpdate(msg.key.remoteJid, setting)
-      await send.text(sonic, msg, `${e.check} ${successMsg}`)
+      await sonic.groupSettingUpdate(msg.key.remoteJid, setting);
+      await send.text(sonic, msg, `${e.check} ${successMsg}`);
     } catch (err) {
-      logger.error(`[group:setting:${setting}]`, err)
-      await send.text(sonic, msg, `${e.cross} Failed to update settings.`)
+      logger.error(`[group:setting:${setting}]`, err);
+      await send.text(sonic, msg, `${e.cross} Failed to update settings.`);
     }
-  }
+  };

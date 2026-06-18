@@ -29,7 +29,7 @@ arising from its use. Users are solely responsible for their actions and must
 ensure they have proper consent before adding sonic to groups or sending
 messages.
 
-> [!CAUTION] 
+> [!CAUTION]
 > WhatsApp may suspend or ban accounts that violate their terms of
 > service. Use sonic at your own risk.
 

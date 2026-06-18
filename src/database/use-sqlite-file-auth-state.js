@@ -3,8 +3,8 @@
  * Handles credentials, encryption keys and session data across app restarts
  */
 
-import Database from 'better-sqlite3'
-import { proto, initAuthCreds, BufferJSON } from 'baileys'
+import Database from 'better-sqlite3';
+import { proto, initAuthCreds, BufferJSON } from 'baileys';
 
 const KNOWN_KEY_TYPES = [
   'app-state-sync-key',
@@ -23,7 +23,7 @@ const KNOWN_KEY_TYPES = [
   'lid-mapping',
   'device-list',
   'tctoken',
-]
+];
 
 /*
  * Helper for serializing/deserializing binary data with JSON
@@ -31,12 +31,12 @@ const KNOWN_KEY_TYPES = [
  */
 const J = {
   to(v) {
-    return JSON.stringify(v, BufferJSON.replacer)
+    return JSON.stringify(v, BufferJSON.replacer);
   },
   from(s) {
-    return JSON.parse(s, BufferJSON.reviver)
+    return JSON.parse(s, BufferJSON.reviver);
   },
-}
+};
 
 /*
  * Initialize database schema and apply migrations
@@ -44,11 +44,11 @@ const J = {
  */
 
 function applyMigrations(db) {
-  db.pragma('journal_mode = WAL')
-  db.pragma('synchronous = NORMAL')
-  db.pragma('foreign_keys = ON')
-  db.pragma('cache_size = -64000')
-  db.pragma('temp_store = MEMORY')
+  db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
+  db.pragma('foreign_keys = ON');
+  db.pragma('cache_size = -64000');
+  db.pragma('temp_store = MEMORY');
 
   db.prepare(
     `
@@ -56,19 +56,19 @@ function applyMigrations(db) {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     )
-  `
-  ).run()
+  `,
+  ).run();
 
   const getVersion = () => {
-    const row = db.prepare("SELECT value FROM schema_meta WHERE key='version'").get()
-    return row ? Number(row.value) : 0
-  }
-  const setVersion = v =>
+    const row = db.prepare("SELECT value FROM schema_meta WHERE key='version'").get();
+    return row ? Number(row.value) : 0;
+  };
+  const setVersion = (v) =>
     db
       .prepare(
-        "INSERT INTO schema_meta (key, value) VALUES ('version', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value"
+        "INSERT INTO schema_meta (key, value) VALUES ('version', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
       )
-      .run(String(v))
+      .run(String(v));
 
   const migrations = [
     {
@@ -139,24 +139,26 @@ function applyMigrations(db) {
           FROM keys
           GROUP BY account_id, type;
       `,
-      seed: db => {
-        const insert = db.prepare('INSERT OR IGNORE INTO key_types(name) VALUES (?)')
+      seed: (db) => {
+        const insert = db.prepare('INSERT OR IGNORE INTO key_types(name) VALUES (?)');
         db.transaction(() => {
-          for (const t of KNOWN_KEY_TYPES) insert.run(t)
-        })()
+          for (const t of KNOWN_KEY_TYPES) insert.run(t);
+        })();
       },
     },
-  ]
+  ];
 
-  const current = getVersion()
-  const pending = migrations.filter(m => m.version > current).sort((a, b) => a.version - b.version)
+  const current = getVersion();
+  const pending = migrations
+    .filter((m) => m.version > current)
+    .sort((a, b) => a.version - b.version);
 
   for (const m of pending) {
     db.transaction(() => {
-      db.exec(m.sql)
-      if (typeof m.seed === 'function') m.seed(db)
-      setVersion(m.version)
-    })()
+      db.exec(m.sql);
+      if (typeof m.seed === 'function') m.seed(db);
+      setVersion(m.version);
+    })();
   }
 }
 
@@ -193,59 +195,59 @@ function prepareStatements(db) {
     countKeys: db.prepare(`
       SELECT COUNT(*) as n FROM keys WHERE account_id=? AND type=?
     `),
-  }
+  };
 }
 
 // Support for multiple accounts in one database with separate credential storage
 export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
-  const { accountId = 'default', accountLabel = null } = opts
+  const { accountId = 'default', accountLabel = null } = opts;
 
-  const db = new Database(dbPath)
-  applyMigrations(db)
-  const st = prepareStatements(db)
+  const db = new Database(dbPath);
+  applyMigrations(db);
+  const st = prepareStatements(db);
 
-  st.insertAccount.run(accountId, accountLabel)
+  st.insertAccount.run(accountId, accountLabel);
 
-  const row = st.getCreds.get(accountId)
-  const creds = row ? J.from(row.data) : initAuthCreds()
-  if (!row) st.upsertCreds.run(accountId, J.to(creds))
+  const row = st.getCreds.get(accountId);
+  const creds = row ? J.from(row.data) : initAuthCreds();
+  if (!row) st.upsertCreds.run(accountId, J.to(creds));
 
   const decodeIfNeeded = (type, value) => {
-    if (value == null) return null
+    if (value == null) return null;
     if (type === 'app-state-sync-key') {
-      return proto.Message.AppStateSyncKeyData.create(value)
+      return proto.Message.AppStateSyncKeyData.create(value);
     }
-    return value
-  }
+    return value;
+  };
 
   const keysApi = {
     get: async (type, ids) => {
-      st.seedType.run(type)
-      const data = {}
+      st.seedType.run(type);
+      const data = {};
       for (const id of ids) {
-        const r = st.selectKey.get(accountId, type, id)
-        data[id] = r ? decodeIfNeeded(type, J.from(r.value)) : null
+        const r = st.selectKey.get(accountId, type, id);
+        data[id] = r ? decodeIfNeeded(type, J.from(r.value)) : null;
       }
-      return data
+      return data;
     },
 
-    set: async patch => {
-      db.transaction(patch => {
+    set: async (patch) => {
+      db.transaction((patch) => {
         for (const type of Object.keys(patch)) {
-          st.seedType.run(type)
-          const records = patch[type]
+          st.seedType.run(type);
+          const records = patch[type];
           for (const id of Object.keys(records)) {
-            const value = records[id]
+            const value = records[id];
             if (value == null) {
-              st.deleteKey.run(accountId, type, id)
+              st.deleteKey.run(accountId, type, id);
             } else {
-              st.upsertKey.run(accountId, type, id, J.to(value))
+              st.upsertKey.run(accountId, type, id, J.to(value));
             }
           }
         }
-      })(patch)
+      })(patch);
     },
-  }
+  };
 
   return {
     state: {
@@ -255,40 +257,40 @@ export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
 
     saveCreds: async () => {
       db.transaction(() => {
-        st.upsertCreds.run(accountId, J.to(creds))
-      })()
+        st.upsertCreds.run(accountId, J.to(creds));
+      })();
     },
 
     // Admin utilities for account management and debugging
     admin: {
-      purgeType: type => st.purgeType.run(accountId, type),
-      countByType: type => st.countKeys.get(accountId, type)?.n ?? 0,
+      purgeType: (type) => st.purgeType.run(accountId, type),
+      countByType: (type) => st.countKeys.get(accountId, type)?.n ?? 0,
       exportAccount: () => {
-        const dump = {}
-        const keysStmt = db.prepare('SELECT type, id, value FROM keys WHERE account_id=?')
-        dump.creds = creds
-        dump.keys = {}
+        const dump = {};
+        const keysStmt = db.prepare('SELECT type, id, value FROM keys WHERE account_id=?');
+        dump.creds = creds;
+        dump.keys = {};
         for (const row of keysStmt.iterate(accountId)) {
-          if (!dump.keys[row.type]) dump.keys[row.type] = {}
-          dump.keys[row.type][row.id] = J.from(row.value)
+          if (!dump.keys[row.type]) dump.keys[row.type] = {};
+          dump.keys[row.type][row.id] = J.from(row.value);
         }
-        return dump
+        return dump;
       },
-      importAccount: payload => {
+      importAccount: (payload) => {
         db.transaction(() => {
-          if (payload.creds) st.upsertCreds.run(accountId, J.to(payload.creds))
+          if (payload.creds) st.upsertCreds.run(accountId, J.to(payload.creds));
           if (payload.keys) {
             for (const type of Object.keys(payload.keys)) {
-              st.seedType.run(type)
+              st.seedType.run(type);
               for (const id of Object.keys(payload.keys[type])) {
-                st.upsertKey.run(accountId, type, id, J.to(payload.keys[type][id]))
+                st.upsertKey.run(accountId, type, id, J.to(payload.keys[type][id]));
               }
             }
           }
-        })()
+        })();
       },
     },
 
     _db: db,
-  }
+  };
 }

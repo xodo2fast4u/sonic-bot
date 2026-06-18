@@ -44,14 +44,7 @@
     "types": ["node"]
   },
   "include": ["types/**/*"],
-  "exclude": [
-    "src/**/*",
-    "node_modules",
-    "dist",
-    "**/*.test.js",
-    "**/*.spec.js",
-    "**/*.config.js"
-  ],
+  "exclude": ["src/**/*", "node_modules", "dist", "**/*.test.js", "**/*.spec.js", "**/*.config.js"],
   "ts-node": {
     "esm": true,
     "experimentalSpecifierResolution": "node"

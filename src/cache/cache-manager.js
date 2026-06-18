@@ -1,26 +1,26 @@
-import { EventEmitter } from 'events'
-import { container } from '../core/container.js'
-import { CacheError } from '../core/errors.js'
+import { EventEmitter } from 'events';
+import { container } from '../core/container.js';
+import { CacheError } from '../core/errors.js';
 
 class CacheEntry {
   constructor(key, value, ttl = null) {
-    this.key = key
-    this.value = value
-    this.createdAt = Date.now()
-    this.ttl = ttl
-    this.accessCount = 0
-    this.lastAccessed = Date.now()
+    this.key = key;
+    this.value = value;
+    this.createdAt = Date.now();
+    this.ttl = ttl;
+    this.accessCount = 0;
+    this.lastAccessed = Date.now();
   }
 
   isExpired() {
-    if (!this.ttl) return false
-    return Date.now() - this.createdAt > this.ttl
+    if (!this.ttl) return false;
+    return Date.now() - this.createdAt > this.ttl;
   }
 
   access() {
-    this.accessCount++
-    this.lastAccessed = Date.now()
-    return this.value
+    this.accessCount++;
+    this.lastAccessed = Date.now();
+    return this.value;
   }
 
   getStats() {
@@ -32,21 +32,21 @@ class CacheEntry {
       lastAccessed: this.lastAccessed,
       age: Date.now() - this.createdAt,
       isExpired: this.isExpired(),
-    }
+    };
   }
 }
 
 export class CacheManager extends EventEmitter {
   constructor(options = {}) {
-    super()
+    super();
     this.options = {
       maxSize: options.maxSize || 1000,
       cleanupInterval: options.cleanupInterval || 60000, // 1 minute
       defaultTTL: options.defaultTTL || 300000, // 5 minutes
       ...options,
-    }
+    };
 
-    this.cache = new Map()
+    this.cache = new Map();
     this.stats = {
       hits: 0,
       misses: 0,
@@ -54,261 +54,263 @@ export class CacheManager extends EventEmitter {
       deletes: 0,
       evictions: 0,
       expirations: 0,
-    }
+    };
 
-    this.logger = null
-    this.initialized = false
-    this.cleanupTimer = null
+    this.logger = null;
+    this.initialized = false;
+    this.cleanupTimer = null;
   }
 
   async initialize() {
-    this.logger = container.resolve('logger')
+    this.logger = container.resolve('logger');
 
-    this.startCleanupTimer()
+    this.startCleanupTimer();
 
-    this.initialized = true
+    this.initialized = true;
     this.logger.info('Cache manager initialized', {
       maxSize: this.options.maxSize,
       defaultTTL: this.options.defaultTTL,
       cleanupInterval: this.options.cleanupInterval,
-    })
+    });
   }
 
   async set(key, value, ttl = null) {
     if (!this.initialized) {
-      throw new CacheError('Cache manager not initialized')
+      throw new CacheError('Cache manager not initialized');
     }
 
     try {
       if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
-        await this.evictLRU()
+        await this.evictLRU();
       }
 
-      const entry = new CacheEntry(key, value, ttl || this.options.defaultTTL)
-      this.cache.set(key, entry)
+      const entry = new CacheEntry(key, value, ttl || this.options.defaultTTL);
+      this.cache.set(key, entry);
 
-      this.stats.sets++
+      this.stats.sets++;
 
-      this.emit('set', { key, ttl: entry.ttl })
-      this.logger.debug('Cache set', { key, ttl: entry.ttl })
+      this.emit('set', { key, ttl: entry.ttl });
+      this.logger.debug('Cache set', { key, ttl: entry.ttl });
 
-      return true
+      return true;
     } catch (error) {
-      this.logger.error('Cache set failed', { key, error: error.message })
-      throw new CacheError(`Failed to set cache key ${key}: ${error.message}`, key)
+      this.logger.error('Cache set failed', { key, error: error.message });
+      throw new CacheError(`Failed to set cache key ${key}: ${error.message}`, key);
     }
   }
 
   async get(key) {
     if (!this.initialized) {
-      throw new CacheError('Cache manager not initialized')
+      throw new CacheError('Cache manager not initialized');
     }
 
     try {
-      const entry = this.cache.get(key)
+      const entry = this.cache.get(key);
 
       if (!entry) {
-        this.stats.misses++
-        this.emit('miss', { key })
-        return null
+        this.stats.misses++;
+        this.emit('miss', { key });
+        return null;
       }
 
       if (entry.isExpired()) {
-        this.cache.delete(key)
-        this.stats.expirations++
-        this.emit('expired', { key })
-        return null
+        this.cache.delete(key);
+        this.stats.expirations++;
+        this.emit('expired', { key });
+        return null;
       }
 
-      this.stats.hits++
-      this.emit('hit', { key })
+      this.stats.hits++;
+      this.emit('hit', { key });
 
-      return entry.access()
+      return entry.access();
     } catch (error) {
-      this.logger.error('Cache get failed', { key, error: error.message })
-      throw new CacheError(`Failed to get cache key ${key}: ${error.message}`, key)
+      this.logger.error('Cache get failed', { key, error: error.message });
+      throw new CacheError(`Failed to get cache key ${key}: ${error.message}`, key);
     }
   }
 
   async has(key) {
-    const entry = this.cache.get(key)
+    const entry = this.cache.get(key);
 
-    if (!entry) return false
+    if (!entry) return false;
 
     if (entry.isExpired()) {
-      this.cache.delete(key)
-      this.stats.expirations++
-      return false
+      this.cache.delete(key);
+      this.stats.expirations++;
+      return false;
     }
 
-    return true
+    return true;
   }
 
   async delete(key) {
-    const deleted = this.cache.delete(key)
+    const deleted = this.cache.delete(key);
 
     if (deleted) {
-      this.stats.deletes++
-      this.emit('delete', { key })
-      this.logger.debug('Cache delete', { key })
+      this.stats.deletes++;
+      this.emit('delete', { key });
+      this.logger.debug('Cache delete', { key });
     }
 
-    return deleted
+    return deleted;
   }
 
   async clear() {
-    const size = this.cache.size
-    this.cache.clear()
+    const size = this.cache.size;
+    this.cache.clear();
 
-    this.logger.info('Cache cleared', { entries: size })
-    this.emit('clear', { entries: size })
+    this.logger.info('Cache cleared', { entries: size });
+    this.emit('clear', { entries: size });
   }
 
   async mget(keys) {
-    const results = new Map()
+    const results = new Map();
 
     for (const key of keys) {
-      const value = await this.get(key)
+      const value = await this.get(key);
       if (value !== null) {
-        results.set(key, value)
+        results.set(key, value);
       }
     }
 
-    return results
+    return results;
   }
 
   async mset(entries, ttl = null) {
-    const results = new Map()
+    const results = new Map();
 
     for (const [key, value] of entries) {
       try {
-        await this.set(key, value, ttl)
-        results.set(key, true)
+        await this.set(key, value, ttl);
+        results.set(key, true);
       } catch (error) {
-        results.set(key, false)
+        results.set(key, false);
       }
     }
 
-    return results
+    return results;
   }
 
   async getOrSet(key, factory, ttl = null) {
-    let value = await this.get(key)
+    let value = await this.get(key);
 
     if (value === null) {
-      value = await factory()
-      await this.set(key, value, ttl)
+      value = await factory();
+      await this.set(key, value, ttl);
     }
 
-    return value
+    return value;
   }
 
   async increment(key, amount = 1) {
-    const current = (await this.get(key)) || 0
-    const newValue = current + amount
-    await this.set(key, newValue)
-    return newValue
+    const current = (await this.get(key)) || 0;
+    const newValue = current + amount;
+    await this.set(key, newValue);
+    return newValue;
   }
 
   async decrement(key, amount = 1) {
-    const current = (await this.get(key)) || 0
-    const newValue = current - amount
-    await this.set(key, newValue)
-    return newValue
+    const current = (await this.get(key)) || 0;
+    const newValue = current - amount;
+    await this.set(key, newValue);
+    return newValue;
   }
 
   async keys(pattern = '*') {
-    const regex = new RegExp(pattern.replace(/\*/g, '.*'))
-    const matchingKeys = []
+    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+    const matchingKeys = [];
 
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
-        matchingKeys.push(key)
+        matchingKeys.push(key);
       }
     }
 
-    return matchingKeys
+    return matchingKeys;
   }
 
   async deletePattern(pattern) {
-    const keysToDelete = await this.keys(pattern)
-    let deleted = 0
+    const keysToDelete = await this.keys(pattern);
+    let deleted = 0;
 
     for (const key of keysToDelete) {
       if (await this.delete(key)) {
-        deleted++
+        deleted++;
       }
     }
 
-    return deleted
+    return deleted;
   }
 
   async evictLRU() {
-    if (this.cache.size === 0) return
+    if (this.cache.size === 0) return;
 
-    let lruKey = null
-    let lruTime = Date.now()
+    let lruKey = null;
+    let lruTime = Date.now();
 
     for (const [key, entry] of this.cache) {
       if (entry.lastAccessed < lruTime) {
-        lruTime = entry.lastAccessed
-        lruKey = key
+        lruTime = entry.lastAccessed;
+        lruKey = key;
       }
     }
 
     if (lruKey) {
-      this.cache.delete(lruKey)
-      this.stats.evictions++
-      this.emit('evicted', { key: lruKey })
-      this.logger.debug('Cache LRU eviction', { key: lruKey })
+      this.cache.delete(lruKey);
+      this.stats.evictions++;
+      this.emit('evicted', { key: lruKey });
+      this.logger.debug('Cache LRU eviction', { key: lruKey });
     }
   }
 
   async cleanup() {
-    const now = Date.now()
-    const expiredKeys = []
+    const now = Date.now();
+    const expiredKeys = [];
 
     for (const [key, entry] of this.cache) {
       if (entry.isExpired()) {
-        expiredKeys.push(key)
+        expiredKeys.push(key);
       }
     }
 
     for (const key of expiredKeys) {
-      this.cache.delete(key)
-      this.stats.expirations++
+      this.cache.delete(key);
+      this.stats.expirations++;
     }
 
     if (expiredKeys.length > 0) {
-      this.logger.debug('Cache cleanup', { expired: expiredKeys.length })
-      this.emit('cleanup', { expired: expiredKeys.length })
+      this.logger.debug('Cache cleanup', { expired: expiredKeys.length });
+      this.emit('cleanup', { expired: expiredKeys.length });
     }
 
     while (this.cache.size > this.options.maxSize) {
-      await this.evictLRU()
+      await this.evictLRU();
     }
   }
 
   startCleanupTimer() {
     if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer)
+      clearInterval(this.cleanupTimer);
     }
 
     this.cleanupTimer = setInterval(async () => {
-      await this.cleanup()
-    }, this.options.cleanupInterval)
+      await this.cleanup();
+    }, this.options.cleanupInterval);
   }
 
   stopCleanupTimer() {
     if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer)
-      this.cleanupTimer = null
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
     }
   }
 
   getStats() {
     const hitRate =
-      this.stats.hits + this.stats.misses > 0 ? (this.stats.hits / (this.stats.hits + this.stats.misses)) * 100 : 0
+      this.stats.hits + this.stats.misses > 0
+        ? (this.stats.hits / (this.stats.hits + this.stats.misses)) * 100
+        : 0;
 
     return {
       size: this.cache.size,
@@ -316,44 +318,44 @@ export class CacheManager extends EventEmitter {
       hitRate: Math.round(hitRate * 100) / 100,
       ...this.stats,
       memoryUsage: this.getMemoryUsage(),
-    }
+    };
   }
 
   getEntryStats() {
-    const entries = []
+    const entries = [];
 
     for (const [key, entry] of this.cache) {
-      entries.push(entry.getStats())
+      entries.push(entry.getStats());
     }
 
-    return entries.sort((a, b) => b.accessCount - a.accessCount)
+    return entries.sort((a, b) => b.accessCount - a.accessCount);
   }
 
   getHotKeys(limit = 10) {
     return this.getEntryStats()
-      .filter(entry => entry.accessCount > 1)
-      .slice(0, limit)
+      .filter((entry) => entry.accessCount > 1)
+      .slice(0, limit);
   }
 
   getColdKeys(limit = 10) {
     return this.getEntryStats()
-      .filter(entry => entry.accessCount <= 1)
-      .slice(0, limit)
+      .filter((entry) => entry.accessCount <= 1)
+      .slice(0, limit);
   }
 
   getMemoryUsage() {
-    let totalSize = 0
+    let totalSize = 0;
 
     for (const [key, entry] of this.cache) {
-      totalSize += key.length * 2
-      totalSize += JSON.stringify(entry.value).length * 2
-      totalSize += 64
+      totalSize += key.length * 2;
+      totalSize += JSON.stringify(entry.value).length * 2;
+      totalSize += 64;
     }
 
     return {
       estimatedBytes: totalSize,
       estimatedMB: Math.round((totalSize / 1024 / 1024) * 100) / 100,
-    }
+    };
   }
 
   resetStats() {
@@ -364,13 +366,13 @@ export class CacheManager extends EventEmitter {
       deletes: 0,
       evictions: 0,
       expirations: 0,
-    }
+    };
 
-    this.logger.info('Cache statistics reset')
+    this.logger.info('Cache statistics reset');
   }
 
   async export() {
-    const data = {}
+    const data = {};
 
     for (const [key, entry] of this.cache) {
       if (!entry.isExpired()) {
@@ -378,36 +380,36 @@ export class CacheManager extends EventEmitter {
           value: entry.value,
           ttl: entry.ttl,
           createdAt: entry.createdAt,
-        }
+        };
       }
     }
 
-    return data
+    return data;
   }
 
   async import(data) {
-    await this.clear()
+    await this.clear();
 
     for (const [key, entryData] of Object.entries(data)) {
-      const entry = new CacheEntry(key, entryData.value, entryData.ttl)
-      entry.createdAt = entryData.createdAt
+      const entry = new CacheEntry(key, entryData.value, entryData.ttl);
+      entry.createdAt = entryData.createdAt;
 
       if (!entry.isExpired()) {
-        this.cache.set(key, entry)
+        this.cache.set(key, entry);
       }
     }
 
-    this.logger.info('Cache imported', { entries: Object.keys(data).length })
+    this.logger.info('Cache imported', { entries: Object.keys(data).length });
   }
 
   async destroy() {
-    this.stopCleanupTimer()
-    await this.clear()
-    this.removeAllListeners()
-    this.initialized = false
+    this.stopCleanupTimer();
+    await this.clear();
+    this.removeAllListeners();
+    this.initialized = false;
 
-    this.logger.info('Cache manager destroyed')
+    this.logger.info('Cache manager destroyed');
   }
 }
 
-container.singleton('cache', () => new CacheManager())
+container.singleton('cache', () => new CacheManager());

@@ -1,4 +1,4 @@
-import { Migration } from '../migration-manager.js'
+import { Migration } from '../migration-manager.js';
 
 export default new Migration(
   '0.1.0',
@@ -48,5 +48,5 @@ CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS inventory;
 DROP TABLE IF EXISTS users;
-  `
-)
+  `,
+);

@@ -1,5 +1,5 @@
-import { config, emoji as e } from '../../config/config.js'
-import { format } from '../../utils/utils.js'
+import { config, emoji as e } from '../../config/config.js';
+import { format } from '../../utils/utils.js';
 
 export default {
   cmd: ['info'],
@@ -13,7 +13,7 @@ export default {
 ┃ ${e.time} Uptime: ${format.getUptime()}
 ┃ ${e.bolt} Prefix: ${config.prefix}
 ┃ ${e.info} The fastest bot!
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim()
-    )
+╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+    );
   },
-}
+};

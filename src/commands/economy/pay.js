@@ -1,39 +1,41 @@
-import { emoji as e } from '../../config/config.js'
-import { getTarget, resolveSender, jid } from '../../utils/utils.js'
-import { getUser, transferCoins } from '../../database/database.js'
-import { COOLDOWN } from '../../utils/cooldown.js'
-import { formatCoins, checkEconCooldown } from './_utils.js'
+import { emoji as e } from '../../config/config.js';
+import { getTarget, resolveSender, jid } from '../../utils/utils.js';
+import { getUser, transferCoins } from '../../database/database.js';
+import { COOLDOWN } from '../../utils/cooldown.js';
+import { formatCoins, checkEconCooldown } from './_utils.js';
 
 export default {
   cmd: ['pay'],
   desc: 'Pay coins to another user',
 
   run: async ({ mention, text, sonic, msg }, args) => {
-    const sender = resolveSender(msg)
+    const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'pay', COOLDOWN.PAY))) return
+    if (!(await checkEconCooldown(sonic, msg, 'pay', COOLDOWN.PAY))) return;
 
-    const target = getTarget(msg)
+    const target = getTarget(msg);
     if (!target) {
-      return text(`${e.cross} Mention or reply to someone to pay them!`)
+      return text(`${e.cross} Mention or reply to someone to pay them!`);
     }
 
     if (target === sender) {
-      return text(`${e.cross} You can't pay yourself!`)
+      return text(`${e.cross} You can't pay yourself!`);
     }
 
-    const amount = parseInt(args[0]) || parseInt(args[1])
+    const amount = parseInt(args[0]) || parseInt(args[1]);
     if (!amount || amount <= 0) {
-      return text(`${e.cross} Provide a valid amount! Example: !pay @user 100`)
+      return text(`${e.cross} Provide a valid amount! Example: !pay @user 100`);
     }
 
-    const result = transferCoins(sender, target, amount)
+    const result = transferCoins(sender, target, amount);
 
     if (!result.success) {
-      return text(`${e.cross} Insufficient coins! You have ${formatCoins(getUser(sender).balance)}`)
+      return text(
+        `${e.cross} Insufficient coins! You have ${formatCoins(getUser(sender).balance)}`,
+      );
     }
 
-    const targetNum = jid.fromUser(target)
+    const targetNum = jid.fromUser(target);
 
     await mention(
       `
@@ -44,7 +46,7 @@ export default {
 ┃
 ┃ ${e.star} Your balance: ${formatCoins(result.fromBalance)}
 ╰━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
-      [target]
-    )
+      [target],
+    );
   },
-}
+};
