@@ -56,6 +56,7 @@ export default {
 ┃ ${p}name - Name info
 ┃ ${p}songrecommendation - Music suggestion
 ┃ ${p}wiki - Wikipedia search
+┃ ${p}wallpaper - Gets a wallpaper
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.ring} *NEWSLETTER* ━━━╮
