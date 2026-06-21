@@ -1,8 +1,8 @@
 node_modules
 package-lock.json
 bun.lock
+.prettierrc
 .git
 .husky
 .env
-.pretterrc
 .gitignore

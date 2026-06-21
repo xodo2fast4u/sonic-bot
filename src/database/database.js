@@ -3,6 +3,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { jid } from '../utils/utils.js';
+import logger from '../utils/logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data');
@@ -243,7 +244,7 @@ export const getEconomyStats = () => {
  * WAL checkpoints and prevent potential corruption from abrupt shutdowns.
  */
 const shutdown = () => {
-  console.log('💾 Closing database...');
+  logger.info('💾 Closing database...');
   db.close();
   process.exit();
 };
@@ -252,4 +253,4 @@ process.on('exit', () => db.close());
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-console.log('💾 Database initialized');
+logger.info('💾 Database initialized');

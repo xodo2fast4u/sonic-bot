@@ -104,7 +104,7 @@ export const startSocket = async () => {
 
     if (events['lid-mapping.update']) {
       // Store LID<->PN mappings if needed
-      // console.log('LID mapping update:', events['lid-mapping.update'])
+      // logger.info('LID mapping update:', events['lid-mapping.update'])
     }
 
     if (events['messages.upsert']) {

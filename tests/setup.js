@@ -1,5 +1,7 @@
 process.env.NODE_ENV = 'test';
 
+import logger from '../src/utils/logger.js';
+
 const originalConsole = { ...console };
 
 beforeEach(() => {
@@ -111,9 +113,9 @@ global.testUtils = {
 };
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  logger.fatal('Uncaught Exception:', error);
 });
