@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { jid } from '../utils/utils.js';
 import logger from '../utils/logger.js';
 

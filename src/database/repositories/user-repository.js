@@ -1,6 +1,6 @@
 import { BaseRepository } from './base-repository.js';
-import { InsufficientFundsError, InvalidTransactionError } from '../../core/errors.js';
 import { container } from '../../core/container.js';
+import { InsufficientFundsError, InvalidTransactionError } from '../../core/errors.js';
 
 export class UserRepository extends BaseRepository {
   constructor() {

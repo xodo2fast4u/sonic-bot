@@ -4,12 +4,13 @@ import makeWASocket, {
   makeCacheableSignalKeyStore,
   DisconnectReason,
 } from 'baileys';
-import { useSqliteAuthState } from '../database/use-sqlite-file-auth-state.js';
 import NodeCache from '@cacheable/node-cache';
 import readline from 'readline';
-import { config, getOwner, setOwner } from '../config/config.js';
-import { handleMessage } from '../core/handler.js';
 import logger from '../utils/logger.js';
+import { handleMessage } from '../core/handler.js';
+import { useSqliteAuthState } from '../database/use-sqlite-file-auth-state.js';
+import { config, getOwner, setOwner } from '../config/config.js';
+
 const msgRetryCache = new NodeCache();
 
 const rl = readline.createInterface({

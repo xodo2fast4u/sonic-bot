@@ -1,6 +1,6 @@
+import Database from 'better-sqlite3';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import Database from 'better-sqlite3';
 import { ConnectionPool } from '../../src/database/connection-pool.js';
 import { UserRepository } from '../../src/database/repositories/user-repository.js';
 import { InventoryRepository } from '../../src/database/repositories/inventory-repository.js';

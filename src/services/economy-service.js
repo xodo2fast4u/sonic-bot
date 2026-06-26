@@ -1,9 +1,9 @@
-import { container } from '../core/container.js';
 import {
   InsufficientFundsError,
   InvalidTransactionError,
   ValidationError,
 } from '../core/errors.js';
+import { container } from '../core/container.js';
 
 export class EconomyService {
   constructor() {

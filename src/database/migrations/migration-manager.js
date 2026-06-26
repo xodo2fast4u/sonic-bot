@@ -1,6 +1,6 @@
+import { fileURLToPath } from 'url';
 import { existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { container } from '../../core/container.js';
 import { DatabaseError } from '../../core/errors.js';
 

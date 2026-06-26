@@ -1,13 +1,6 @@
-/**
- * Command Middleware Pipeline
- * Provides modular middleware system for command processing
- */
 import { container } from '../core/container.js';
 import { PermissionError, CooldownError } from '../core/errors.js';
 
-/**
- * Middleware context
- */
 export class MiddlewareContext {
   constructor(helpers, args, command, user, message) {
     this.helpers = helpers;
@@ -17,7 +10,7 @@ export class MiddlewareContext {
     this.message = message;
     this.correlationId = this.generateCorrelationId();
     this.startTime = Date.now();
-    this.data = new Map(); // For middleware to share data
+    this.data = new Map();
     this.stopped = false;
     this.result = null;
   }
@@ -44,9 +37,6 @@ export class MiddlewareContext {
   }
 }
 
-/**
- * Middleware Pipeline
- */
 export class MiddlewarePipeline {
   constructor() {
     this.middlewares = [];
@@ -56,30 +46,20 @@ export class MiddlewarePipeline {
     this.configManager = null;
   }
 
-  /**
-   * Initialize pipeline dependencies
-   */
   async initialize() {
     this.logger = container.resolve('logger');
     this.cooldownManager = container.resolve('cooldownManager');
     this.utils = container.resolve('utils');
     this.configManager = container.resolve('configManager');
 
-    // Register default middlewares
     await this.registerDefaults();
   }
 
-  /**
-   * Add middleware to pipeline
-   */
   use(middleware) {
     this.middlewares.push(middleware);
     return this;
   }
 
-  /**
-   * Execute middleware pipeline
-   */
   async execute(context) {
     const timer = this.logger.timer('middleware:pipeline');
 
@@ -92,7 +72,6 @@ export class MiddlewarePipeline {
         await middleware(context);
       }
 
-      // If not stopped, execute the command
       if (!context.stopped) {
         const commandTimer = this.logger.timer(`command:${context.command.cmd[0]}`);
 
@@ -131,9 +110,6 @@ export class MiddlewarePipeline {
     }
   }
 
-  /**
-   * Handle middleware errors
-   */
   async handleError(error, context) {
     this.logger.error('Middleware pipeline error', {
       error: error.message,
@@ -142,7 +118,6 @@ export class MiddlewarePipeline {
       correlationId: context.correlationId,
     });
 
-    // Send user-friendly error message
     if (error.getUserMessage) {
       await context.helpers.text(error.getUserMessage());
     } else {
@@ -150,35 +125,22 @@ export class MiddlewarePipeline {
     }
   }
 
-  /**
-   * Register default middlewares
-   */
   async registerDefaults() {
-    // Authentication middleware
     this.use(this.createAuthenticationMiddleware());
 
-    // Permission middleware
     this.use(this.createPermissionMiddleware());
 
-    // Cooldown middleware
     this.use(this.createCooldownMiddleware());
 
-    // Rate limiting middleware
     this.use(this.createRateLimitMiddleware());
 
-    // Logging middleware
     this.use(this.createLoggingMiddleware());
 
-    // Metrics middleware
     this.use(this.createMetricsMiddleware());
   }
 
-  /**
-   * Authentication middleware
-   */
   createAuthenticationMiddleware() {
     return async (context) => {
-      // Check if user is valid
       if (!context.user) {
         context.stop();
         await context.helpers.text('❌ Unable to identify user.');
@@ -189,14 +151,10 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Permission middleware
-   */
   createPermissionMiddleware() {
     return async (context) => {
       const command = context.command;
 
-      // Check if command requires owner permissions
       if (command.ownerOnly && !this.utils.isOwner(context.user)) {
         context.stop(
           new PermissionError('This command is restricted to the bot owner', context.user),
@@ -205,7 +163,6 @@ export class MiddlewarePipeline {
         return;
       }
 
-      // Check if command requires admin permissions
       if (command.adminOnly) {
         const isAdmin = await this.checkAdminPermissions(context.user, context.message);
 
@@ -222,15 +179,11 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Cooldown middleware
-   */
   createCooldownMiddleware() {
     return async (context) => {
       const command = context.command;
       const user = context.user;
 
-      // Check command-specific cooldown
       if (command.cooldown) {
         const cooldown = this.cooldownManager.checkCommandCooldown(
           user,
@@ -247,7 +200,6 @@ export class MiddlewarePipeline {
         }
       }
 
-      // Check global cooldown
       const globalCooldown = this.cooldownManager.checkGlobalCooldown(user);
 
       if (!globalCooldown.allowed) {
@@ -272,9 +224,6 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Rate limiting middleware
-   */
   createRateLimitMiddleware() {
     return async (context) => {
       const user = context.user;
@@ -294,9 +243,6 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Logging middleware
-   */
   createLoggingMiddleware() {
     return async (context) => {
       this.logger.info('Command processing started', {
@@ -306,15 +252,13 @@ export class MiddlewarePipeline {
         correlationId: context.correlationId,
       });
 
-      // Store original helpers for logging
       const originalText = context.helpers.text;
 
-      // Wrap text method to log responses
       context.helpers.text = async (message) => {
         this.logger.debug('Command response', {
           command: context.command.cmd[0],
           user: context.user,
-          message: message.substring(0, 200), // Truncate long messages
+          message: message.substring(0, 200),
           correlationId: context.correlationId,
         });
 
@@ -325,17 +269,12 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Metrics middleware
-   */
   createMetricsMiddleware() {
     return async (context) => {
       const startTime = Date.now();
 
-      // Store completion handler
       context.set('metricsStart', startTime);
 
-      // This will be called after command execution
       const originalRun = context.command.run;
 
       context.command.run = async (...args) => {
@@ -343,7 +282,6 @@ export class MiddlewarePipeline {
 
         const duration = Date.now() - startTime;
 
-        // Record metrics
         this.logger.logPerformance(`command:${context.command.cmd[0]}`, duration, true, {
           user: context.user,
           argsCount: context.args.length,
@@ -354,18 +292,12 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Check admin permissions
-   */
   async checkAdminPermissions(user, message) {
     // This would integrate with WhatsApp group admin checking
     // For now, we'll check if user is owner as a fallback
     return this.utils.isOwner(user);
   }
 
-  /**
-   * Get pipeline statistics
-   */
   getStats() {
     return {
       middlewareCount: this.middlewares.length,
@@ -376,14 +308,10 @@ export class MiddlewarePipeline {
     };
   }
 
-  /**
-   * Clear pipeline
-   */
   clear() {
     this.middlewares = [];
     this.logger?.info('Middleware pipeline cleared');
   }
 }
 
-// Register as singleton
 container.singleton('middlewarePipeline', () => new MiddlewarePipeline());

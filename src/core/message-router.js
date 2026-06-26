@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
 import { isJidStatusBroadcast } from 'baileys';
+import { EventEmitter } from 'events';
 import { container } from './container.js';
 
 export class MessageRouter extends EventEmitter {
