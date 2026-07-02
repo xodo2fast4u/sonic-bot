@@ -30,9 +30,11 @@ const KNOWN_KEY_TYPES = [
  * Handles Buffer objects that can't normally be stringified
  */
 const J = {
+  /** @param {any} v @returns {string} */
   to(v) {
     return JSON.stringify(v, BufferJSON.replacer);
   },
+  /** @param {string} s @returns {any} */
   from(s) {
     return JSON.parse(s, BufferJSON.reviver);
   },
@@ -43,6 +45,7 @@ const J = {
  * Optimizes performance with WAL mode and proper foreign key constraints
  */
 
+/** @param {any} db */
 function applyMigrations(db) {
   db.pragma('journal_mode = WAL');
   db.pragma('synchronous = NORMAL');
@@ -63,6 +66,7 @@ function applyMigrations(db) {
     const row = db.prepare("SELECT value FROM schema_meta WHERE key='version'").get();
     return row ? Number(row.value) : 0;
   };
+  /** @param {any} v */
   const setVersion = (v) =>
     db
       .prepare(
@@ -139,6 +143,7 @@ function applyMigrations(db) {
           FROM keys
           GROUP BY account_id, type;
       `,
+      /** @param {any} db */
       seed: (db) => {
         const insert = db.prepare('INSERT OR IGNORE INTO key_types(name) VALUES (?)');
         db.transaction(() => {
@@ -163,6 +168,7 @@ function applyMigrations(db) {
 }
 
 // Compile all database queries for better performance
+/** @param {any} db */
 function prepareStatements(db) {
   return {
     insertAccount: db.prepare(`
@@ -199,8 +205,12 @@ function prepareStatements(db) {
 }
 
 // Support for multiple accounts in one database with separate credential storage
-export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
-  const { accountId = 'default', accountLabel = null } = opts;
+export function useSqliteAuthState(
+  dbPath = 'sonic_session.db',
+  opts = /** @type {{accountId?:string,accountLabel?:string|null}} */ ({}),
+) {
+  const { accountId = 'default', accountLabel = null } =
+    /** @type {{accountId?:string,accountLabel?:string|null}} */ (opts);
 
   const db = new Database(dbPath);
   applyMigrations(db);
@@ -212,6 +222,7 @@ export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
   const creds = row ? J.from(row.data) : initAuthCreds();
   if (!row) st.upsertCreds.run(accountId, J.to(creds));
 
+  /** @param {string} type @param {any} value @returns {any} */
   const decodeIfNeeded = (type, value) => {
     if (value == null) return null;
     if (type === 'app-state-sync-key') {
@@ -221,8 +232,19 @@ export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
   };
 
   const keysApi = {
-    get: async (type, ids) => {
+    /**
+     * @param {string} type
+     * @param {string[]} ids
+     * @returns {Promise<Record<string, any>>}
+     */
+    /**
+     * @param {string} type
+     * @param {string[]} ids
+     * @returns {Promise<Record<string, any>>}
+     */
+    get: async function (type, ids) {
       st.seedType.run(type);
+      /** @type {Record<string, any>} */
       const data = {};
       for (const id of ids) {
         const r = st.selectKey.get(accountId, type, id);
@@ -231,21 +253,31 @@ export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
       return data;
     },
 
-    set: async (patch) => {
-      db.transaction((patch) => {
-        for (const type of Object.keys(patch)) {
-          st.seedType.run(type);
-          const records = patch[type];
-          for (const id of Object.keys(records)) {
-            const value = records[id];
-            if (value == null) {
-              st.deleteKey.run(accountId, type, id);
-            } else {
-              st.upsertKey.run(accountId, type, id, J.to(value));
+    /**
+     * @param {Record<string, Record<string, any>>} patch
+     * @returns {Promise<void>}
+     */
+    set: async function (patch) {
+      const transaction = db.transaction(
+        /** @param {Record<string, Record<string, any>>} innerPatch */
+        (innerPatch) => {
+          for (const type of Object.keys(/** @type {Record<string, any>} */ (innerPatch))) {
+            st.seedType.run(type);
+            /** @type {Record<string, any>} */
+            const records = /** @type {Record<string, any>} */ (innerPatch[type]);
+            if (!records) continue;
+            for (const id of Object.keys(records)) {
+              const value = records[id];
+              if (value == null) {
+                st.deleteKey.run(accountId, type, id);
+              } else {
+                st.upsertKey.run(accountId, type, id, J.to(value));
+              }
             }
           }
-        }
-      })(patch);
+        },
+      );
+      transaction(patch);
     },
   };
 
@@ -263,27 +295,45 @@ export function useSqliteAuthState(dbPath = 'sonic_session.db', opts = {}) {
 
     // Admin utilities for account management and debugging
     admin: {
-      purgeType: (type) => st.purgeType.run(accountId, type),
-      countByType: (type) => st.countKeys.get(accountId, type)?.n ?? 0,
+      /** @param {string} type */
+      purgeType(type) {
+        return st.purgeType.run(accountId, type);
+      },
+      /** @param {string} type */
+      countByType(type) {
+        return st.countKeys.get(accountId, type)?.n ?? 0;
+      },
       exportAccount: () => {
-        const dump = {};
+        /** @type {{creds:any, keys: Record<string, Record<string, any>>}} */
+        const dump = { creds: null, keys: {} };
         const keysStmt = db.prepare('SELECT type, id, value FROM keys WHERE account_id=?');
         dump.creds = creds;
         dump.keys = {};
         for (const row of keysStmt.iterate(accountId)) {
-          if (!dump.keys[row.type]) dump.keys[row.type] = {};
-          dump.keys[row.type][row.id] = J.from(row.value);
+          const typedRow = /** @type {{type:string,id:string,value:string}} */ (row);
+          if (!typedRow) continue;
+          const bucket = dump.keys[typedRow.type] || (dump.keys[typedRow.type] = {});
+          bucket[typedRow.id] = J.from(typedRow.value);
         }
         return dump;
       },
-      importAccount: (payload) => {
+      /** @param {{creds?: any, keys?: Record<string, Record<string, any>>}} payload */
+      /**
+       * @param {{creds?: any, keys?: Record<string, Record<string, any>>}} payload
+       */
+      importAccount(payload) {
+        const safePayload =
+          /** @type {{creds?: any, keys?: Record<string, Record<string, any>>}} */ (payload);
         db.transaction(() => {
-          if (payload.creds) st.upsertCreds.run(accountId, J.to(payload.creds));
-          if (payload.keys) {
-            for (const type of Object.keys(payload.keys)) {
+          if (safePayload.creds) st.upsertCreds.run(accountId, J.to(safePayload.creds));
+          if (safePayload.keys) {
+            const keys = /** @type {Record<string, Record<string, any>>} */ (safePayload.keys);
+            for (const type of Object.keys(keys)) {
               st.seedType.run(type);
-              for (const id of Object.keys(payload.keys[type])) {
-                st.upsertKey.run(accountId, type, id, J.to(payload.keys[type][id]));
+              const records = keys[type];
+              if (!records) continue;
+              for (const id of Object.keys(records)) {
+                st.upsertKey.run(accountId, type, id, J.to(records[id]));
               }
             }
           }

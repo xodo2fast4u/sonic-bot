@@ -24,6 +24,7 @@ export class UserService {
     this.eventBus = container.resolve('eventBus');
   }
 
+  /** @param {any} userId @param {boolean} [includeInventory] @returns {Promise<any>} */
   async getUserProfile(userId, includeInventory = false) {
     const cacheKey = `user:profile:${userId}`;
 
@@ -42,6 +43,7 @@ export class UserService {
     return profile;
   }
 
+  /** @param {any} userId @param {any} updates @returns {Promise<any>} */
   async updateUserProfile(userId, updates) {
     const { balance, bank, ...otherUpdates } = updates;
 
@@ -78,13 +80,19 @@ export class UserService {
       await this.eventBus.emitEvent('user:profile:updated', {
         userId,
         updates,
+        skippedFields: Object.keys(otherUpdates),
         timestamp: Date.now(),
       });
+
+      if (Object.keys(otherUpdates).length > 0) {
+        this.logger.debug('Non-persisted profile fields ignored', { userId, otherUpdates });
+      }
     }
 
     return await this.getUserProfile(userId);
   }
 
+  /** @param {any} fromId @param {any} toId @param {number} amount @param {any} [options] @returns {Promise<any>} */
   async transferCoins(fromId, toId, amount, options = {}) {
     if (!fromId || !toId) {
       throw new ValidationError('transfer', null, 'fromId and toId are required');
@@ -114,32 +122,44 @@ export class UserService {
       throw new InsufficientFundsError(fromId, amount, fromUser.balance);
     }
 
+    if (!toUser.id) {
+      throw new InvalidTransactionError('recipient not found', toId, { fromId, amount });
+    }
+
     const result = await this.userRepository.transferCoins(fromId, toId, amount);
 
-    if (result.success) {
-      await this.cache.set(rateLimitKey, recentTransfers + 1, 3600000);
-
-      await this.cache.delete(`user:profile:${fromId}`);
-      await this.cache.delete(`user:profile:${toId}`);
-
-      await this.eventBus.emitEvent('user:coins:transferred', {
-        fromId,
+    if (!result.success) {
+      throw new InvalidTransactionError(result.reason || 'transfer failed', fromId, {
         toId,
         amount,
-        timestamp: Date.now(),
-      });
-
-      this.logger.info('Coins transferred successfully', {
-        fromId,
-        toId,
-        amount,
-        correlationId: options.correlationId,
+        toUserBalance: toUser.balance,
       });
     }
+
+    await this.cache.set(rateLimitKey, recentTransfers + 1, 3600000);
+
+    await this.cache.delete(`user:profile:${fromId}`);
+    await this.cache.delete(`user:profile:${toId}`);
+
+    await this.eventBus.emitEvent('user:coins:transferred', {
+      fromId,
+      toId,
+      amount,
+      timestamp: Date.now(),
+    });
+
+    this.logger.info('Coins transferred successfully', {
+      fromId,
+      toId,
+      amount,
+      toUserBalance: toUser.balance,
+      correlationId: options.correlationId,
+    });
 
     return result;
   }
 
+  /** @param {any} userId @param {number} amount @param {string} [source] @param {any} [options] @returns {Promise<any>} */
   async addCoins(userId, amount, source = 'manual', options = {}) {
     if (amount <= 0) {
       throw new ValidationError('amount', amount, 'must be positive');
@@ -168,6 +188,7 @@ export class UserService {
     return newBalance;
   }
 
+  /** @param {any} userId @param {number} amount @param {string} [reason] @param {any} [options] @returns {Promise<any>} */
   async removeCoins(userId, amount, reason = 'spend', options = {}) {
     if (amount <= 0) {
       throw new ValidationError('amount', amount, 'must be positive');
@@ -196,6 +217,7 @@ export class UserService {
     return newBalance;
   }
 
+  /** @param {any} userId @param {number} amount @param {any} [options] @returns {Promise<any>} */
   async depositToBank(userId, amount, options = {}) {
     if (amount <= 0) {
       throw new ValidationError('amount', amount, 'must be positive');
@@ -226,6 +248,7 @@ export class UserService {
     return result;
   }
 
+  /** @param {any} userId @param {number} amount @param {any} [options] @returns {Promise<any>} */
   async withdrawFromBank(userId, amount, options = {}) {
     if (amount <= 0) {
       throw new ValidationError('amount', amount, 'must be positive');
@@ -256,6 +279,7 @@ export class UserService {
     return result;
   }
 
+  /** @param {any} userId @param {any} [options] @returns {Promise<any>} */
   async getUserStats(userId, options = {}) {
     const cacheKey = `user:stats:${userId}`;
     const { includeTransactions = false, transactionLimit = 10 } = options;
@@ -284,6 +308,7 @@ export class UserService {
     return stats;
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getUserRank(userId) {
     const cacheKey = `user:rank:${userId}`;
 
@@ -291,7 +316,7 @@ export class UserService {
 
     if (!rank) {
       const leaderboard = await this.userRepository.getLeaderboard(100);
-      const userIndex = leaderboard.findIndex((user) => user.id === userId);
+      const userIndex = leaderboard.findIndex((/** @type {any} */ user) => user.id === userId);
 
       rank = userIndex >= 0 ? userIndex + 1 : null;
 
@@ -301,11 +326,13 @@ export class UserService {
     return rank;
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getUserLastActive(userId) {
     const session = await this.sessionManager.getSession(userId, false);
     return session ? session.lastAccessed : null;
   }
 
+  /** @param {string} query @param {any} [options] @returns {Promise<any>} */
   async searchUsers(query, options = {}) {
     const { limit = 20, offset = 0, includeInactive = false } = options;
 
@@ -319,7 +346,7 @@ export class UserService {
     if (!includeInactive) {
       const maxInactiveTime = 7 * 24 * 60 * 60 * 1000;
       const userActivity = await Promise.all(
-        users.map(async (user) => {
+        users.map(async (/** @type {any} */ user) => {
           const lastActive = await this.getUserLastActive(user.id);
           return {
             user,
@@ -339,6 +366,7 @@ export class UserService {
     };
   }
 
+  /** @param {any} [options] @returns {Promise<any>} */
   async getEconomyOverview(options = {}) {
     const cacheKey = 'economy:overview';
     const { includeDetails = false } = options;
@@ -364,9 +392,17 @@ export class UserService {
       await this.cache.set(cacheKey, overview, 300000);
     }
 
-    return overview;
+    return includeDetails
+      ? overview
+      : {
+          total_users: overview.total_users,
+          total_wealth: overview.total_wealth,
+          averageWealth: overview.averageWealth,
+          activeUsers: overview.activeUsers,
+        };
   }
 
+  /** @returns {Promise<number>} */
   async getTotalTransactionCount() {
     /*
      * This would ideally come from a dedicated transaction service
@@ -376,11 +412,13 @@ export class UserService {
     return stats.total_users * 10;
   }
 
+  /** @returns {Promise<number>} */
   async getActiveUserCount() {
     const activeUsers = this.sessionManager.getActiveUsers(24 * 60 * 60 * 1000); // 24 hours
     return activeUsers.length;
   }
 
+  /** @param {any[]} updates @param {any} [options] @returns {Promise<any[]>} */
   async batchUpdateUsers(updates, options = {}) {
     const { validateAll = true, stopOnError = false } = options;
 
@@ -417,14 +455,15 @@ export class UserService {
 
     this.logger.info('Batch user update completed', {
       total: updates.length,
-      successful: results.filter((r) => r.success).length,
-      failed: results.filter((r) => !r.success).length,
+      successful: results.filter((/** @type {any} */ r) => r.success).length,
+      failed: results.filter((/** @type {any} */ r) => !r.success).length,
       correlationId: options.correlationId,
     });
 
     return results;
   }
 
+  /** @param {any} userId @param {number} [days] @returns {Promise<any>} */
   async getUserActivityReport(userId, days = 7) {
     const endTime = Date.now();
     const startTime = endTime - days * 24 * 60 * 60 * 1000;
@@ -435,7 +474,7 @@ export class UserService {
     ]);
 
     const recentTransactions = transactions.filter(
-      (t) => t.timestamp >= startTime && t.timestamp <= endTime,
+      (/** @type {any} */ t) => t.timestamp >= startTime && t.timestamp <= endTime,
     );
 
     const session = await this.sessionManager.getSession(userId, false);
@@ -447,8 +486,8 @@ export class UserService {
       profile,
       transactions: {
         total: recentTransactions.length,
-        sent: recentTransactions.filter((t) => t.fromId === userId).length,
-        received: recentTransactions.filter((t) => t.toId === userId).length,
+        sent: recentTransactions.filter((/** @type {any} */ t) => t.fromId === userId).length,
+        received: recentTransactions.filter((/** @type {any} */ t) => t.toId === userId).length,
         list: recentTransactions.slice(0, 10),
       },
       activity: {

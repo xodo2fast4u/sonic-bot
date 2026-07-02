@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['wiki'],
   desc: 'Search Wikipedia for a summary of a topic',
@@ -32,7 +34,7 @@ export default {
         `📚 *${data.title}*\n\n${data.extract}\n\n🔗 ${data.content_urls?.desktop?.page || ''}`,
       );
     } catch (err) {
-      await text(`${e.cross} Error fetching Wikipedia data: ${err.message}`);
+      await text(`${e.cross} Error fetching Wikipedia data: ${getErrorMessage(err)}`);
     }
   },
 };

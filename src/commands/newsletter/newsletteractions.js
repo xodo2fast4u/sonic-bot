@@ -1,11 +1,17 @@
 import { emoji as e } from '../../config/config.js';
 import { getTarget } from '../../utils/utils.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/**
+ * @param {string[]} args
+ * @param {import('../../../types/index.js').WhatsAppMessage} msg
+ */
 const parseTarget = (args, msg) => {
   if (args[2]) return `${args[2].replace(/[^0-9]/g, '')}@s.whatsapp.net`;
   return getTarget(msg);
 };
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['newsletteractions'],
   desc: 'Follow, mute, react, and manage newsletter permissions',
@@ -72,7 +78,7 @@ export default {
 
       return text(`${e.warn} Unknown newsletter action: ${action}`);
     } catch (err) {
-      await text(`${e.cross} Failed to ${action}. ${err.message || ''}`);
+      await text(`${e.cross} Failed to ${action}. ${getErrorMessage(err) || ''}`);
     }
   },
 };

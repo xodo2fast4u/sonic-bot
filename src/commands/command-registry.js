@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { container } from '../core/container.js';
 import { CommandError } from '../core/errors.js';
+import { getErrorMessage } from '../utils/error-message.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -14,6 +15,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  * Command metadata
  */
 class CommandMetadata {
+  /**
+   * @param {string} category
+   * @param {string} fileName
+   * @param {string} modulePath
+   */
   constructor(category, fileName, modulePath) {
     this.category = category;
     this.fileName = fileName;
@@ -64,7 +70,7 @@ class CommandMetadata {
       return this.commands;
     } catch (error) {
       throw new CommandError(
-        `Failed to load command module ${this.modulePath}: ${error.message}`,
+        `Failed to load command module ${this.modulePath}: ${getErrorMessage(error)}`,
         null,
         {
           modulePath: this.modulePath,
@@ -156,6 +162,7 @@ export class CommandRegistry {
 
   /**
    * Pre-register command aliases without loading the module
+   * @param {CommandMetadata} metadata
    */
   async preRegisterCommands(metadata) {
     try {
@@ -181,12 +188,16 @@ export class CommandRegistry {
       }
     } catch (error) {
       // If pre-registration fails, we'll load the module when needed
-      this.logger.debug(`Pre-registration failed for ${metadata.fileName}:`, error.message);
+      this.logger.debug(
+        `Pre-registration failed for ${metadata.fileName}:`,
+        getErrorMessage(error),
+      );
     }
   }
 
   /**
    * Get command by name/alias
+   * @param {string} commandName
    */
   async get(commandName) {
     if (!this.initialized) {
@@ -224,6 +235,7 @@ export class CommandRegistry {
 
   /**
    * Get commands by category
+   * @param {string} category
    */
   async getByCategory(category) {
     const categoryMetadata = this.metadata.get(category);
@@ -247,19 +259,34 @@ export class CommandRegistry {
 
   /**
    * Search commands
+   * @param {string} query
+   * @param {import('../../types/index.js').SearchCommandOptions} [options]
    */
   async search(query, options = {}) {
     const { includeCategory = false, includeDescription = false, limit = 50 } = options;
+    /** @type {{ name: string, category?: string, fileName?: string, description?: string }[]} */
     const results = [];
     const lowerQuery = query.toLowerCase();
 
     for (const [commandName, metadata] of this.commands) {
       if (commandName.includes(lowerQuery)) {
-        results.push({
-          name: commandName,
-          category: metadata.category,
-          fileName: metadata.fileName,
-        });
+        /** @type {{ name: string, category?: string, fileName?: string, description?: string }} */
+        const entry = { name: commandName };
+
+        if (includeCategory) {
+          entry.category = metadata.category;
+          entry.fileName = metadata.fileName;
+        }
+
+        if (includeDescription) {
+          const commands = await metadata.load();
+          const command = commands.get(commandName);
+          if (command?.desc) {
+            entry.description = command.desc;
+          }
+        }
+
+        results.push(entry);
       }
     }
 
@@ -268,6 +295,7 @@ export class CommandRegistry {
 
   /**
    * Load category
+   * @param {string} category
    */
   async loadCategory(category) {
     const categoryMetadata = this.metadata.get(category);
@@ -288,6 +316,7 @@ export class CommandRegistry {
 
   /**
    * Unload category
+   * @param {string} category
    */
   async unloadCategory(category) {
     const categoryMetadata = this.metadata.get(category);
@@ -305,6 +334,7 @@ export class CommandRegistry {
 
   /**
    * Reload category
+   * @param {string} category
    */
   async reloadCategory(category) {
     await this.unloadCategory(category);
@@ -321,7 +351,8 @@ export class CommandRegistry {
       loadedFiles: 0,
       totalCommands: this.commands.size,
       loadedCommands: 0,
-      categories: {},
+      categoryBreakdown:
+        /** @type {Record<string, { files: number, loadedFiles: number, commands: number, loadedCommands: number, totalLoadTime: number, totalAccessCount: number }>} */ ({}),
     };
 
     for (const [categoryName, categoryMetadata] of this.metadata) {
@@ -349,7 +380,7 @@ export class CommandRegistry {
         categoryStats.totalAccessCount += metadata.accessCount;
       }
 
-      stats.categories[categoryName] = categoryStats;
+      stats.categoryBreakdown[categoryName] = categoryStats;
     }
 
     return stats;
@@ -363,7 +394,7 @@ export class CommandRegistry {
 
     for (const [categoryName, categoryMetadata] of this.metadata) {
       for (const metadata of categoryMetadata.values()) {
-        detailed.push(metadata.getStats());
+        detailed.push({ categoryName, ...metadata.getStats() });
       }
     }
 
@@ -372,6 +403,7 @@ export class CommandRegistry {
 
   /**
    * Clear cache for specific command
+   * @param {string} commandName
    */
   async clearCommandCache(commandName) {
     const metadata = this.commands.get(commandName?.toLowerCase());
@@ -395,6 +427,7 @@ export class CommandRegistry {
 
   /**
    * Get hot commands (frequently accessed)
+   * @param {number} [threshold]
    */
   getHotCommands(threshold = 10) {
     const hot = [];
@@ -416,6 +449,7 @@ export class CommandRegistry {
 
   /**
    * Get cold commands (rarely accessed)
+   * @param {number} [threshold]
    */
   getColdCommands(threshold = 1) {
     const cold = [];
@@ -462,7 +496,9 @@ export class CommandRegistry {
             }
           }
         } catch (error) {
-          issues.push(`Failed to load ${categoryName}/${metadata.fileName}: ${error.message}`);
+          issues.push(
+            `Failed to load ${categoryName}/${metadata.fileName}: ${getErrorMessage(error)}`,
+          );
         }
       }
     }

@@ -2,6 +2,7 @@ import { emoji as e } from '../../config/config.js';
 import { checkPerms } from './_utils.js';
 import { jid } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['tagall'],
   desc: 'Tag all members',
@@ -10,9 +11,11 @@ export default {
     const meta = await checkPerms(sonic, msg, { admin: true });
     if (!meta) return;
 
-    const memberIds = meta.participants.map((p) => p.id);
+    const memberIds = meta.participants.map((/** @type {any} */ p) => p.id);
 
-    const mentions = meta.participants.map((p) => `@${jid.getParticipantNumber(p)}`).join('\n');
+    const mentions = meta.participants
+      .map((/** @type {any} */ p) => `@${jid.getParticipantNumber(p)}`)
+      .join('\n');
 
     const text = args.length ? `${args.join(' ')}\n\n` : '';
 

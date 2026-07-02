@@ -2,11 +2,17 @@ import { container } from '../core/container.js';
 
 export class HealthChecker {
   constructor() {
+    /** @type {Map<string, {name:string,check:()=>Promise<any>,timeout:number}>} */
     this.checks = new Map();
+    /** @type {any|null} */
     this.logger = null;
+    /** @type {any|null} */
     this.metricsCollector = null;
+    /** @type {any|null} */
     this.connectionPool = null;
+    /** @type {any|null} */
     this.cache = null;
+    /** @type {any|null} */
     this.configManager = null;
   }
 
@@ -20,6 +26,7 @@ export class HealthChecker {
     this.registerDefaultChecks();
   }
 
+  /** @param {string} name @param {() => Promise<any>} checkFunction @param {number} [timeout] */
   registerCheck(name, checkFunction, timeout = 5000) {
     this.checks.set(name, {
       name,
@@ -28,10 +35,12 @@ export class HealthChecker {
     });
   }
 
+  /** @param {string} name @returns {boolean} */
   removeCheck(name) {
     return this.checks.delete(name);
   }
 
+  /** @returns {Promise<any>} */
   async runAllChecks() {
     const startTime = Date.now();
     const results = [];
@@ -58,6 +67,7 @@ export class HealthChecker {
     };
   }
 
+  /** @param {string} name @param {{check:()=>Promise<any>,timeout:number}} healthCheck @returns {Promise<any>} */
   async runSingleCheck(name, healthCheck) {
     const startTime = Date.now();
 
@@ -83,6 +93,7 @@ export class HealthChecker {
         details: result.details || {},
       };
     } catch (error) {
+      const err = /** @type {any} */ (error);
       const duration = Date.now() - startTime;
 
       this.metricsCollector.recordTimer(`health.check.${name}.duration`, duration);
@@ -93,12 +104,13 @@ export class HealthChecker {
         name,
         status: 'fail',
         duration,
-        message: error.message,
-        details: { error: error.stack },
+        message: err?.message || String(err),
+        details: { error: err?.stack || String(err) },
       };
     }
   }
 
+  /** @param {Array<{status:string}>} results @returns {string} */
   calculateOverallStatus(results) {
     const hasFailure = results.some((result) => result.status === 'fail');
     const hasWarning = results.some((result) => result.status === 'warn');
@@ -137,9 +149,10 @@ export class HealthChecker {
             details: stats,
           };
         } catch (error) {
+          const err = /** @type {any} */ (error);
           return {
             pass: false,
-            message: `Database query failed: ${error.message}`,
+            message: `Database query failed: ${err?.message || String(err)}`,
           };
         }
       },
@@ -174,9 +187,10 @@ export class HealthChecker {
             details: stats,
           };
         } catch (error) {
+          const err = /** @type {any} */ (error);
           return {
             pass: false,
-            message: `Cache operation failed: ${error.message}`,
+            message: `Cache operation failed: ${err?.message || String(err)}`,
           };
         }
       },
@@ -320,9 +334,10 @@ export class HealthChecker {
 
           return { pass: true };
         } catch (error) {
+          const err = /** @type {any} */ (error);
           return {
             pass: false,
-            message: `File system error: ${error.message}`,
+            message: `File system error: ${err?.message || String(err)}`,
           };
         }
       },
@@ -346,10 +361,11 @@ export class HealthChecker {
             await import(dep.module);
             results.push({ name: dep.name, status: 'available' });
           } catch (error) {
+            const err = /** @type {any} */ (error);
             results.push({
               name: dep.name,
               status: 'unavailable',
-              error: error.message,
+              error: err?.message || String(err),
             });
           }
         }
@@ -373,6 +389,7 @@ export class HealthChecker {
     );
   }
 
+  /** @returns {{totalChecks:number,checkNames:string[],lastRun:any,averageDuration:number}} */
   getSummary() {
     return {
       totalChecks: this.checks.size,
@@ -382,10 +399,12 @@ export class HealthChecker {
     };
   }
 
+  /** @param {string} name @returns {any} */
   getCheck(name) {
     return this.checks.get(name);
   }
 
+  /** @returns {Array<{name:string,timeout:number}>} */
   getAllChecks() {
     return Array.from(this.checks.entries()).map(([name, check]) => ({
       name,
@@ -393,6 +412,7 @@ export class HealthChecker {
     }));
   }
 
+  /** @param {string} name @returns {Promise<any>} */
   async runCheck(name) {
     const healthCheck = this.checks.get(name);
     if (!healthCheck) {

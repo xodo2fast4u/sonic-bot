@@ -1,5 +1,6 @@
 import { config, emoji as e, getOwner } from '../../config/config.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['owner', 'creator'],
   desc: 'Show bot owner',

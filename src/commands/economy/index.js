@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+/** @type {Record<string, import('../../../types/index.js').Command>} */
 const commands = {};
 const files = await readdir(__dirname);
 

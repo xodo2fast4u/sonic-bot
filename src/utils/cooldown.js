@@ -7,6 +7,7 @@ export const COOLDOWN = {
   PAY: 10 * 1000,
 };
 
+/** @param {any} userId @returns {{lastCmd:number,spamAttempts:number,commands:Record<string,number>}} */
 const getUserCooldown = (userId) => {
   if (!cooldowns.has(userId)) {
     cooldowns.set(userId, {
@@ -18,6 +19,7 @@ const getUserCooldown = (userId) => {
   return cooldowns.get(userId);
 };
 
+/** @param {any} userId */
 export const checkGlobalCooldown = (userId) => {
   const data = getUserCooldown(userId);
   const now = Date.now();
@@ -41,6 +43,7 @@ export const checkGlobalCooldown = (userId) => {
   }
 };
 
+/** @param {any} userId @param {string} command @param {number} duration */
 export const checkCommandCooldown = (userId, command, duration) => {
   const data = getUserCooldown(userId);
   const now = Date.now();
@@ -56,6 +59,7 @@ export const checkCommandCooldown = (userId, command, duration) => {
   return { allowed: false, remaining };
 };
 
+/** @param {number} seconds @returns {string} */
 export const formatCooldown = (seconds) => {
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
@@ -64,6 +68,7 @@ export const formatCooldown = (seconds) => {
   return `${hours}h ${mins}m`;
 };
 
+/** @param {any} userId @param {string|null} [command] */
 export const resetCooldown = (userId, command = null) => {
   const data = getUserCooldown(userId);
   if (command) {

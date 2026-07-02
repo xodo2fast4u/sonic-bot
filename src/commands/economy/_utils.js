@@ -136,12 +136,19 @@ export const JOBS = [
   },
 ];
 
+/** @param {number} min @param {number} max */
 export const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-export const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+/** @template T @param {readonly T[]} arr @returns {T} */
+export const randomFrom = (arr) => {
+  const item = arr[Math.floor(Math.random() * arr.length)];
+  return item ?? /** @type {T} */ (arr[0]);
+};
 
+/** @param {number} amount */
 export const formatCoins = (amount) => `${e.ring} ${amount.toLocaleString()}`;
 
+/** @param {import('../../../types/index.js').WhatsAppSocket} sonic @param {import('../../../types/index.js').WhatsAppMessage} msg @param {string} command @param {number} duration */
 export const checkEconCooldown = async (sonic, msg, command, duration) => {
   const sender = resolveSender(msg);
   const cd = checkCommandCooldown(sender, command, duration);
@@ -160,10 +167,10 @@ export const checkEconCooldown = async (sonic, msg, command, duration) => {
 
 /**
  * Helper to display profile/wallet information with automatic mention handling
- * @param {Object} helpers - Command helpers (text, mention, msg)
- * @param {string} target - The user JID to display
- * @param {string} selfContent - Content to show when viewing own profile
- * @param {string} otherContent - Content to show when viewing someone else's profile
+ * @param {Pick<import('../../../types/index.js').CommandHelpers, 'text' | 'mention' | 'msg'>} helpers
+ * @param {string} target
+ * @param {string} selfContent
+ * @param {string} otherContent
  */
 export const sendProfileDisplay = async (
   { text, mention, msg },
@@ -183,16 +190,22 @@ export const sendProfileDisplay = async (
 
 /**
  * Factory for bank-related actions (deposit/withdraw)
- * @param {Function} dbFunc - The database function to call (deposit or withdraw)
- * @param {string} sourceKey - The user property to check for 'all' (balance or bank)
- * @param {string} title - The display title for the UI
+ * @param {(userId: string, amount: number) => { success: boolean; balance?: number; bank?: number }} dbFunc
+ * @param {'balance' | 'bank'} sourceKey
+ * @param {string} title
  */
 export const bankAction = (dbFunc, sourceKey, title) => {
+  /** @param {Pick<import('../../../types/index.js').CommandHelpers, 'text' | 'msg'>} helpers @param {string[]} args */
   return async ({ text, msg }, args) => {
     const sender = resolveSender(msg);
     const user = getUser(sender);
 
-    const amount = args[0]?.toLowerCase() === 'all' ? user[sourceKey] : parseInt(args[0]);
+    if (!user) {
+      return text(`${e.cross} Could not load your wallet. Try again later.`);
+    }
+
+    const available = sourceKey === 'balance' ? user.balance : user.bank;
+    const amount = args[0]?.toLowerCase() === 'all' ? available : parseInt(args[0] ?? '', 10);
 
     if (!amount || amount <= 0) {
       return text(
@@ -204,7 +217,7 @@ export const bankAction = (dbFunc, sourceKey, title) => {
 
     if (!result.success) {
       const errorMsg = title === 'DEPOSIT' ? 'Insufficient cash!' : 'Insufficient bank balance!';
-      return text(`${e.cross} ${errorMsg} You have ${formatCoins(user[sourceKey])}`);
+      return text(`${e.cross} ${errorMsg} You have ${formatCoins(available)}`);
     }
 
     await text(
@@ -213,8 +226,8 @@ export const bankAction = (dbFunc, sourceKey, title) => {
 ┃
 ┃ ${e.check} ${title === 'DEPOSIT' ? 'Deposited' : 'Withdrew'}: ${formatCoins(amount)}
 ┃
-┃ ${e.star} Cash: ${formatCoins(result.balance)}
-┃ ${e.bolt} Bank: ${formatCoins(result.bank)}
+┃ ${e.star} Cash: ${formatCoins(result.balance ?? 0)}
+┃ ${e.bolt} Bank: ${formatCoins(result.bank ?? 0)}
 ╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
     );
   };

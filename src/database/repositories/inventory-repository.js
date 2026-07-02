@@ -4,14 +4,17 @@ import { container } from '../../core/container.js';
 export class InventoryRepository extends BaseRepository {
   constructor() {
     super('inventory');
+    /** @type {any|null} */
     this.jidUtils = null;
   }
 
+  /** @override */
   async initialize() {
     await super.initialize();
     this.jidUtils = container.resolve('utils').jid;
   }
 
+  /** @param {any} userId @returns {Promise<any[]>} */
   async getUserInventory(userId) {
     const id = this.jidUtils.fromUser(userId);
     const query = `
@@ -22,9 +25,10 @@ export class InventoryRepository extends BaseRepository {
     `;
 
     const results = await this.all(query, [id], 'getUserInventory');
-    return results.map((item) => this.mapItem(item));
+    return results.map((/** @type {any} */ item) => this.mapItem(item));
   }
 
+  /** @param {any} userId @param {any} itemName @param {number} [quantity] @returns {Promise<any>} */
   async addItem(userId, itemName, quantity = 1) {
     const id = this.jidUtils.fromUser(userId);
 
@@ -44,6 +48,7 @@ export class InventoryRepository extends BaseRepository {
     return result;
   }
 
+  /** @param {any} userId @param {any} itemName @param {number} [quantity] @returns {Promise<void>} */
   async removeItem(userId, itemName, quantity = 1) {
     const id = this.jidUtils.fromUser(userId);
 
@@ -59,6 +64,7 @@ export class InventoryRepository extends BaseRepository {
     await this.clearUserCache(id);
   }
 
+  /** @param {any} userId @param {any} itemName @param {number} [quantity] @returns {Promise<boolean>} */
   async hasItem(userId, itemName, quantity = 1) {
     const id = this.jidUtils.fromUser(userId);
     const query = `
@@ -70,6 +76,7 @@ export class InventoryRepository extends BaseRepository {
     return result && result.quantity >= quantity;
   }
 
+  /** @param {any} userId @param {any} itemName @returns {Promise<number>} */
   async getItemQuantity(userId, itemName) {
     const id = this.jidUtils.fromUser(userId);
     const query = `
@@ -81,6 +88,7 @@ export class InventoryRepository extends BaseRepository {
     return result ? result.quantity : 0;
   }
 
+  /** @param {any} userId @param {any} itemName @param {number} quantity @returns {Promise<void>} */
   async setItemQuantity(userId, itemName, quantity) {
     const id = this.jidUtils.fromUser(userId);
 
@@ -104,6 +112,7 @@ export class InventoryRepository extends BaseRepository {
     await this.clearUserCache(id);
   }
 
+  /** @param {any} fromId @param {any} toId @param {any} itemName @param {number} quantity @returns {Promise<any>} */
   async transferItem(fromId, toId, itemName, quantity) {
     const from = this.jidUtils.fromUser(fromId);
     const to = this.jidUtils.fromUser(toId);
@@ -127,6 +136,7 @@ export class InventoryRepository extends BaseRepository {
     });
   }
 
+  /** @param {any} itemName @param {number} [limit] @returns {Promise<any[]>} */
   async getItemsByName(itemName, limit = 50) {
     const query = `
       SELECT user_id, item_name, quantity
@@ -139,6 +149,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.all(query, [itemName, limit], 'getItemsByName');
   }
 
+  /** @param {number} [maxQuantity] @param {number} [limit] @returns {Promise<any[]>} */
   async getRareItems(maxQuantity = 5, limit = 20) {
     const query = `
       SELECT user_id, item_name, quantity
@@ -151,6 +162,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.all(query, [maxQuantity, limit], 'getRareItems');
   }
 
+  /** @param {number} [minQuantity] @param {number} [limit] @returns {Promise<any[]>} */
   async getCommonItems(minQuantity = 100, limit = 20) {
     const query = `
       SELECT user_id, item_name, quantity
@@ -163,6 +175,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.all(query, [minQuantity, limit], 'getCommonItems');
   }
 
+  /** @returns {Promise<any>} */
   async getInventoryStats() {
     const query = `
       SELECT 
@@ -178,6 +191,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.get(query, [], 'getInventoryStats');
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getUserInventoryCount(userId) {
     const id = this.jidUtils.fromUser(userId);
     const query = `
@@ -191,6 +205,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.get(query, [id], 'getUserInventoryCount');
   }
 
+  /** @param {any} searchTerm @param {number} [limit] @returns {Promise<any[]>} */
   async searchItems(searchTerm, limit = 20) {
     const query = `
       SELECT user_id, item_name, quantity
@@ -203,6 +218,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.all(query, [`%${searchTerm}%`, limit], 'searchItems');
   }
 
+  /** @param {any} itemName @param {number} [limit] @returns {Promise<any[]>} */
   async getTopItemHolders(itemName, limit = 10) {
     const query = `
       SELECT user_id, item_name, quantity
@@ -213,9 +229,10 @@ export class InventoryRepository extends BaseRepository {
     `;
 
     const results = await this.all(query, [itemName, limit], 'getTopItemHolders');
-    return results.map((item) => this.mapItem(item));
+    return results.map((/** @type {any} */ item) => this.mapItem(item));
   }
 
+  /** @param {any} userId @param {number} [limit] @returns {Promise<any[]>} */
   async getUserTopItems(userId, limit = 10) {
     const id = this.jidUtils.fromUser(userId);
     const query = `
@@ -227,9 +244,10 @@ export class InventoryRepository extends BaseRepository {
     `;
 
     const results = await this.all(query, [id, limit], 'getUserTopItems');
-    return results.map((item) => this.mapItem(item));
+    return results.map((/** @type {any} */ item) => this.mapItem(item));
   }
 
+  /** @param {Array<{userId:any,itemName:any,quantity:number}>} additions @returns {Promise<any[]>} */
   async batchAddItems(additions) {
     return await this.transaction(async () => {
       const results = [];
@@ -256,6 +274,7 @@ export class InventoryRepository extends BaseRepository {
     });
   }
 
+  /** @param {any} userId @returns {Promise<void>} */
   async clearUserInventory(userId) {
     const id = this.jidUtils.fromUser(userId);
     await this.execute('DELETE FROM inventory WHERE user_id = ?', [id], 'clearUserInventory');
@@ -263,6 +282,7 @@ export class InventoryRepository extends BaseRepository {
     await this.clearUserCache(id);
   }
 
+  /** @param {number} [hours] @param {number} [limit] @returns {Promise<any[]>} */
   async getExpiringItems(hours = 24, limit = 20) {
     const query = `
       SELECT user_id, item_name, quantity, created_at
@@ -275,7 +295,7 @@ export class InventoryRepository extends BaseRepository {
     const expirationTime = Date.now() - hours * 60 * 60 * 1000;
     const results = await this.all(query, [expirationTime, limit], 'getExpiringItems');
 
-    return results.map((item) => ({
+    return results.map((/** @type {any} */ item) => ({
       userId: this.jidUtils.toUser(item.user_id),
       itemName: item.item_name,
       quantity: item.quantity,
@@ -284,11 +304,13 @@ export class InventoryRepository extends BaseRepository {
     }));
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getOrCreateUser(userId) {
     const userRepo = container.resolve('userRepository');
     return await userRepo.getOrCreate(userId);
   }
 
+  /** @param {any} userId @returns {Promise<void>} */
   async clearUserCache(userId) {
     const cacheKeys = [
       `inventory:${userId}`,
@@ -301,6 +323,7 @@ export class InventoryRepository extends BaseRepository {
     }
   }
 
+  /** @param {any} dbItem @returns {any|null} */
   mapItem(dbItem) {
     if (!dbItem) return null;
 
@@ -311,6 +334,7 @@ export class InventoryRepository extends BaseRepository {
     };
   }
 
+  /** @param {any} itemName @returns {Promise<any>} */
   async getItemDistribution(itemName) {
     const query = `
       SELECT 
@@ -326,6 +350,7 @@ export class InventoryRepository extends BaseRepository {
     return await this.get(query, [itemName], 'getItemDistribution');
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getUserInventorySummary(userId) {
     const id = this.jidUtils.fromUser(userId);
     const query = `

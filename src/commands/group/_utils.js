@@ -3,10 +3,18 @@ import { emoji as e } from '../../config/config.js';
 import { jid, send, getTarget, resolveSender } from '../../utils/utils.js';
 import logger from '../../utils/logger.js';
 
+/** @param {any} metadata */
 const getAdminIds = (metadata) => {
-  return metadata.participants.filter((p) => p.admin).map((p) => p.id);
+  return metadata.participants
+    .filter((/** @type {any} */ p) => p.admin)
+    .map((/** @type {any} */ p) => p.id);
 };
 
+/**
+ * @param {any} sonic
+ * @param {any} msg
+ * @param {{ admin?: boolean, botAdmin?: boolean }} [options]
+ */
 export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false } = {}) => {
   const groupJid = msg.key.remoteJid;
 
@@ -24,7 +32,8 @@ export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false }
 
   if (admin) {
     const isAdmin = adminIds.some(
-      (id) => areJidsSameUser(id, sender) || jid.fromUser(id) === jid.fromUser(sender),
+      (/** @type {string} */ id) =>
+        areJidsSameUser(id, sender) || jid.fromUser(id) === jid.fromUser(sender),
     );
 
     if (!isAdmin) {
@@ -35,7 +44,8 @@ export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false }
 
   if (botAdmin) {
     const isBotAdmin = adminIds.some(
-      (id) => areJidsSameUser(id, botJid) || jid.fromUser(id) === jid.fromUser(botJid),
+      (/** @type {string} */ id) =>
+        areJidsSameUser(id, botJid) || jid.fromUser(id) === jid.fromUser(botJid),
     );
 
     if (!isBotAdmin) {
@@ -47,6 +57,10 @@ export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false }
   return metadata;
 };
 
+/**
+ * @param {any} sonic
+ * @param {any} msg
+ */
 export const requireTarget = async (sonic, msg) => {
   const target = getTarget(msg);
   if (!target) {
@@ -60,9 +74,19 @@ export const requireTarget = async (sonic, msg) => {
  * Factory function creates similar command handlers with different actions,
  * reducing code duplication across kick, promote, demote, and add commands.
  */
+/**
+ * @param {string} action
+ * @param {string} successMsg
+ */
 export const participantAction =
   (action, successMsg) =>
-  async ({ sonic, msg }, args) => {
+  async (
+    /** @type {import('../../../types/index.js').CommandHelpers & { sonic: any, msg: any }} */ {
+      sonic,
+      msg,
+    },
+    /** @type {string[]} */ args,
+  ) => {
     const meta = await checkPerms(sonic, msg, { admin: true, botAdmin: true });
     if (!meta) return;
 
@@ -94,7 +118,8 @@ export const participantAction =
       }
     } catch (err) {
       logger.error(`[group:${action}]`, err);
-      const is403 = err.output?.statusCode === 403 || err.statusCode === 403;
+      const error = /** @type {any} */ (err);
+      const is403 = error.output?.statusCode === 403 || error.statusCode === 403;
       await send.text(
         sonic,
         msg,
@@ -107,9 +132,18 @@ export const participantAction =
  * Factory function creates similar setting toggle handlers with different settings,
  * reducing code duplication across lock, unlock, and other group setting commands.
  */
+/**
+ * @param {string} setting
+ * @param {string} successMsg
+ */
 export const settingAction =
   (setting, successMsg) =>
-  async ({ sonic, msg }) => {
+  async (
+    /** @type {import('../../../types/index.js').CommandHelpers & { sonic: any, msg: any }} */ {
+      sonic,
+      msg,
+    },
+  ) => {
     if (!(await checkPerms(sonic, msg, { admin: true, botAdmin: true }))) return;
 
     try {

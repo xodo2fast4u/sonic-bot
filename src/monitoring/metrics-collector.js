@@ -4,13 +4,21 @@ import { container } from '../core/container.js';
 export class MetricsCollector extends EventEmitter {
   constructor() {
     super();
+    /** @type {Map<string, any>} */
     this.metrics = new Map();
+    /** @type {Map<string, number>} */
     this.counters = new Map();
+    /** @type {Map<string, number[]>} */
     this.timers = new Map();
+    /** @type {Map<string, {count:number,sum:number,min:number,max:number,values:number[]}>} */
     this.histograms = new Map();
+    /** @type {Map<string, number>} */
     this.gauges = new Map();
+    /** @type {any|null} */
     this.logger = null;
+    /** @type {any|null} */
     this.configManager = null;
+    /** @type {any|null} */
     this.collectionInterval = null;
     this.startTime = Date.now();
   }
@@ -39,32 +47,41 @@ export class MetricsCollector extends EventEmitter {
     }
   }
 
+  /** @param {string} name @param {number} [value] @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {number} [value] @param {Record<string,string>} [tags] */
   incrementCounter(name, value = 1, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
 
     if (!this.counters.has(key)) {
       this.counters.set(key, 0);
     }
 
-    this.counters.set(key, this.counters.get(key) + value);
+    const current = /** @type {number} */ (this.counters.get(key) || 0);
+    this.counters.set(key, current + value);
 
     this.emit('metric:increment', { name, value, tags, timestamp: Date.now() });
   }
 
+  /** @param {string} name @param {number} duration @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {number} duration @param {Record<string,string>} [tags] */
   recordTimer(name, duration, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
 
     if (!this.timers.has(key)) {
       this.timers.set(key, []);
     }
 
-    this.timers.get(key).push(duration);
+    const arr = /** @type {number[]} */ (this.timers.get(key) || []);
+    arr.push(duration);
+    this.timers.set(key, arr);
 
     this.emit('metric:timer', { name, duration, tags, timestamp: Date.now() });
   }
 
+  /** @param {string} name @param {number} value @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {number} value @param {Record<string,string>} [tags] */
   recordHistogram(name, value, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
 
     if (!this.histograms.has(key)) {
       this.histograms.set(key, {
@@ -76,26 +93,32 @@ export class MetricsCollector extends EventEmitter {
       });
     }
 
-    const histogram = this.histograms.get(key);
-    histogram.count++;
-    histogram.sum += value;
-    histogram.values.push(value);
+    const histogram = /** @type {any} */ (this.histograms.get(key));
+    if (histogram) {
+      histogram.count++;
+      histogram.sum += value;
+      histogram.values.push(value);
 
-    if (value < histogram.min) histogram.min = value;
-    if (value > histogram.max) histogram.max = value;
+      if (value < histogram.min) histogram.min = value;
+      if (value > histogram.max) histogram.max = value;
+    }
 
     this.emit('metric:histogram', { name, value, tags, timestamp: Date.now() });
   }
 
+  /** @param {string} name @param {number} value @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {number} value @param {Record<string,string>} [tags] */
   setGauge(name, value, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
     this.gauges.set(key, value);
 
     this.emit('metric:gauge', { name, value, tags, timestamp: Date.now() });
   }
 
+  /** @param {string} name @param {any} value @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {any} value @param {Record<string,string>} [tags] */
   recordMetric(name, value, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
     this.metrics.set(key, {
       value,
       timestamp: Date.now(),
@@ -105,13 +128,17 @@ export class MetricsCollector extends EventEmitter {
     this.emit('metric:record', { name, value, tags, timestamp: Date.now() });
   }
 
+  /** @param {string} name @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {Record<string,string>} [tags] */
   getCounter(name, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
     return this.counters.get(key) || 0;
   }
 
+  /** @param {string} name @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {Record<string,string>} [tags] */
   getTimerStats(name, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
     const values = this.timers.get(key) || [];
 
     if (values.length === 0) {
@@ -122,10 +149,7 @@ export class MetricsCollector extends EventEmitter {
     const count = values.length;
     const sum = values.reduce((a, b) => a + b, 0);
     const mean = sum / count;
-    const median =
-      count % 2 === 0
-        ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-        : sorted[Math.floor(count / 2)];
+    const median = this.calculatePercentile(sorted, 0.5);
 
     return {
       count,
@@ -139,8 +163,10 @@ export class MetricsCollector extends EventEmitter {
     };
   }
 
+  /** @param {string} name @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {Record<string,string>} [tags] */
   getHistogramStats(name, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
     const histogram = this.histograms.get(key);
 
     if (!histogram) {
@@ -161,8 +187,10 @@ export class MetricsCollector extends EventEmitter {
     };
   }
 
+  /** @param {string} name @param {Record<string,string>} [tags] */
+  /** @param {string} name @param {Record<string,string>} [tags] */
   getGauge(name, tags = {}) {
-    const key = this.createKey(name, tags);
+    const key = this.createKey(name, /** @type {any} */ (tags));
     return this.gauges.get(key);
   }
 
@@ -170,16 +198,16 @@ export class MetricsCollector extends EventEmitter {
     return {
       counters: Object.fromEntries(this.counters),
       timers: Object.fromEntries(
-        Array.from(this.timers.keys()).map((key) => [
-          key,
-          this.getTimerStats(...this.parseKey(key)),
-        ]),
+        Array.from(this.timers.keys()).map((key) => {
+          const [name, tags] = this.parseKey(key);
+          return [key, this.getTimerStats(name, tags)];
+        }),
       ),
       histograms: Object.fromEntries(
-        Array.from(this.histograms.keys()).map((key) => [
-          key,
-          this.getHistogramStats(...this.parseKey(key)),
-        ]),
+        Array.from(this.histograms.keys()).map((key) => {
+          const [name, tags] = this.parseKey(key);
+          return [key, this.getHistogramStats(name, tags)];
+        }),
       ),
       gauges: Object.fromEntries(this.gauges),
       metrics: Object.fromEntries(this.metrics),
@@ -187,8 +215,11 @@ export class MetricsCollector extends EventEmitter {
     };
   }
 
+  /** @param {string} pattern */
+  /** @param {string} pattern */
   getMetricsByPattern(pattern) {
     const regex = new RegExp(pattern);
+    /** @type {{counters:Record<string,number>,timers:Record<string,any>,histograms:Record<string,any>,gauges:Record<string,number>,metrics:Record<string,any>}} */
     const result = {
       counters: {},
       timers: {},
@@ -203,15 +234,17 @@ export class MetricsCollector extends EventEmitter {
       }
     }
 
-    for (const [key, value] of this.timers) {
+    for (const [key] of this.timers) {
       if (regex.test(key)) {
-        result.timers[key] = this.getTimerStats(...this.parseKey(key));
+        const [n, t] = this.parseKey(key);
+        result.timers[key] = this.getTimerStats(n, t);
       }
     }
 
-    for (const [key, value] of this.histograms) {
+    for (const [key] of this.histograms) {
       if (regex.test(key)) {
-        result.histograms[key] = this.getHistogramStats(...this.parseKey(key));
+        const [n, t] = this.parseKey(key);
+        result.histograms[key] = this.getHistogramStats(n, t);
       }
     }
 
@@ -266,6 +299,7 @@ export class MetricsCollector extends EventEmitter {
     this.logger.info('All metrics reset');
   }
 
+  /** @param {string} pattern */
   resetByPattern(pattern) {
     const regex = new RegExp(pattern);
 
@@ -303,8 +337,9 @@ export class MetricsCollector extends EventEmitter {
     this.logger.info(`Metrics reset for pattern: ${pattern}`);
   }
 
+  /** @param {string} name @param {Record<string,string>} tags */
   createKey(name, tags) {
-    const tagString = Object.keys(tags)
+    const tagString = Object.keys(tags || {})
       .sort()
       .map((key) => `${key}=${tags[key]}`)
       .join(',');
@@ -312,28 +347,40 @@ export class MetricsCollector extends EventEmitter {
     return tagString ? `${name}{${tagString}}` : name;
   }
 
+  /**
+   * Parse a metric key into name and tags tuple.
+   * @param {string} key
+   * @returns {[string, Record<string,string>]}
+   */
   parseKey(key) {
     const match = key.match(/^(.+?)\{(.*)\}$/);
     if (!match) {
       return [key, {}];
     }
 
-    const name = match[1];
+    const name = String(match[1]);
     const tagString = match[2];
+    /** @type {Record<string,string>} */
     const tags = {};
 
     if (tagString) {
       tagString.split(',').forEach((pair) => {
-        const [key, value] = pair.split('=');
-        tags[key] = value;
+        if (typeof pair !== 'string' || pair.trim() === '') return;
+        const parts = pair.split('=');
+        const k = parts[0];
+        if (!k) return;
+        const v = parts.slice(1).join('=');
+        const vstr = v === undefined ? '' : String(v);
+        tags[String(k)] = vstr;
       });
     }
 
     return [name, tags];
   }
 
+  /** @param {number[]} sortedValues @param {number} percentile */
   calculatePercentile(sortedValues, percentile) {
-    if (sortedValues.length === 0) return 0;
+    if (!sortedValues || sortedValues.length === 0) return 0;
 
     const index = Math.ceil(sortedValues.length * percentile) - 1;
     return sortedValues[Math.max(0, index)];
@@ -349,8 +396,10 @@ export class MetricsCollector extends EventEmitter {
           used: this.getGauge('system.memory.used'),
           total: this.getGauge('system.memory.total'),
           usage:
-            this.getGauge('system.memory.total') > 0
-              ? (this.getGauge('system.memory.used') / this.getGauge('system.memory.total')) * 100
+            (this.getGauge('system.memory.total') || 0) > 0
+              ? ((this.getGauge('system.memory.used') || 0) /
+                  (this.getGauge('system.memory.total') || 1)) *
+                100
               : 0,
         },
         cpu: {
@@ -401,6 +450,7 @@ export class MetricsCollector extends EventEmitter {
     }
 
     for (const [key, histogram] of Object.entries(metrics.histograms)) {
+      if (!histogram) continue;
       output += `# TYPE histogram histogram\n`;
       output += `histogram_count{${this.getKeyLabels(key)}} ${histogram.count}\n`;
       output += `histogram_sum{${this.getKeyLabels(key)}} ${histogram.sum}\n`;
@@ -410,8 +460,9 @@ export class MetricsCollector extends EventEmitter {
     return output;
   }
 
+  /** @param {string} key */
   getKeyLabels(key) {
-    const [name, tags] = this.parseKey(key);
+    const [, tags] = this.parseKey(key);
     const labelPairs = Object.entries(tags).map(([k, v]) => `${k}="${v}"`);
     return labelPairs.length > 0 ? `{${labelPairs.join(',')}}` : '';
   }

@@ -3,6 +3,7 @@ import { getUser, addCoins, removeCoins } from '../../database/database.js';
 import { random, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['slots'],
   desc: 'Gamble your coins (50/50)',
@@ -13,10 +14,14 @@ export default {
     if (!(await checkEconCooldown(sonic, msg, 'slots', 10000))) return;
 
     const user = getUser(sender);
-    const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0]);
+    if (!user) {
+      return text(`${e.cross} Could not load your wallet. Try again later.`);
+    }
+
+    const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0] ?? '', 10);
 
     if (!bet || bet <= 0) {
-      return text(`${e.cross} Provide a valid bet! Example: !slots 100`);
+      return text(`${e.cross} Provide a valid bet! Example: !slots 100 or !slots all`);
     }
 
     if (bet > user.balance) {
@@ -50,7 +55,8 @@ export default {
       status = `${e.cross} Lost!`;
     }
 
-    const currentBalance = getUser(sender).balance;
+    const updatedUser = getUser(sender);
+    const currentBalance = updatedUser?.balance ?? 0;
 
     await text(
       `

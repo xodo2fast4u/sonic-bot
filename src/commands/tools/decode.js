@@ -1,5 +1,6 @@
 import { emoji as e } from '../../config/config.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['decode'],
   desc: 'Decode Base64 text',

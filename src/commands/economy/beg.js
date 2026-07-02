@@ -31,6 +31,7 @@ const RESPONSES = {
   ],
 };
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['beg'],
   desc: 'Beg for coins',

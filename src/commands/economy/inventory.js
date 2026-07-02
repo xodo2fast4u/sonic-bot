@@ -3,6 +3,7 @@ import { jid, getTarget, resolveSender } from '../../utils/utils.js';
 import { getInventory } from '../../database/database.js';
 import { sendProfileDisplay } from './_utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['inventory', 'inv'],
   desc: 'View your inventory',

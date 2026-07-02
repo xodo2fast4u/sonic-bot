@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['image'],
   desc: 'Search and send an image from DuckDuckGo',
@@ -57,7 +59,7 @@ export default {
 
       await image(imageUrl, `🖼️ Result for: *${query}*`);
     } catch (err) {
-      await text(`${e.cross} Error fetching image: ${err.message}`);
+      await text(`${e.cross} Error fetching image: ${getErrorMessage(err)}`);
     }
   },
 };

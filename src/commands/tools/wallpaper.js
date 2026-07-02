@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['wallpaper'],
   desc: 'Fetch a high-quality wallpaper',
@@ -57,7 +59,7 @@ export default {
       await react('✅');
     } catch (err) {
       await react('❌');
-      await text(`${e.cross} Error fetching wallpaper: ${err.message}`);
+      await text(`${e.cross} Error fetching wallpaper: ${getErrorMessage(err)}`);
     }
   },
 };

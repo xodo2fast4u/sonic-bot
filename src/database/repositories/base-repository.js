@@ -1,11 +1,16 @@
-import { container } from '../core/container.js';
-import { DatabaseError, QueryError } from '../core/errors.js';
+import { container } from '../../core/container.js';
+import { DatabaseError, QueryError } from '../../core/errors.js';
 
 export class BaseRepository {
+  /** @param {string} tableName */
   constructor(tableName) {
+    /** @type {string} */
     this.tableName = tableName;
+    /** @type {any|null} */
     this.connectionPool = null;
+    /** @type {any|null} */
     this.logger = null;
+    /** @type {any|null} */
     this.cache = null;
   }
 
@@ -15,6 +20,7 @@ export class BaseRepository {
     this.cache = container.resolve('cache');
   }
 
+  /** @param {string} query @param {any[]} [params] @param {string} [operation] @returns {Promise<any>} */
   async execute(query, params = [], operation = 'execute') {
     const timer = this.logger.timer(`db:${operation}`);
 
@@ -23,11 +29,13 @@ export class BaseRepository {
       timer.end(true, { table: this.tableName, query: query.substring(0, 100) });
       return result;
     } catch (error) {
-      timer.end(false, { table: this.tableName, error: error.message });
-      throw new QueryError(error.message, query, params);
+      const err = /** @type {any} */ (error);
+      timer.end(false, { table: this.tableName, error: err?.message });
+      throw new QueryError(err?.message || String(err), query, params);
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @param {string} [operation] @returns {Promise<any>} */
   async get(query, params = [], operation = 'get') {
     const timer = this.logger.timer(`db:${operation}`);
 
@@ -36,11 +44,13 @@ export class BaseRepository {
       timer.end(true, { table: this.tableName, query: query.substring(0, 100) });
       return result;
     } catch (error) {
-      timer.end(false, { table: this.tableName, error: error.message });
-      throw new QueryError(error.message, query, params);
+      const err = /** @type {any} */ (error);
+      timer.end(false, { table: this.tableName, error: err?.message });
+      throw new QueryError(err?.message || String(err), query, params);
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @param {string} [operation] @returns {Promise<any>} */
   async all(query, params = [], operation = 'all') {
     const timer = this.logger.timer(`db:${operation}`);
 
@@ -49,11 +59,13 @@ export class BaseRepository {
       timer.end(true, { table: this.tableName, query: query.substring(0, 100) });
       return result;
     } catch (error) {
-      timer.end(false, { table: this.tableName, error: error.message });
-      throw new QueryError(error.message, query, params);
+      const err = /** @type {any} */ (error);
+      timer.end(false, { table: this.tableName, error: err?.message });
+      throw new QueryError(err?.message || String(err), query, params);
     }
   }
 
+  /** @param {any} callback @returns {Promise<any>} */
   async transaction(callback) {
     const timer = this.logger.timer('db:transaction');
 
@@ -62,11 +74,13 @@ export class BaseRepository {
       timer.end(true, { table: this.tableName });
       return result;
     } catch (error) {
-      timer.end(false, { table: this.tableName, error: error.message });
-      throw new DatabaseError(`Transaction failed: ${error.message}`);
+      const err = /** @type {any} */ (error);
+      timer.end(false, { table: this.tableName, error: err?.message });
+      throw new DatabaseError(`Transaction failed: ${err?.message || String(err)}`);
     }
   }
 
+  /** @param {string|number} id @param {boolean} [useCache] @returns {Promise<any>} */
   async findById(id, useCache = true) {
     const cacheKey = `${this.tableName}:${id}`;
 
@@ -88,6 +102,7 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {any} [conditions] @param {boolean} [useCache] @returns {Promise<any>} */
   async findOne(conditions = {}, useCache = true) {
     const { where, params } = this.buildWhereClause(conditions);
     const query = `SELECT * FROM ${this.tableName} ${where} LIMIT 1`;
@@ -111,9 +126,10 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {any} [conditions] @param {any} [options] @returns {Promise<any>} */
   async findMany(conditions = {}, options = {}) {
     const { where, params } = this.buildWhereClause(conditions);
-    const { orderBy, limit, offset } = options;
+    const { orderBy, limit, offset } = /** @type {any} */ (options);
 
     let query = `SELECT * FROM ${this.tableName} ${where}`;
 
@@ -132,6 +148,7 @@ export class BaseRepository {
     return await this.all(query, params, 'findMany');
   }
 
+  /** @param {Record<string, any>} data @returns {Promise<any>} */
   async create(data) {
     const fields = Object.keys(data);
     const placeholders = fields.map(() => '?').join(', ');
@@ -145,6 +162,7 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {string|number} id @param {Record<string, any>} data @returns {Promise<any>} */
   async update(id, data) {
     const fields = Object.keys(data);
     const setClause = fields.map((field) => `${field} = ?`).join(', ');
@@ -159,6 +177,7 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {string|number} id @returns {Promise<any>} */
   async delete(id) {
     const query = `DELETE FROM ${this.tableName} WHERE id = ?`;
     const result = await this.execute(query, [id], 'delete');
@@ -169,6 +188,7 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {any} conditions @param {any} data @returns {Promise<any>} */
   async updateMany(conditions, data) {
     const { where, params: whereParams } = this.buildWhereClause(conditions);
     const fields = Object.keys(data);
@@ -183,6 +203,7 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {any} conditions @returns {Promise<any>} */
   async deleteMany(conditions) {
     const { where, params } = this.buildWhereClause(conditions);
     const query = `DELETE FROM ${this.tableName} ${where}`;
@@ -193,6 +214,7 @@ export class BaseRepository {
     return result;
   }
 
+  /** @param {any} [conditions] @returns {Promise<number>} */
   async count(conditions = {}) {
     const { where, params } = this.buildWhereClause(conditions);
     const query = `SELECT COUNT(*) as count FROM ${this.tableName} ${where}`;
@@ -201,20 +223,22 @@ export class BaseRepository {
     return result ? result.count : 0;
   }
 
+  /** @param {any} conditions @returns {Promise<boolean>} */
   async exists(conditions) {
     const count = await this.count(conditions);
     return count > 0;
   }
 
+  /** @param {any} [conditions] @returns {{where:string,params:any[]}} */
   buildWhereClause(conditions = {}) {
-    const keys = Object.keys(conditions);
+    const keys = Object.keys(/** @type {any} */ (conditions));
 
     if (keys.length === 0) {
       return { where: '', params: [] };
     }
 
     const whereClause = keys
-      .map((key, index) => {
+      .map((key) => {
         const value = conditions[key];
 
         if (Array.isArray(value)) {
@@ -222,7 +246,7 @@ export class BaseRepository {
         } else if (value !== null && typeof value === 'object') {
           // Handle operators like { '>=': 100, '<': 200 }
           return Object.entries(value)
-            .map(([operator, val]) => {
+            .map(([operator]) => {
               switch (operator) {
                 case '>':
                   return `${key} > ?`;
@@ -247,6 +271,7 @@ export class BaseRepository {
       })
       .join(' AND ');
 
+    /** @type {any[]} */
     const params = [];
     keys.forEach((key) => {
       const value = conditions[key];
@@ -265,6 +290,7 @@ export class BaseRepository {
     };
   }
 
+  /** @returns {Promise<void>} */
   async clearCache() {
     if (!this.cache) return;
 
@@ -285,8 +311,12 @@ export class BaseRepository {
         tableName: this.tableName,
       });
     } catch (error) {
-      this.logger.warn('Failed to clear cache', { table: this.tableName, error: error.message });
-      throw error;
+      const err = /** @type {any} */ (error);
+      this.logger.warn('Failed to clear cache', {
+        table: this.tableName,
+        error: err?.message || String(err),
+      });
+      throw err;
     }
   }
 

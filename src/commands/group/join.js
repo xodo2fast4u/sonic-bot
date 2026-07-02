@@ -1,6 +1,7 @@
 import { emoji as e } from '../../config/config.js';
 import logger from '../../utils/logger.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['join'],
   desc: 'Join group via invite code',

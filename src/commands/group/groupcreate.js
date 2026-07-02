@@ -2,13 +2,15 @@ import { emoji as e } from '../../config/config.js';
 import { jid } from '../../utils/utils.js';
 import logger from '../../utils/logger.js';
 
+/** @param {string} text */
 const parseParticipants = (text) =>
   text
     .split(/\s+/)
-    .map((num) => num.replace(/[^0-9]/g, ''))
+    .map((/** @type {string} */ num) => num.replace(/[^0-9]/g, ''))
     .filter(Boolean)
-    .map((num) => jid.toUser(num));
+    .map((/** @type {string} */ num) => jid.toUser(num));
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['groupcreate', 'groupnew'],
   desc: 'Create a group with a subject and members',
@@ -19,7 +21,7 @@ export default {
       return text(`${e.warn} Use: groupcreate <subject> | <number1> <number2> ...`);
 
     const [subject, membersText] = input.split('|').map((part) => part.trim());
-    const participants = parseParticipants(membersText);
+    const participants = parseParticipants(membersText ?? '');
 
     if (!subject) return text(`${e.warn} Provide a group subject.`);
     if (!participants.length) return text(`${e.warn} Provide at least one member number.`);

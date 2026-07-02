@@ -2,6 +2,7 @@ import { emoji as e } from '../../config/config.js';
 import { format } from '../../utils/utils.js';
 import os from 'os';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['server'],
   desc: 'Server statistics',

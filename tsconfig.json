@@ -1,35 +1,39 @@
 {
   "compilerOptions": {
+    /* File layout */
+    "rootDir": "./src",
+
+    /* Language and Environment */
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+
     "allowJs": true,
-    "checkJs": false,
+    "checkJs": true,
+
+    /* Emit */
     "noEmit": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": false,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "strictFunctionTypes": false,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": false,
-    "noUncheckedIndexedAccess": false,
-    "noImplicitOverride": false,
+
+    /* Type Checking */
+    "strict": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
     "allowUnusedLabels": true,
     "allowUnreachableCode": true,
-    "exactOptionalPropertyTypes": false,
-    "noImplicitThis": false,
-    "noPropertyAccessFromIndexSignature": false,
-    "noUncheckedSideEffectImports": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "noUncheckedSideEffectImports": true,
+
+    /* Completeness */
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
+
     "paths": {
       "@/*": ["./src/*"],
       "@/types/*": ["./types/*"],
@@ -43,10 +47,6 @@
     "typeRoots": ["./types", "./node_modules/@types"],
     "types": ["node"]
   },
-  "include": ["types/**/*"],
-  "exclude": ["src/**/*", "node_modules", "dist", "**/*.test.js", "**/*.spec.js", "**/*.config.js"],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  }
+  "include": ["src/**/*", "types/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.js", "**/*.spec.js", "**/*.config.js"]
 }

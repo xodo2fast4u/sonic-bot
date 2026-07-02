@@ -4,6 +4,7 @@ import { getUser, transferCoins } from '../../database/database.js';
 import { COOLDOWN } from '../../utils/cooldown.js';
 import { formatCoins, checkEconCooldown } from './_utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['pay'],
   desc: 'Pay coins to another user',
@@ -22,7 +23,7 @@ export default {
       return text(`${e.cross} You can't pay yourself!`);
     }
 
-    const amount = parseInt(args[0]) || parseInt(args[1]);
+    const amount = parseInt(args[0] ?? '', 10) || parseInt(args[1] ?? '', 10);
     if (!amount || amount <= 0) {
       return text(`${e.cross} Provide a valid amount! Example: !pay @user 100`);
     }
@@ -30,9 +31,9 @@ export default {
     const result = transferCoins(sender, target, amount);
 
     if (!result.success) {
-      return text(
-        `${e.cross} Insufficient coins! You have ${formatCoins(getUser(sender).balance)}`,
-      );
+      const senderUser = getUser(sender);
+      const balanceText = senderUser ? formatCoins(senderUser.balance) : 'unknown';
+      return text(`${e.cross} Insufficient coins! You have ${balanceText}`);
     }
 
     const targetNum = jid.fromUser(target);

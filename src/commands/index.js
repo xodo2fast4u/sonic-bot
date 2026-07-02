@@ -2,8 +2,11 @@ import { readdir } from 'fs/promises';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import logger from '../utils/logger.js';
+import { getErrorMessage } from '../utils/error-message.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** @type {Map<string, import('../../types/index.js').Command>} */
 export const commands = new Map();
 
 const loadCommands = async () => {
@@ -11,7 +14,7 @@ const loadCommands = async () => {
 
   for (const folder of folders.filter((f) => f.isDirectory())) {
     try {
-      const module = await import(`./${folder.name}/index.js`);
+      const module = await import(join(__dirname, folder.name, 'index.js'));
 
       for (const cmd of Object.values(module.default || module)) {
         if (!cmd?.cmd || !cmd?.run) continue;
@@ -22,7 +25,7 @@ const loadCommands = async () => {
 
       logger.info(`📂 Loaded: ${folder.name}`);
     } catch (err) {
-      logger.error(`❌ Failed to load ${folder.name}:`, err.message);
+      logger.error(`❌ Failed to load ${folder.name}:`, getErrorMessage(err));
     }
   }
 

@@ -2,6 +2,7 @@ import { emoji as e } from '../../config/config.js';
 import { getEconomyStats } from '../../database/database.js';
 import { formatCoins } from './_utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['stats'],
   desc: 'View economy statistics',

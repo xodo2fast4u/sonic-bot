@@ -1,13 +1,17 @@
 import { isJidStatusBroadcast } from 'baileys';
 import { EventEmitter } from 'events';
 import { container } from './container.js';
+import { getErrorMessage } from '../utils/error-message.js';
 
 export class MessageRouter extends EventEmitter {
   constructor() {
     super();
+    /** @type {Array<(context: any) => Promise<boolean|void>>} */
     this.middlewares = [];
     this.commandRegistry = new Map();
+    /** @type {any|null} */
     this.cooldownManager = null;
+    /** @type {any|null} */
     this.logger = null;
   }
 
@@ -19,11 +23,13 @@ export class MessageRouter extends EventEmitter {
     this.logger.info('MessageRouter initialized');
   }
 
+  /** @param {(context: any) => Promise<boolean|void>} middleware */
   use(middleware) {
     this.middlewares.push(middleware);
     return this;
   }
 
+  /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */
   async processMessage(sonic, msg) {
     const context = {
       sonic,
@@ -46,10 +52,11 @@ export class MessageRouter extends EventEmitter {
     }
   }
 
+  /** @param {{ sonic: any; msg: import('../../types/index.js').WhatsAppMessage; correlationId: string }} context */
   async processCommand(context) {
     const { sonic, msg, correlationId } = context;
 
-    if (!msg.message || isJidStatusBroadcast(msg.key.remoteJid)) {
+    if (!msg.message || !msg.key.remoteJid || isJidStatusBroadcast(msg.key.remoteJid)) {
       return;
     }
 
@@ -83,7 +90,7 @@ export class MessageRouter extends EventEmitter {
         correlationId,
       });
     } catch (error) {
-      this.logger.error(`Command execution failed [${cmdName}]:`, error);
+      this.logger.error(`Command execution failed [${cmdName}]:`, getErrorMessage(error));
       await this.sendError(sonic, msg, error);
       this.emit('command:error', {
         command: cmdName,
@@ -94,6 +101,7 @@ export class MessageRouter extends EventEmitter {
     }
   }
 
+  /** @param {import('../../types/index.js').WhatsAppMessage} msg */
   async extractText(msg) {
     const { extractMessageContent } = await import('baileys');
     const m = extractMessageContent(msg.message);
@@ -106,6 +114,7 @@ export class MessageRouter extends EventEmitter {
     );
   }
 
+  /** @param {string} text */
   parseCommand(text) {
     const prefix = this.getPrefix();
     return text.slice(prefix.length).trim().split(/\s+/);
@@ -116,27 +125,36 @@ export class MessageRouter extends EventEmitter {
     return config.prefix;
   }
 
+  /** @param {import('../../types/index.js').WhatsAppMessage} msg */
   resolveSender(msg) {
     const { jid } = container.resolve('utils');
     return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid;
   }
 
+  /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */
   createHelpers(sonic, msg) {
     const { send } = container.resolve('utils');
 
     return {
+      /** @param {string} message */
       text: (message) => send.text(sonic, msg, message),
+      /** @param {string} text @param {string[]} mentions */
       mention: (text, mentions) => send.mention(sonic, msg, text, mentions),
+      /** @param {string} emoji @param {any} [key] */
       react: (emoji, key) => send.react(sonic, msg, emoji, key),
+      /** @param {any} key @param {string} text */
       edit: (key, text) => send.edit(sonic, msg, key, text),
+      /** @param {string} url @param {string} [caption] */
       image: (url, caption) => send.image(sonic, msg, url, caption),
       sonic,
       msg,
     };
   }
 
+  /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg @param {import('../../types/index.js').CooldownResult} cooldown */
   async handleCooldown(sonic, msg, cooldown) {
-    const { emoji, send } = container.resolve('config', 'utils');
+    const { emoji } = container.resolve('config');
+    const { send } = container.resolve('utils');
     const { formatCooldown } = this.cooldownManager;
 
     switch (cooldown.action) {
@@ -157,13 +175,15 @@ export class MessageRouter extends EventEmitter {
     }
   }
 
+  /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg @param {any} error */
   async sendError(sonic, msg, error) {
     const { send } = container.resolve('utils');
-    await send.text(sonic, msg, `❌ Error: ${error.message}`);
+    await send.text(sonic, msg, `❌ Error: ${getErrorMessage(error)}`);
   }
 
+  /** @param {any} error @param {{ correlationId: string; msg: import('../../types/index.js').WhatsAppMessage }} context */
   handleError(error, context) {
-    this.logger.error('Message routing error:', error, {
+    this.logger.error('Message routing error:', getErrorMessage(error), {
       correlationId: context.correlationId,
       messageId: context.msg.key.id,
     });
@@ -174,6 +194,7 @@ export class MessageRouter extends EventEmitter {
   generateCorrelationId() {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
   getStats() {
     return {
       middlewareCount: this.middlewares.length,

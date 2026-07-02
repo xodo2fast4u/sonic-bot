@@ -4,6 +4,7 @@ import { COOLDOWN } from '../../utils/cooldown.js';
 import { random, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['daily', 'claim'],
   desc: 'Claim daily reward',

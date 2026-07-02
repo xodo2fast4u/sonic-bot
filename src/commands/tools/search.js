@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['search'],
   desc: 'Search the web',
@@ -30,9 +32,14 @@ export default {
       }
 
       if (data.RelatedTopics?.length) {
-        const topics = data.RelatedTopics.filter((t) => t.Text && t.FirstURL)
+        const topics = data.RelatedTopics.filter(
+          (/** @type {{ Text?: string; FirstURL?: string }} */ t) => t.Text && t.FirstURL,
+        )
           .slice(0, 4)
-          .map((t, i) => `${i + 1}. ${t.Text}\n   🔗 ${t.FirstURL}`);
+          .map(
+            (/** @type {{ Text: string; FirstURL: string }} */ t, /** @type {number} */ i) =>
+              `${i + 1}. ${t.Text}\n   🔗 ${t.FirstURL}`,
+          );
 
         if (topics.length) {
           results.push(`🔍 *Related Results*\n${topics.join('\n\n')}`);
@@ -46,7 +53,7 @@ export default {
 
       await text(`${e.check} *Search Results for:* ${query}\n\n${results.join('\n\n')}`);
     } catch (err) {
-      await text(`${e.cross} Error fetching search results: ${err.message}`);
+      await text(`${e.cross} Error fetching search results: ${getErrorMessage(err)}`);
     }
   },
 };

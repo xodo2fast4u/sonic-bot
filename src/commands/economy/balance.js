@@ -3,14 +3,20 @@ import { getTarget, jid, resolveSender } from '../../utils/utils.js';
 import { getUser } from '../../database/database.js';
 import { formatCoins, sendProfileDisplay } from './_utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['balance'],
   desc: 'Check coin balance',
 
   run: async (helpers) => {
-    const { msg } = helpers;
+    const { msg, text } = helpers;
     const target = getTarget(msg) || resolveSender(msg);
     const user = getUser(target);
+
+    if (!user) {
+      return text(`${e.cross} Could not load wallet data for that user.`);
+    }
+
     const num = jid.fromUser(target);
 
     const selfContent = `

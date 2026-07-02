@@ -2,17 +2,19 @@ import { emoji as e } from '../../config/config.js';
 import { getTarget, resolveSender, jid } from '../../utils/utils.js';
 import logger from '../../utils/logger.js';
 
+/** @param {string[]} args @param {any} msg */
 const parseJids = (args, msg) => {
   if (args.length)
     return args
-      .map((num) => num.replace(/[^0-9]/g, ''))
+      .map((/** @type {string} */ num) => num.replace(/[^0-9]/g, ''))
       .filter(Boolean)
-      .map((num) => jid.toUser(num));
+      .map((/** @type {string} */ num) => jid.toUser(num));
 
   const target = getTarget(msg);
   return target ? [target] : [];
 };
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['grouprequest'],
   desc: 'List or manage group membership requests',
@@ -22,12 +24,16 @@ export default {
     if (!action || !['list', 'approve', 'reject'].includes(action))
       return text(`${e.warn} Use: grouprequest <list|approve|reject> [numbers or mention]`);
 
+    const actor = resolveSender(msg);
+
     try {
       if (action === 'list') {
         const requests = await sonic.groupRequestParticipantsList(msg.key.remoteJid);
         if (!requests.length) return text(`${e.check} No pending group requests.`);
 
-        await text(`${e.check} Pending requests:\n${requests.map((req) => req.jid).join('\n')}`);
+        await text(
+          `${e.check} Pending requests (requested by +${jid.fromUser(actor)}):\n${requests.map((/** @type {any} */ req) => req.jid).join('\n')}`,
+        );
         return;
       }
 
@@ -41,7 +47,7 @@ export default {
       );
 
       await text(
-        `${e.check} Request ${action}ed:\n${results.map((res) => `${res.jid}: ${res.status}`).join('\n')}`,
+        `${e.check} Request ${action}ed by +${jid.fromUser(actor)}:\n${results.map((/** @type {any} */ res) => `${res.jid}: ${res.status}`).join('\n')}`,
       );
     } catch (err) {
       logger.error(`[group:request:${action}]`, err);

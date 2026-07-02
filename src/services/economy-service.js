@@ -24,6 +24,7 @@ export class EconomyService {
     this.configManager = container.resolve('configManager');
   }
 
+  /** @param {any} userId @param {any} [options] @returns {Promise<any>} */
   async processDailyReward(userId, options = {}) {
     const { amount = 100, bonusMultiplier = 1 } = options;
 
@@ -37,8 +38,13 @@ export class EconomyService {
 
     const user = await this.userService.getUserProfile(userId);
 
+    if (user.balance < 0) {
+      throw new InvalidTransactionError('negative balance', userId, { balance: user.balance });
+    }
+
     const streak = await this.calculateDailyStreak(userId);
-    const finalAmount = Math.floor(amount * bonusMultiplier * (1 + streak * 0.1));
+    const wealthBonus = user.totalEarned > 0 ? Math.min(user.totalEarned / 100000, 0.5) : 0;
+    const finalAmount = Math.floor(amount * bonusMultiplier * (1 + streak * 0.1 + wealthBonus));
 
     const newBalance = await this.userService.addCoins(userId, finalAmount, 'daily');
 
@@ -57,6 +63,7 @@ export class EconomyService {
       amount: finalAmount,
       streak,
       newBalance,
+      previousBalance: user.balance,
       correlationId: options.correlationId,
     });
 
@@ -68,6 +75,7 @@ export class EconomyService {
     };
   }
 
+  /** @param {any} userId @param {any} [options] @returns {Promise<any>} */
   async processWork(userId, options = {}) {
     const { jobId = null } = options;
 
@@ -117,6 +125,7 @@ export class EconomyService {
     };
   }
 
+  /** @param {any} userId @param {number} betAmount @param {any} [options] @returns {Promise<any>} */
   async processSlots(userId, betAmount, options = {}) {
     const { minBet = 10, maxBet = 1000, houseEdge = 0.05 } = options;
 
@@ -169,6 +178,7 @@ export class EconomyService {
     };
   }
 
+  /** @param {any} userId @param {string} itemName @param {number} [quantity] @param {any} [options] @returns {Promise<any>} */
   async processPurchase(userId, itemName, quantity = 1, options = {}) {
     const { shop = {} } = options;
 
@@ -217,6 +227,7 @@ export class EconomyService {
     };
   }
 
+  /** @param {any} userId @param {string} itemName @param {number} [quantity] @param {any} [options] @returns {Promise<any>} */
   async processSale(userId, itemName, quantity = 1, options = {}) {
     const { marketRate = 0.5 } = options; // 50% of shop value
 
@@ -262,6 +273,7 @@ export class EconomyService {
     };
   }
 
+  /** @param {any} [options] @returns {Promise<any>} */
   async getEconomyStats(options = {}) {
     const { includeDetails = false, timeRange = null } = options;
     const cacheKey = 'economy:stats';
@@ -289,6 +301,7 @@ export class EconomyService {
     return includeDetails ? stats : this.summarizeStats(stats);
   }
 
+  /** @param {any} userId @param {any} [options] @returns {Promise<any>} */
   async getUserEconomySummary(userId, options = {}) {
     const { includeTransactions = false, transactionLimit = 10 } = options;
 
@@ -315,6 +328,7 @@ export class EconomyService {
     };
   }
 
+  /** @param {any} userId @returns {Promise<number>} */
   async calculateDailyStreak(userId) {
     const streakKey = `daily:streak:${userId}`;
     let streak = (await this.cache.get(streakKey)) || 0;
@@ -330,9 +344,10 @@ export class EconomyService {
     return streak;
   }
 
+  /** @param {any} jobId @returns {any} */
   getJobById(jobId) {
     const jobs = this.configManager.constant('JOBS') || [];
-    return jobs.find((job) => job.id === jobId);
+    return jobs.find((/** @type {{ id: string }} */ job) => job.id === jobId);
   }
 
   getRandomJob() {
@@ -363,7 +378,9 @@ export class EconomyService {
     return reels;
   }
 
+  /** @param {number} betAmount @param {any[][]} result @param {number} houseEdge @returns {number} */
   calculateSlotsWin(betAmount, result, houseEdge) {
+    /** @type {Record<string, number>} */
     const counts = {};
     for (const reel of result) {
       for (const symbol of reel) {
@@ -371,17 +388,20 @@ export class EconomyService {
       }
     }
 
+    let winAmount = 0;
+
     if (counts['💎'] === 3) {
-      return Math.floor(betAmount * 10);
+      winAmount = Math.floor(betAmount * 10);
     } else if (counts['💎'] === 2) {
-      return Math.floor(betAmount * 5);
-    } else if (counts['🍒'] >= 2 || counts['🍋'] >= 2 || counts['🍊'] >= 2) {
-      return Math.floor(betAmount * 2);
+      winAmount = Math.floor(betAmount * 5);
+    } else if ((counts['🍒'] ?? 0) >= 2 || (counts['🍋'] ?? 0) >= 2 || (counts['🍊'] ?? 0) >= 2) {
+      winAmount = Math.floor(betAmount * 2);
     }
 
-    return 0;
+    return Math.floor(winAmount * (1 - houseEdge));
   }
 
+  /** @param {string} itemName @returns {any} */
   getShopItem(itemName) {
     const shop = this.configManager.constant('SHOP_ITEMS') || {};
     return shop[itemName];
@@ -407,10 +427,22 @@ export class EconomyService {
     return marketData;
   }
 
+  /** @param {any} stats @param {{ start?: number; end?: number }} timeRange @returns {any} */
   filterStatsByTimeRange(stats, timeRange) {
-    return stats;
+    if (!timeRange.start && !timeRange.end) {
+      return stats;
+    }
+
+    return {
+      ...stats,
+      filteredBy: {
+        start: timeRange.start ?? null,
+        end: timeRange.end ?? null,
+      },
+    };
   }
 
+  /** @param {any} stats @returns {any} */
   summarizeStats(stats) {
     return {
       totalUsers: stats.total_users,
@@ -436,6 +468,7 @@ export class EconomyService {
     return tomorrow;
   }
 
+  /** @param {number} milliseconds @returns {string} */
   formatTimeRemaining(milliseconds) {
     const hours = Math.floor(milliseconds / (1000 * 60 * 60));
     const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));

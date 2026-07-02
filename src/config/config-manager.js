@@ -2,6 +2,10 @@ import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { container } from '../core/container.js';
 
+/** @typedef {import('../../types/index.d.ts').ValidationRule} ValidationRule */
+/** @typedef {import('../../types/index.d.ts').ValidationSchema} ValidationSchema */
+
+/** @type {ValidationSchema} */
 const CONFIG_SCHEMA = {
   prefix: {
     type: 'string',
@@ -99,39 +103,50 @@ const ENVIRONMENT_CONFIGS = {
 };
 
 class ConfigValidator {
+  /**
+   * @param {Record<string, unknown>} config
+   * @param {ValidationSchema} [schema]
+   */
   static validate(config, schema = CONFIG_SCHEMA) {
     const errors = [];
+    /** @type {Record<string, unknown>} */
     const validated = {};
 
     for (const [key, rules] of Object.entries(schema)) {
       const value = config[key];
 
-      if (rules.required && (value === undefined || value === null)) {
+      if ('required' in rules && rules.required && (value === undefined || value === null)) {
         errors.push(`Missing required field: ${key}`);
         continue;
       }
 
-      const finalValue = value !== undefined ? value : rules.default;
+      const finalValue =
+        value !== undefined ? value : 'default' in rules ? rules.default : undefined;
 
-      if (finalValue !== undefined && rules.type && typeof finalValue !== rules.type) {
+      if (
+        finalValue !== undefined &&
+        'type' in rules &&
+        rules.type &&
+        typeof finalValue !== rules.type
+      ) {
         errors.push(`Invalid type for ${key}: expected ${rules.type}, got ${typeof finalValue}`);
         continue;
       }
 
       if (typeof finalValue === 'string') {
-        if (rules.minLength && finalValue.length < rules.minLength) {
+        if ('minLength' in rules && rules.minLength && finalValue.length < rules.minLength) {
           errors.push(`${key} must be at least ${rules.minLength} characters`);
           continue;
         }
-        if (rules.maxLength && finalValue.length > rules.maxLength) {
+        if ('maxLength' in rules && rules.maxLength && finalValue.length > rules.maxLength) {
           errors.push(`${key} must be at most ${rules.maxLength} characters`);
           continue;
         }
-        if (rules.pattern && !rules.pattern.test(finalValue)) {
+        if ('pattern' in rules && rules.pattern && !rules.pattern.test(finalValue)) {
           errors.push(`Invalid format for ${key}`);
           continue;
         }
-        if (rules.enum && !rules.enum.includes(finalValue)) {
+        if ('enum' in rules && rules.enum && !rules.enum.includes(finalValue)) {
           errors.push(`${key} must be one of: ${rules.enum.join(', ')}`);
           continue;
         }
@@ -146,8 +161,11 @@ class ConfigValidator {
 
 export class ConfigManager {
   constructor() {
+    /** @type {Record<string, unknown>|null} */
     this.config = null;
+    /** @type {Record<string, unknown>|null} */
     this.envConfig = null;
+    /** @type {any} */
     this.logger = null;
   }
 
@@ -162,20 +180,27 @@ export class ConfigManager {
       throw new Error(`Configuration validation failed:\n${validation.errors.join('\n')}`);
     }
 
+    const environment = validation.config['environment'];
+    const envKey =
+      typeof environment === 'string' && environment in ENVIRONMENT_CONFIGS
+        ? /** @type {keyof typeof ENVIRONMENT_CONFIGS} */ (environment)
+        : 'development';
+
     this.config = Object.freeze({
       ...validation.config,
-      ...ENVIRONMENT_CONFIGS[validation.config.environment],
+      ...ENVIRONMENT_CONFIGS[envKey],
       constants: CONSTANTS,
     });
 
     this.logger.info('Configuration loaded and validated', {
-      environment: this.config.environment,
-      logLevel: this.config.logLevel,
+      environment: this.config['environment'],
+      logLevel: this.config['logLevel'],
     });
   }
 
   loadEnvironmentConfig() {
     const envPath = resolve(process.cwd(), '.env');
+    /** @type {Record<string, string>} */
     let envVars = {};
 
     if (existsSync(envPath)) {
@@ -189,16 +214,17 @@ export class ConfigManager {
     }
 
     return {
-      prefix: process.env.PREFIX || envVars.PREFIX,
-      ownerNumber: process.env.OWNER_NUMBER || envVars.OWNER_NUMBER,
-      botName: process.env.BOT_NAME || envVars.BOT_NAME,
-      version: process.env.VERSION || envVars.VERSION,
-      authDir: process.env.AUTH_DIR || envVars.AUTH_DIR,
-      environment: process.env.NODE_ENV || envVars.NODE_ENV || 'development',
-      logLevel: process.env.LOG_LEVEL || envVars.LOG_LEVEL,
+      prefix: process.env['PREFIX'] || envVars['PREFIX'],
+      ownerNumber: process.env['OWNER_NUMBER'] || envVars['OWNER_NUMBER'],
+      botName: process.env['BOT_NAME'] || envVars['BOT_NAME'],
+      version: process.env['VERSION'] || envVars['VERSION'],
+      authDir: process.env['AUTH_DIR'] || envVars['AUTH_DIR'],
+      environment: process.env['NODE_ENV'] || envVars['NODE_ENV'] || 'development',
+      logLevel: process.env['LOG_LEVEL'] || envVars['LOG_LEVEL'],
     };
   }
 
+  /** @param {string} key */
   get(key) {
     if (!this.config) {
       throw new Error('Configuration not initialized');
@@ -213,17 +239,25 @@ export class ConfigManager {
     return this.config;
   }
 
+  /** @param {string} feature */
   isFeatureEnabled(feature) {
     return this.get(feature) === true;
   }
 
+  /** @param {string} key */
   constant(key) {
-    return this.get('constants')[key];
+    const constants = this.get('constants');
+    if (typeof constants === 'object' && constants !== null && key in constants) {
+      return /** @type {Record<string, unknown>} */ (constants)[key];
+    }
+    return undefined;
   }
 }
 
 container.singleton('configManager', () => new ConfigManager());
 
 export const config = () => container.resolve('configManager').getAll();
+/** @param {string} key */
 export const get = (key) => container.resolve('configManager').get(key);
+/** @param {string} key */
 export const constant = (key) => container.resolve('configManager').constant(key);

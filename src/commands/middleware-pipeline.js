@@ -1,7 +1,17 @@
+import { areJidsSameUser } from 'baileys';
 import { container } from '../core/container.js';
 import { PermissionError, CooldownError } from '../core/errors.js';
+import { getErrorMessage } from '../utils/error-message.js';
+import { jid, resolveSender } from '../utils/utils.js';
 
 export class MiddlewareContext {
+  /**
+   * @param {import('../../types/index.js').CommandHelpers} helpers
+   * @param {string[]} args
+   * @param {import('../../types/index.js').Command} command
+   * @param {string} user
+   * @param {any} message
+   */
   constructor(helpers, args, command, user, message) {
     this.helpers = helpers;
     this.args = args;
@@ -12,6 +22,7 @@ export class MiddlewareContext {
     this.startTime = Date.now();
     this.data = new Map();
     this.stopped = false;
+    /** @type {unknown} */
     this.result = null;
   }
 
@@ -19,19 +30,23 @@ export class MiddlewareContext {
     return `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  /** @param {unknown} [result] */
   stop(result = null) {
     this.stopped = true;
     this.result = result;
   }
 
+  /** @param {string} key @param {unknown} value */
   set(key, value) {
     this.data.set(key, value);
   }
 
+  /** @param {string} key */
   get(key) {
     return this.data.get(key);
   }
 
+  /** @param {string} key */
   has(key) {
     return this.data.has(key);
   }
@@ -39,6 +54,7 @@ export class MiddlewareContext {
 
 export class MiddlewarePipeline {
   constructor() {
+    /** @type {((context: MiddlewareContext) => Promise<void>)[]} */
     this.middlewares = [];
     this.logger = null;
     this.cooldownManager = null;
@@ -55,11 +71,13 @@ export class MiddlewarePipeline {
     await this.registerDefaults();
   }
 
+  /** @param {(context: MiddlewareContext) => Promise<void>} middleware */
   use(middleware) {
     this.middlewares.push(middleware);
     return this;
   }
 
+  /** @param {MiddlewareContext} context */
   async execute(context) {
     const timer = this.logger.timer('middleware:pipeline');
 
@@ -86,7 +104,7 @@ export class MiddlewarePipeline {
             correlationId: context.correlationId,
           });
         } catch (error) {
-          commandTimer.end(false, { user: context.user, error: error.message });
+          commandTimer.end(false, { user: context.user, error: getErrorMessage(error) });
           throw error;
         }
       }
@@ -102,23 +120,24 @@ export class MiddlewarePipeline {
       timer.end(false, {
         command: context.command.cmd[0],
         user: context.user,
-        error: error.message,
+        error: getErrorMessage(error),
       });
 
-      await this.handleError(error, context);
+      await this.handleError(/** @type {Error} */ (error), context);
       throw error;
     }
   }
 
+  /** @param {Error} error @param {MiddlewareContext} context */
   async handleError(error, context) {
     this.logger.error('Middleware pipeline error', {
-      error: error.message,
+      error: getErrorMessage(error),
       command: context.command.cmd[0],
       user: context.user,
       correlationId: context.correlationId,
     });
 
-    if (error.getUserMessage) {
+    if ('getUserMessage' in error && typeof error.getUserMessage === 'function') {
       await context.helpers.text(error.getUserMessage());
     } else {
       await context.helpers.text('❌ An error occurred while processing your command.');
@@ -140,162 +159,211 @@ export class MiddlewarePipeline {
   }
 
   createAuthenticationMiddleware() {
-    return async (context) => {
-      if (!context.user) {
-        context.stop();
-        await context.helpers.text('❌ Unable to identify user.');
-        return;
-      }
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        if (!context.user) {
+          context.stop();
+          await context.helpers.text('❌ Unable to identify user.');
+          return;
+        }
 
-      context.set('authenticated', true);
-    };
+        context.set('authenticated', true);
+      }
+    );
   }
 
   createPermissionMiddleware() {
-    return async (context) => {
-      const command = context.command;
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        const command = context.command;
 
-      if (command.ownerOnly && !this.utils.isOwner(context.user)) {
-        context.stop(
-          new PermissionError('This command is restricted to the bot owner', context.user),
-        );
-        await context.helpers.text('👑 This command is only available to the bot owner.');
-        return;
-      }
-
-      if (command.adminOnly) {
-        const isAdmin = await this.checkAdminPermissions(context.user, context.message);
-
-        if (!isAdmin) {
+        if (command.ownerOnly && !this.utils.isOwner(context.user)) {
           context.stop(
-            new PermissionError('This command requires admin permissions', context.user, 'admin'),
+            new PermissionError(
+              'This command is restricted to the bot owner',
+              context.user,
+              /** @type {string | null} */ ('owner'),
+            ),
           );
-          await context.helpers.text('👑 This command requires admin privileges.');
+          await context.helpers.text('👑 This command is only available to the bot owner.');
           return;
         }
-      }
 
-      context.set('authorized', true);
-    };
+        if (command.adminOnly) {
+          const isAdmin = await this.checkAdminPermissions(
+            context.user,
+            context.message,
+            context.helpers.sonic,
+          );
+
+          if (!isAdmin) {
+            context.stop(
+              new PermissionError(
+                'This command requires admin permissions',
+                context.user,
+                /** @type {string | null} */ ('admin'),
+              ),
+            );
+            await context.helpers.text('👑 This command requires admin privileges.');
+            return;
+          }
+        }
+
+        context.set('authorized', true);
+      }
+    );
   }
 
   createCooldownMiddleware() {
-    return async (context) => {
-      const command = context.command;
-      const user = context.user;
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        const command = context.command;
+        const user = context.user;
 
-      if (command.cooldown) {
-        const cooldown = this.cooldownManager.checkCommandCooldown(
-          user,
-          command.cmd[0],
-          command.cooldown,
-        );
-
-        if (!cooldown.allowed) {
-          context.stop(new CooldownError(command.cmd[0], cooldown.remaining));
-          await context.helpers.text(
-            `⏱️ Please wait ${Math.ceil(cooldown.remaining / 1000)} seconds before using this command again.`,
+        if (command.cooldown) {
+          const cooldown = this.cooldownManager.checkCommandCooldown(
+            user,
+            command.cmd[0] ?? 'unknown',
+            command.cooldown,
           );
+
+          if (!cooldown.allowed) {
+            context.stop(new CooldownError(command.cmd[0] ?? 'unknown', cooldown.remaining));
+            await context.helpers.text(
+              `⏱️ Please wait ${Math.ceil(cooldown.remaining / 1000)} seconds before using this command again.`,
+            );
+            return;
+          }
+        }
+
+        const globalCooldown = this.cooldownManager.checkGlobalCooldown(user);
+
+        if (!globalCooldown.allowed) {
+          context.stop(new CooldownError('global', globalCooldown.remaining));
+
+          switch (globalCooldown.action) {
+            case 'warn':
+              await context.helpers.text(
+                `⏱️ Slow down! Wait *${this.cooldownManager.formatCooldown(globalCooldown.remaining)}* before using another command.`,
+              );
+              break;
+            case 'react':
+              await context.helpers.react('⏳');
+              break;
+            case 'ignore':
+              break;
+          }
           return;
         }
+
+        context.set('cooldownChecked', true);
       }
-
-      const globalCooldown = this.cooldownManager.checkGlobalCooldown(user);
-
-      if (!globalCooldown.allowed) {
-        context.stop(new CooldownError('global', globalCooldown.remaining));
-
-        switch (globalCooldown.action) {
-          case 'warn':
-            await context.helpers.text(
-              `⏱️ Slow down! Wait *${this.cooldownManager.formatCooldown(globalCooldown.remaining)}* before using another command.`,
-            );
-            break;
-          case 'react':
-            await context.helpers.react('⏳');
-            break;
-          case 'ignore':
-            break;
-        }
-        return;
-      }
-
-      context.set('cooldownChecked', true);
-    };
+    );
   }
 
   createRateLimitMiddleware() {
-    return async (context) => {
-      const user = context.user;
-      const window = this.configManager.constant('RATE_LIMIT_WINDOW');
-      const maxRequests = this.configManager.constant('RATE_LIMIT_MAX_REQUESTS');
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        const user = context.user;
+        const chatId = context.message?.key?.remoteJid;
+        const window = this.configManager.constant('RATE_LIMIT_WINDOW');
+        const maxRequests = this.configManager.constant('RATE_LIMIT_MAX_REQUESTS');
 
-      // This would integrate with a proper rate limiting service
-      // For now, we'll just log it
-      this.logger.debug('Rate limit check', {
-        user,
-        window,
-        maxRequests,
-        correlationId: context.correlationId,
-      });
-
-      context.set('rateLimited', false);
-    };
-  }
-
-  createLoggingMiddleware() {
-    return async (context) => {
-      this.logger.info('Command processing started', {
-        command: context.command.cmd[0],
-        user: context.user,
-        args: context.args,
-        correlationId: context.correlationId,
-      });
-
-      const originalText = context.helpers.text;
-
-      context.helpers.text = async (message) => {
-        this.logger.debug('Command response', {
-          command: context.command.cmd[0],
-          user: context.user,
-          message: message.substring(0, 200),
+        this.logger.debug('Rate limit check', {
+          user,
+          chatId,
+          window,
+          maxRequests,
           correlationId: context.correlationId,
         });
 
-        return await originalText(message);
-      };
+        context.set('rateLimited', false);
+      }
+    );
+  }
 
-      context.set('logged', true);
-    };
+  createLoggingMiddleware() {
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        this.logger.info('Command processing started', {
+          command: context.command.cmd[0],
+          user: context.user,
+          args: context.args,
+          correlationId: context.correlationId,
+        });
+
+        const originalText = context.helpers.text;
+
+        context.helpers.text = async (/** @type {string} */ message) => {
+          this.logger.debug('Command response', {
+            command: context.command.cmd[0],
+            user: context.user,
+            message: message.substring(0, 200),
+            correlationId: context.correlationId,
+          });
+
+          return await originalText(message);
+        };
+
+        context.set('logged', true);
+      }
+    );
   }
 
   createMetricsMiddleware() {
-    return async (context) => {
-      const startTime = Date.now();
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        const startTime = Date.now();
 
-      context.set('metricsStart', startTime);
+        context.set('metricsStart', startTime);
 
-      const originalRun = context.command.run;
+        const originalRun = context.command.run;
 
-      context.command.run = async (...args) => {
-        const result = await originalRun.apply(context.command, args);
+        context.command.run = async (...args) => {
+          const result = await originalRun(
+            .../** @type {[import('../../types/index.js').CommandHelpers, string[]]} */ (args),
+          );
 
-        const duration = Date.now() - startTime;
+          const duration = Date.now() - startTime;
 
-        this.logger.logPerformance(`command:${context.command.cmd[0]}`, duration, true, {
-          user: context.user,
-          argsCount: context.args.length,
-        });
+          this.logger.logPerformance(`command:${context.command.cmd[0]}`, duration, true, {
+            user: context.user,
+            argsCount: context.args.length,
+          });
 
-        return result;
-      };
-    };
+          return result;
+        };
+      }
+    );
   }
 
-  async checkAdminPermissions(user, message) {
-    // This would integrate with WhatsApp group admin checking
-    // For now, we'll check if user is owner as a fallback
-    return this.utils.isOwner(user);
+  /**
+   * @param {string} user
+   * @param {any} message
+   * @param {any} [sonic]
+   */
+  async checkAdminPermissions(user, message, sonic) {
+    if (this.utils.isOwner(user)) {
+      return true;
+    }
+
+    const groupJid = message?.key?.remoteJid;
+    if (!groupJid || !jid.isGroup(groupJid) || !sonic) {
+      return false;
+    }
+
+    const sender = resolveSender(message);
+    const metadata = await sonic.groupMetadata(groupJid);
+    const adminIds = metadata.participants
+      .filter((/** @type {any} */ p) => p.admin)
+      .map((/** @type {any} */ p) => p.id);
+
+    return adminIds.some(
+      (/** @type {string} */ id) =>
+        areJidsSameUser(id, sender) ||
+        areJidsSameUser(id, user) ||
+        jid.fromUser(id) === jid.fromUser(sender),
+    );
   }
 
   getStats() {

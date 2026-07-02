@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['calculate'],
   desc: 'Calculate a math expression',
@@ -31,7 +33,7 @@ export default {
 
       await text(`${e.check} *${sanitized}* = *${result}*`);
     } catch (error) {
-      await text(`${e.cross} Error calculating expression: ${error.message}`);
+      await text(`${e.cross} Error calculating expression: ${getErrorMessage(error)}`);
     }
   },
 };

@@ -1,13 +1,15 @@
 import { emoji as e } from '../../config/config.js';
+import { send } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['speed'],
   desc: 'Bot speed test',
 
-  run: async ({ text, react, edit, msg }) => {
+  run: async ({ react, edit, sonic, msg }) => {
     const start = Date.now();
 
-    const sent = await text(`${e.sonic} Measuring speed...`);
+    const sent = await send.text(sonic, msg, `${e.sonic} Measuring speed...`);
     await react('⏳');
 
     const latency = Date.now() - start;

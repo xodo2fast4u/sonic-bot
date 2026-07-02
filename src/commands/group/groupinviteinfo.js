@@ -2,6 +2,7 @@ import { emoji as e } from '../../config/config.js';
 
 const extractInviteCode = (value = '') => value.replace('https://chat.whatsapp.com/', '').trim();
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['groupinvite'],
   desc: 'Get metadata for a WhatsApp group invite link',

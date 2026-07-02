@@ -1,5 +1,6 @@
 import { config, emoji as e } from '../../config/config.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['about'],
   desc: 'About this bot',

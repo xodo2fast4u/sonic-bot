@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['weather'],
   desc: 'Get current weather and forecast for a location',
@@ -64,7 +66,7 @@ export default {
           .split(' ');
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
           const [y, mo, d] = dateStr.split('-').map(Number);
-          dayText = weekday[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()];
+          dayText = weekday[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()] ?? 'Unknown';
         }
         if (rawTime) timeStr = rawTime;
       }
@@ -98,7 +100,7 @@ export default {
 
       await text(msg);
     } catch (err) {
-      await text(`${e.cross} Error fetching weather data: ${err.message}`);
+      await text(`${e.cross} Error fetching weather data: ${getErrorMessage(err)}`);
     }
   },
 };

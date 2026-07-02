@@ -84,7 +84,7 @@ const statements = {
   withdrawFunds: db.prepare(`UPDATE users SET balance = balance + ?, bank = bank - ? WHERE id = ?`),
 };
 
-export const getUser = (userId) => {
+export const getUser = (/** @type {string} */ userId) => {
   const id = jid.fromUser(userId);
   if (!id) return null;
 
@@ -102,7 +102,7 @@ export const getUser = (userId) => {
   };
 };
 
-export const addCoins = (userId, amount) => {
+export const addCoins = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
   if (!id) return null;
 
@@ -113,10 +113,13 @@ export const addCoins = (userId, amount) => {
     statements.logTransaction.run(null, id, Math.abs(amount), amount > 0 ? 'earn' : 'lose');
   }
 
-  return getUser(userId).balance;
+  const updated = getUser(userId);
+  if (!updated) return null;
+
+  return updated.balance;
 };
 
-export const removeCoins = (userId, amount) => {
+export const removeCoins = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
   const user = getUser(id);
 
@@ -125,17 +128,24 @@ export const removeCoins = (userId, amount) => {
   statements.updateBalance.run(-amount, 0, id);
   statements.logTransaction.run(id, null, amount, 'spend');
 
-  return getUser(id).balance;
+  const updated = getUser(id);
+  if (!updated) return false;
+
+  return updated.balance;
 };
 
-export const setBalance = (userId, amount) => {
+export const setBalance = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
   statements.createUser.run(id);
   statements.setBalance.run(amount, id);
   return amount;
 };
 
-export const transferCoins = (fromId, toId, amount) => {
+export const transferCoins = (
+  /** @type {string} */ fromId,
+  /** @type {string} */ toId,
+  /** @type {number} */ amount,
+) => {
   const from = jid.fromUser(fromId);
   const to = jid.fromUser(toId);
 
@@ -153,14 +163,21 @@ export const transferCoins = (fromId, toId, amount) => {
 
   transfer();
 
+  const fromUpdated = getUser(from);
+  const toUpdated = getUser(to);
+
+  if (!fromUpdated || !toUpdated) {
+    return { success: false, reason: 'user_not_found' };
+  }
+
   return {
     success: true,
-    fromBalance: getUser(from).balance,
-    toBalance: getUser(to).balance,
+    fromBalance: fromUpdated.balance,
+    toBalance: toUpdated.balance,
   };
 };
 
-export const getLeaderboard = (limit = 10) => {
+export const getLeaderboard = (/** @type {number} */ limit = 10) => {
   return statements.getLeaderboard.all(limit).map((user) => ({
     id: user.id,
     balance: user.balance,
@@ -169,12 +186,16 @@ export const getLeaderboard = (limit = 10) => {
   }));
 };
 
-export const getInventory = (userId) => {
+export const getInventory = (/** @type {string} */ userId) => {
   const id = jid.fromUser(userId);
   return statements.getInventory.all(id);
 };
 
-export const addItem = (userId, itemName, quantity = 1) => {
+export const addItem = (
+  /** @type {string} */ userId,
+  /** @type {string} */ itemName,
+  /** @type {number} */ quantity = 1,
+) => {
   const id = jid.fromUser(userId);
   statements.createUser.run(id);
   statements.addItem.run(id, itemName, quantity);
@@ -184,20 +205,28 @@ export const addItem = (userId, itemName, quantity = 1) => {
  * Empty items are deleted separately after removal to maintain referential
  * integrity and avoid constraint violations during the quantity update.
  */
-export const removeItem = (userId, itemName, quantity = 1) => {
+export const removeItem = (
+  /** @type {string} */ userId,
+  /** @type {string} */ itemName,
+  /** @type {number} */ quantity = 1,
+) => {
   const id = jid.fromUser(userId);
   statements.removeItem.run(quantity, id, itemName);
   statements.deleteEmptyItems.run();
 };
 
-export const hasItem = (userId, itemName, quantity = 1) => {
+export const hasItem = (
+  /** @type {string} */ userId,
+  /** @type {string} */ itemName,
+  /** @type {number} */ quantity = 1,
+) => {
   const id = jid.fromUser(userId);
   const inventory = getInventory(id);
   const item = inventory.find((i) => i.item_name === itemName);
   return item && item.quantity >= quantity;
 };
 
-export const deposit = (userId, amount) => {
+export const deposit = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
   const user = getUser(id);
 
@@ -207,10 +236,12 @@ export const deposit = (userId, amount) => {
   statements.logTransaction.run(id, null, amount, 'deposit');
 
   const updated = getUser(id);
+  if (!updated) return { success: false, reason: 'user_not_found' };
+
   return { success: true, balance: updated.balance, bank: updated.bank };
 };
 
-export const withdraw = (userId, amount) => {
+export const withdraw = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
   const user = getUser(id);
 
@@ -220,6 +251,8 @@ export const withdraw = (userId, amount) => {
   statements.logTransaction.run(null, id, amount, 'withdraw');
 
   const updated = getUser(id);
+  if (!updated) return { success: false, reason: 'user_not_found' };
+
   return { success: true, balance: updated.balance, bank: updated.bank };
 };
 

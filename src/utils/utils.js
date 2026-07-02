@@ -14,29 +14,40 @@ import {
 import { getOwner } from '../config/config.js';
 import { state } from '../core/state.js';
 
+/** @param {any} jidStr */
 const userDigitsFromJid = (jidStr) => jidDecode(jidStr)?.user || '';
 
 export const jid = {
+  /** @param {any} rawJid */
   decode: (rawJid) => jidDecode(rawJid),
 
+  /** @param {any} user @param {any} server @param {any} device @param {any} agent */
   encode: (user, server, device, agent) => jidEncode(user, server, device, agent),
 
+  /** @param {any} num */
   toUser: (num) => jidEncode(num?.replace(/[^0-9]/g, ''), 's.whatsapp.net'),
 
   fromUser: userDigitsFromJid,
 
+  /** @param {any} jidStr */
   isGroup: (jidStr) => isJidGroup(jidStr),
 
+  /** @param {any} jidStr */
   isPN: (jidStr) => isPnUser(jidStr),
 
+  /** @param {any} jidStr */
   isLID: (jidStr) => isLidUser(jidStr),
 
+  /** @param {any} jidStr */
   isNewsletter: (jidStr) => isJidNewsletter(jidStr),
 
+  /** @param {any} jidStr */
   isStatus: (jidStr) => isJidStatusBroadcast(jidStr),
 
+  /** @param {any} jidStr */
   isBot: (jidStr) => isJidBot(jidStr),
 
+  /** @param {any} jidStr */
   isMetaAI: (jidStr) => isJidMetaAI(jidStr),
 
   /*
@@ -45,8 +56,9 @@ export const jid = {
    * as a fallback to maintain consistency across different message sources.
    */
 
+  /** @param {any} msg */
   getSender: (msg) => {
-    const key = msg.key;
+    const key = /** @type {any} */ (msg.key || {});
 
     if (isJidGroup(key.remoteJid)) {
       if (key.participant && isLidUser(key.participant) && key.participantAlt) {
@@ -61,6 +73,7 @@ export const jid = {
     return key.remoteJid;
   },
 
+  /** @param {any} participant */
   getParticipantNumber: (participant) => {
     if (participant.phoneNumber) {
       return userDigitsFromJid(participant.phoneNumber);
@@ -68,9 +81,11 @@ export const jid = {
     return userDigitsFromJid(participant.id);
   },
 
+  /** @param {any} jidStr */
   normalize: (jidStr) => jidNormalizedUser(jidStr) || '',
 };
 
+/** @param {any} msg */
 export const getText = (msg) => {
   const m = extractMessageContent(msg.message);
   return (
@@ -82,15 +97,23 @@ export const getText = (msg) => {
   );
 };
 
+/**
+ * @typedef {Object} IContextInfo
+ * @property {string[]} [mentionedJid]
+ * @property {string} [participant]
+ * @property {string} [quotedParticipantAlt]
+ */
+
 /*
  * Extract the target JID for an interactive message: the mentioned user, or the sender
  * of the quoted message. For quoted LIDs, we check the alternative participant field
  * to handle cases where the original JID format differs.
  */
 
+/** @param {any} msg */
 export const getTarget = (msg) => {
   const m = extractMessageContent(msg.message);
-  const ctx = m?.extendedTextMessage?.contextInfo;
+  const ctx = /** @type {IContextInfo|any} */ (m?.extendedTextMessage?.contextInfo);
 
   if (ctx?.mentionedJid?.length) {
     return ctx.mentionedJid[0];
@@ -106,6 +129,7 @@ export const getTarget = (msg) => {
   return null;
 };
 
+/** @param {any} userJid */
 export const isOwner = (userJid) => {
   const owner = getOwner();
   if (!owner) return false;
@@ -122,6 +146,7 @@ export const isOwner = (userJid) => {
  * jid.getSender handles LID/group logic internally, but this adds
  * an additional fallback for edge cases where the primary method fails.
  */
+/** @param {any} msg */
 export const resolveSender = (msg) => {
   return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid;
 };
@@ -132,7 +157,9 @@ export const format = {
     return format.uptime(seconds);
   },
 
+  /** @param {number} seconds */
   uptime: (seconds) => {
+    /** @type {[number,string][]} */
     const units = [
       [86400, 'd'],
       [3600, 'h'],
@@ -151,6 +178,7 @@ export const format = {
     );
   },
 
+  /** @param {number} bytes */
   bytes: (bytes) => {
     if (!bytes) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
@@ -159,18 +187,23 @@ export const format = {
 };
 
 export const send = {
+  /** @param {any} sonic @param {any} msg @param {any} text */
   text: (sonic, msg, text) => sonic.sendMessage(msg.key.remoteJid, { text }, { quoted: msg }),
 
+  /** @param {any} sonic @param {any} msg @param {any} text @param {any[]} mentions */
   mention: (sonic, msg, text, mentions) =>
     sonic.sendMessage(msg.key.remoteJid, { text, mentions }, { quoted: msg }),
 
+  /** @param {any} sonic @param {any} msg @param {any} key @param {any} text */
   edit: (sonic, msg, key, text) => sonic.sendMessage(msg.key.remoteJid, { text, edit: key }),
 
+  /** @param {any} sonic @param {any} msg @param {any} emoji @param {any} key */
   react: (sonic, msg, emoji, key = msg.key) =>
     sonic.sendMessage(msg.key.remoteJid, {
       react: { text: emoji, key },
     }),
 
+  /** @param {any} sonic @param {any} msg @param {string} url @param {string} caption */
   image: (sonic, msg, url, caption = '') =>
     sonic.sendMessage(msg.key.remoteJid, { image: { url }, caption }, { quoted: msg }),
 };

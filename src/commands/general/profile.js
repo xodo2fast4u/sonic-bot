@@ -1,6 +1,7 @@
 import { emoji as e } from '../../config/config.js';
 import { jid, getTarget, resolveSender, isOwner } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['profile'],
   desc: 'User profile',

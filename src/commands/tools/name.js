@@ -1,9 +1,16 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['name'],
   desc: 'Generate a random name with gender and country',
   run: async ({ text }, args) => {
+    if (args.length) {
+      await text(`${e.info} Usage: !name — generates a random name (no arguments needed).`);
+      return;
+    }
+
     try {
       const res = await fetch('https://randomuser.me/api/');
 
@@ -19,7 +26,7 @@ export default {
         `${e.check} *Random Name*\n\n👤 Name: *${user.name.first} ${user.name.last}*\n⚥ Gender: ${user.gender}\n🌍 Country: ${user.location.country}`,
       );
     } catch (err) {
-      await text(`${e.cross} Error generating name: ${err.message}`);
+      await text(`${e.cross} Error generating name: ${getErrorMessage(err)}`);
     }
   },
 };

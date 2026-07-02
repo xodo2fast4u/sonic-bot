@@ -10,6 +10,8 @@ import logger from '../utils/logger.js';
 import { handleMessage } from '../core/handler.js';
 import { useSqliteAuthState } from '../database/use-sqlite-file-auth-state.js';
 import { config, getOwner, setOwner } from '../config/config.js';
+import { getErrorMessage } from '../utils/error-message.js';
+import { handleGroupParticipantsUpdate } from './group-participants.js';
 
 const msgRetryCache = new NodeCache();
 
@@ -17,9 +19,46 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
+
+/** @param {string} q */
 const ask = (q) => new Promise((r) => rl.question(q, r));
 
+/** @type {any|null} */
 let currentSocket = null;
+
+/** @type {import('baileys').ILogger} */
+const baileysLogger = {
+  level: 'trace',
+  /** @param {unknown} obj @param {string} [msg] */
+  trace: (obj, msg) => logger.trace(msg ?? obj),
+  /** @param {unknown} obj @param {string} [msg] */
+  debug: (obj, msg) => logger.debug(msg ?? obj),
+  /** @param {unknown} obj @param {string} [msg] */
+  info: (obj, msg) => logger.info(msg ?? obj),
+  /** @param {unknown} obj @param {string} [msg] */
+  warn: (obj, msg) => logger.warn(msg ?? obj),
+  /** @param {unknown} obj @param {string} [msg] */
+  error: (obj, msg) => logger.error(msg ?? obj),
+  /** @param {Record<string, unknown>} opts */
+  child: (opts) => {
+    const childLogger = logger.child(opts);
+    return {
+      level: 'trace',
+      /** @param {unknown} obj @param {string} [msg] */
+      trace: (obj, msg) => childLogger.trace(msg ?? obj),
+      /** @param {unknown} obj @param {string} [msg] */
+      debug: (obj, msg) => childLogger.debug(msg ?? obj),
+      /** @param {unknown} obj @param {string} [msg] */
+      info: (obj, msg) => childLogger.info(msg ?? obj),
+      /** @param {unknown} obj @param {string} [msg] */
+      warn: (obj, msg) => childLogger.warn(msg ?? obj),
+      /** @param {unknown} obj @param {string} [msg] */
+      error: (obj, msg) => childLogger.error(msg ?? obj),
+      /** @param {Record<string, unknown>} childOpts */
+      child: (childOpts) => baileysLogger.child({ ...opts, ...childOpts }),
+    };
+  },
+};
 
 export const startSocket = async () => {
   if (currentSocket) {
@@ -31,30 +70,35 @@ export const startSocket = async () => {
   const { state, saveCreds } = await useSqliteAuthState(config.authDir);
   const { version, isLatest } = await fetchLatestBaileysVersion();
 
-  logger.info(`🔌 WA v${version.join('.')} (latest: ${isLatest}), using Latest WA version`);
+  baileysLogger.info(`🔌 WA v${version.join('.')} (latest: ${isLatest}), using Latest WA version`);
 
   const sonic = makeWASocket({
     version,
     browser: Browsers.windows('Chrome'),
-    connectTimeoutMs: 60000,
-    keepAliveIntervalMs: 30000,
-    logger,
-    defaultQueryTimeoutMs: 60000,
-    retryRequestDelayMs: 300,
+    connectTimeoutMs: 15000,
+    keepAliveIntervalMs: 25000,
+    logger: baileysLogger,
+    defaultQueryTimeoutMs: 45000,
+    retryRequestDelayMs: 250,
     maxMsgRetryCount: 10,
     auth: {
       creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, logger),
+      keys: makeCacheableSignalKeyStore(state.keys, baileysLogger),
     },
+    emitOwnEvents: true,
+    fireInitQueries: true,
     markOnlineOnConnect: true,
     syncFullHistory: true,
     patchMessageBeforeSending: (msg) => msg,
-    shouldHistorySyncMessage: () => false,
+    shouldSyncHistoryMessage: (msg) => {
+      return msg.syncType !== 3;
+    },
     shouldIgnoreJid: () => false,
     linkPreviewImageThumbnailWidth: 192,
     generateHighQualityLinkPreview: true,
     enableAutoSessionRecreation: true,
     enableRecentMessageCache: true,
+    transactionOpts: { maxCommitRetries: 10, delayBetweenTriesMs: 3000 },
     appStateMacVerification: {
       patch: false,
       snapshot: false,
@@ -71,7 +115,7 @@ export const startSocket = async () => {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
 
     const code = await sonic.requestPairingCode(cleanPhone);
-    logger.info(`\n🔑 Pairing Code: ${code}\n`);
+    baileysLogger.info(`\n🔑 Pairing Code: ${code}\n`);
 
     if (!getOwner()) setOwner(cleanPhone);
   }
@@ -81,18 +125,19 @@ export const startSocket = async () => {
       const { connection, lastDisconnect } = events['connection.update'];
 
       if (connection === 'close') {
-        const code = lastDisconnect?.error?.output?.statusCode;
+        const disconnectError = /** @type {any} */ (lastDisconnect?.error);
+        const code = disconnectError?.output?.statusCode;
         if (code === DisconnectReason.loggedOut) {
-          logger.fatal('🔴 Logged out. Delete sonic_session and restart.');
+          baileysLogger.error('🔴 Logged out. Delete sonic_session and restart.');
           process.exit(1);
         }
-        logger.info('🔄 Reconnecting');
+        baileysLogger.info('🔄 Reconnecting');
         startSocket();
       }
 
       if (connection === 'open') {
         rl.close();
-        logger.info(`
+        baileysLogger.info(`
 ╔══════════════════════════════════╗
 ║  🦔 ${config.botName.toUpperCase()} CONNECTED!
 ║  Prefix: ${config.prefix}
@@ -104,8 +149,7 @@ export const startSocket = async () => {
     if (events['creds.update']) await saveCreds();
 
     if (events['lid-mapping.update']) {
-      // Store LID<->PN mappings if needed
-      // logger.info('LID mapping update:', events['lid-mapping.update'])
+      baileysLogger.info(`LID mapping update: ${JSON.stringify(events['lid-mapping.update'])}`);
     }
 
     if (events['messages.upsert']) {
@@ -113,13 +157,15 @@ export const startSocket = async () => {
       if (type !== 'notify') return;
 
       for (const msg of messages) {
-        await handleMessage(sonic, msg).catch((err) => logger.error(err));
+        await handleMessage(
+          sonic,
+          /** @type {import('../../types/index.js').WhatsAppMessage} */ (msg),
+        ).catch((err) => baileysLogger.error(getErrorMessage(err)));
       }
     }
 
     if (events['group-participants.update']) {
-      // const { id, participants, action } = events['group-participants.update']
-      // action: 'add' | 'remove' | 'promote' | 'demote'
+      await handleGroupParticipantsUpdate(sonic, events['group-participants.update']);
     }
   });
 

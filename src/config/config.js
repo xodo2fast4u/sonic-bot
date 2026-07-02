@@ -4,6 +4,10 @@ import logger from '../utils/logger.js';
 
 const ENV_PATH = resolve(process.cwd(), '.env');
 
+/**
+ * @param {string} key
+ * @param {string} value
+ */
 const updateEnvFile = (key, value) => {
   const env = existsSync(ENV_PATH)
     ? Object.fromEntries(
@@ -24,8 +28,8 @@ const updateEnvFile = (key, value) => {
 };
 
 export const config = Object.freeze({
-  prefix: process.env.PREFIX || '!',
-  ownerNumber: process.env.OWNER_NUMBER || '',
+  prefix: process.env['PREFIX'] || '!',
+  ownerNumber: process.env['OWNER_NUMBER'] || '',
   botName: 'Sonic',
   version: '3.0.0',
   authDir: 'sonic_session.db',
@@ -49,12 +53,14 @@ export const emoji = Object.freeze({
   ping: '🏓',
   rocket: '🚀',
   tool: '⚒️',
+  coin: '🪙',
 });
 
 let ownerNumber = config.ownerNumber;
 
 export const getOwner = () => ownerNumber;
 
+/** @param {string} number */
 export const setOwner = (number) => {
   ownerNumber = number.replace(/[^0-9]/g, '');
   updateEnvFile('OWNER_NUMBER', ownerNumber);

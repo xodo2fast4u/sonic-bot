@@ -2,6 +2,7 @@ import { emoji as e } from '../../config/config.js';
 import { send, jid } from '../../utils/utils.js';
 import { checkPerms } from './_utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['ginfo'],
   desc: 'Group information',
@@ -10,7 +11,7 @@ export default {
     const meta = await checkPerms(sonic, msg);
     if (!meta) return;
 
-    const admins = meta.participants.filter((p) => p.admin).length;
+    const admins = meta.participants.filter((/** @type {any} */ p) => p.admin).length;
     const created = new Date(meta.creation * 1000).toLocaleDateString();
 
     const ownerDisplay = meta.ownerPn
@@ -18,6 +19,8 @@ export default {
       : meta.owner
         ? jid.fromUser(meta.owner)
         : 'Unknown';
+
+    const note = args.length ? `\n┃ ${e.info} Note: ${args.join(' ')}` : '';
 
     await send.text(
       sonic,
@@ -29,7 +32,7 @@ export default {
 ┃ ${e.admin} Admins: ${admins}
 ┃ ${e.admin} Owner: +${ownerDisplay}
 ┃ ${e.time} Created: ${created}
-┃ ${e.info} Desc: ${meta.desc || 'None'}
+┃ ${e.info} Desc: ${meta.desc || 'None'}${note}
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
     );
   },

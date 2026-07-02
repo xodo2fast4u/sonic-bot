@@ -3,10 +3,17 @@ import { existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { container } from '../../core/container.js';
 import { DatabaseError } from '../../core/errors.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-class Migration {
+export class Migration {
+  /**
+   * @param {string} version
+   * @param {string} description
+   * @param {string} up
+   * @param {string} [down]
+   */
   constructor(version, description, up, down) {
     this.version = version;
     this.description = description;
@@ -15,6 +22,10 @@ class Migration {
     this.timestamp = new Date().toISOString();
   }
 
+  /**
+   * @param {any} connectionPool
+   * @param {'up'|'down'} [direction]
+   */
   async execute(connectionPool, direction = 'up') {
     const sql = direction === 'up' ? this.up : this.down;
     if (!sql) {
@@ -89,8 +100,8 @@ export class MigrationManager {
         } else {
           this.logger.warn(`Invalid migration file: ${file}`);
         }
-      } catch (error) {
-        this.logger.error(`Failed to load migration ${file}:`, error);
+      } catch (/** @type {unknown} */ error) {
+        this.logger.error(`Failed to load migration ${file}:`, getErrorMessage(error));
       }
     }
   }
@@ -106,7 +117,14 @@ export class MigrationManager {
     const results = await this.connectionPool.all(
       'SELECT version, description, executed_at FROM schema_migrations ORDER BY executed_at',
     );
-    return new Map(results.map((row) => [row.version, row]));
+    return new Map(
+      results.map(
+        (/** @type {{ version: string; description: string; executed_at: number }} */ row) => [
+          row.version,
+          row,
+        ],
+      ),
+    );
   }
 
   async getPendingMigrations() {
@@ -121,9 +139,17 @@ export class MigrationManager {
       }
     }
 
-    return pending.sort((a, b) => a.version.localeCompare(b.version));
+    const sorted = pending.sort((a, b) => a.version.localeCompare(b.version));
+
+    this.logger.debug('Resolved pending migrations', {
+      currentVersion,
+      pendingCount: sorted.length,
+    });
+
+    return sorted;
   }
 
+  /** @param {string|null} [targetVersion] */
   async migrate(targetVersion = null) {
     const pending = await this.getPendingMigrations();
 
@@ -166,9 +192,9 @@ export class MigrationManager {
           description: migration.description,
           executionTime: Date.now() - startTime,
         });
-      } catch (error) {
-        this.logger.error(`Migration failed: ${migration.version}`, error);
-        throw new DatabaseError(`Migration ${migration.version} failed: ${error.message}`);
+      } catch (/** @type {unknown} */ error) {
+        this.logger.error(`Migration failed: ${migration.version}`, getErrorMessage(error));
+        throw new DatabaseError(`Migration ${migration.version} failed: ${getErrorMessage(error)}`);
       }
     }
 
@@ -176,6 +202,7 @@ export class MigrationManager {
     return { success: true, migrated };
   }
 
+  /** @param {string} targetVersion */
   async rollback(targetVersion) {
     const currentVersion = await this.getCurrentVersion();
     const executed = await this.getExecutedMigrations();
@@ -220,9 +247,9 @@ export class MigrationManager {
           description: migration.description,
           executionTime: Date.now() - startTime,
         });
-      } catch (error) {
-        this.logger.error(`Rollback failed: ${migration.version}`, error);
-        throw new DatabaseError(`Rollback ${migration.version} failed: ${error.message}`);
+      } catch (/** @type {unknown} */ error) {
+        this.logger.error(`Rollback failed: ${migration.version}`, getErrorMessage(error));
+        throw new DatabaseError(`Rollback ${migration.version} failed: ${getErrorMessage(error)}`);
       }
     }
 
@@ -248,6 +275,10 @@ export class MigrationManager {
     };
   }
 
+  /**
+   * @param {string} version
+   * @param {string} description
+   */
   createMigration(version, description) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${timestamp}_${version.replace(/\./g, '_')}_${description.replace(/\s+/g, '_').toLowerCase()}.js`;

@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['newslettermanage'],
   desc: 'Create or update newsletters and fetch metadata/messages',
@@ -104,7 +106,7 @@ export default {
 
       return text(`${e.warn} Unknown newsletter action: ${action}`);
     } catch (err) {
-      await text(`${e.cross} Failed to ${action}. ${err.message || ''}`);
+      await text(`${e.cross} Failed to ${action}. ${getErrorMessage(err) || ''}`);
     }
   },
 };

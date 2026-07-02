@@ -3,6 +3,7 @@ import { getLeaderboard } from '../../database/database.js';
 import { formatCoins } from './_utils.js';
 import { jid } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['leaderboard', 'lb'],
   desc: 'View richest users',

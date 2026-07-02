@@ -2,7 +2,9 @@ import { emoji as e } from '../../config/config.js';
 import { getTarget, resolveSender, jid } from '../../utils/utils.js';
 import { removeItem, hasItem, getInventory } from '../../database/database.js';
 import { getOwner } from '../../config/config.js';
+import logger from '../../utils/logger.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['removeitem'],
   desc: "Remove items from a user's inventory (Owner only)",
@@ -22,7 +24,7 @@ export default {
     }
 
     const itemName = args[0];
-    const quantity = parseInt(args[1]) || 1;
+    const quantity = args[1] ? parseInt(args[1], 10) : 1;
 
     if (!itemName) {
       return text(`${e.cross} Provide an item name! Example: !removeitem @user "Diamond Sword" 2`);
@@ -38,7 +40,16 @@ export default {
 
     removeItem(target, itemName, quantity);
     const inventory = getInventory(target);
+    const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0);
     const targetNum = jid.fromUser(target);
+
+    logger.info('[economy:removeitem] Item removed', {
+      bot: sonic.user?.id,
+      target,
+      itemName,
+      quantity,
+      totalItems,
+    });
 
     await text(
       `
@@ -47,6 +58,7 @@ export default {
 ┃ ${e.user} Target: @${targetNum}
 ┃ ${e.cross} Item: ${itemName}
 ┃ ${e.check} Quantity: -${quantity}
+┃ ${e.menu} Inventory total: ${totalItems} item(s)
 ┃
 ┃ ${e.ring} Removed by: Owner
 ╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),

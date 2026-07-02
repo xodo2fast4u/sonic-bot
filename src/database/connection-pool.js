@@ -3,10 +3,15 @@ import { EventEmitter } from 'events';
 import { container } from '../core/container.js';
 import { DatabaseError, ConnectionError } from '../core/errors.js';
 
+/** @param {string} dbPath @param {any} [options] */
 class Connection {
+  /** @param {string} dbPath @param {any} [options] */
   constructor(dbPath, options = {}) {
+    /** @type {any|null} */
     this.db = null;
+    /** @type {string} */
     this.dbPath = dbPath;
+    /** @type {any} */
     this.options = options;
     this.inUse = false;
     this.createdAt = Date.now();
@@ -14,13 +19,14 @@ class Connection {
     this.queryCount = 0;
   }
 
+  /** @returns {Promise<any>} */
   async connect() {
     if (this.db) return this.db;
 
     try {
       this.db = new Database(this.dbPath, {
         ...this.options,
-        verbose: process.env.NODE_ENV === 'development' ? console.log : undefined,
+        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined,
       });
 
       this.db.pragma('journal_mode = WAL');
@@ -31,7 +37,8 @@ class Connection {
 
       return this.db;
     } catch (error) {
-      throw new ConnectionError(`Failed to connect to database: ${error.message}`, {
+      const err = /** @type {any} */ (error);
+      throw new ConnectionError(`Failed to connect to database: ${err?.message || String(err)}`, {
         dbPath: this.dbPath,
       });
     }
@@ -44,6 +51,7 @@ class Connection {
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @returns {Promise<any>} */
   async execute(query, params = []) {
     if (!this.db) {
       await this.connect();
@@ -58,12 +66,16 @@ class Connection {
       const result = stmt.run(...params);
       return result;
     } catch (error) {
-      throw new DatabaseError(`Query execution failed: ${error.message}`, query, params);
+      const err = /** @type {any} */ (error);
+      throw new DatabaseError(`Query execution failed: ${err?.message || String(err)}`, query, {
+        params,
+      });
     } finally {
       this.inUse = false;
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @returns {Promise<any>} */
   async get(query, params = []) {
     if (!this.db) {
       await this.connect();
@@ -78,12 +90,16 @@ class Connection {
       const result = stmt.get(...params);
       return result;
     } catch (error) {
-      throw new DatabaseError(`Query execution failed: ${error.message}`, query, params);
+      const err = /** @type {any} */ (error);
+      throw new DatabaseError(`Query execution failed: ${err?.message || String(err)}`, query, {
+        params,
+      });
     } finally {
       this.inUse = false;
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @returns {Promise<any[]>} */
   async all(query, params = []) {
     if (!this.db) {
       await this.connect();
@@ -98,24 +114,31 @@ class Connection {
       const result = stmt.all(...params);
       return result;
     } catch (error) {
-      throw new DatabaseError(`Query execution failed: ${error.message}`, query, params);
+      const err = /** @type {any} */ (error);
+      throw new DatabaseError(`Query execution failed: ${err?.message || String(err)}`, query, {
+        params,
+      });
     } finally {
       this.inUse = false;
     }
   }
 
+  /** @param {number} maxAge @returns {boolean} */
   isExpired(maxAge) {
     return Date.now() - this.createdAt > maxAge;
   }
 
+  /** @param {number} maxIdleTime @returns {boolean} */
   isIdle(maxIdleTime) {
     return Date.now() - this.lastUsed > maxIdleTime;
   }
 }
 
 export class ConnectionPool extends EventEmitter {
+  /** @param {{maxConnections?:number,minConnections?:number,maxIdleTime?:number,maxAge?:number,acquireTimeout?:number}} [options] */
   constructor(options = {}) {
     super();
+    /** @type {{maxConnections:number,minConnections:number,maxIdleTime:number,maxAge:number,acquireTimeout:number}} */
     this.options = {
       maxConnections: options.maxConnections || 10,
       minConnections: options.minConnections || 2,
@@ -125,15 +148,20 @@ export class ConnectionPool extends EventEmitter {
       ...options,
     };
 
+    /** @type {any[]} */
     this.connections = [];
+    /** @type {Array<{resolve:(connection:any)=>void,reject:(error:any)=>void}>} */
     this.waitingQueue = [];
     this.totalConnections = 0;
     this.activeConnections = 0;
+    /** @type {any|null} */
     this.logger = null;
-    this.dbPath = null;
+    /** @type {string} */
+    this.dbPath = '';
     this.initialized = false;
   }
 
+  /** @param {string} dbPath @returns {Promise<void>} */
   async initialize(dbPath) {
     this.dbPath = dbPath;
     this.logger = container.resolve('logger');
@@ -154,6 +182,7 @@ export class ConnectionPool extends EventEmitter {
     this.emit('initialized');
   }
 
+  /** @returns {Promise<any>} */
   async createConnection() {
     if (this.totalConnections >= this.options.maxConnections) {
       throw new DatabaseError('Maximum connections reached');
@@ -172,6 +201,7 @@ export class ConnectionPool extends EventEmitter {
     return connection;
   }
 
+  /** @returns {Promise<any>} */
   async acquire() {
     if (!this.initialized) {
       throw new DatabaseError('Connection pool not initialized');
@@ -213,12 +243,15 @@ export class ConnectionPool extends EventEmitter {
     });
   }
 
+  /** @param {any} connection @returns {Promise<void>} */
   async release(connection) {
     this.activeConnections--;
 
     if (this.waitingQueue.length > 0) {
       const waiter = this.waitingQueue.shift();
-      waiter.resolve(connection);
+      if (waiter) {
+        waiter.resolve(connection);
+      }
       return;
     }
 
@@ -230,6 +263,7 @@ export class ConnectionPool extends EventEmitter {
     }
   }
 
+  /** @param {any} connection @returns {Promise<void>} */
   async removeConnection(connection) {
     const index = this.connections.indexOf(connection);
     if (index !== -1) {
@@ -243,6 +277,7 @@ export class ConnectionPool extends EventEmitter {
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @returns {Promise<any>} */
   async execute(query, params = []) {
     const connection = await this.acquire();
     try {
@@ -252,6 +287,7 @@ export class ConnectionPool extends EventEmitter {
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @returns {Promise<any>} */
   async get(query, params = []) {
     const connection = await this.acquire();
     try {
@@ -261,6 +297,7 @@ export class ConnectionPool extends EventEmitter {
     }
   }
 
+  /** @param {string} query @param {any[]} [params] @returns {Promise<any[]>} */
   async all(query, params = []) {
     const connection = await this.acquire();
     try {
@@ -270,6 +307,7 @@ export class ConnectionPool extends EventEmitter {
     }
   }
 
+  /** @param {any} callback @returns {Promise<any>} */
   async transaction(callback) {
     const connection = await this.acquire();
     try {
@@ -287,7 +325,6 @@ export class ConnectionPool extends EventEmitter {
   }
 
   async maintenance() {
-    const now = Date.now();
     const connectionsToRemove = [];
 
     for (const connection of this.connections) {

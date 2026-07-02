@@ -39,6 +39,52 @@ export interface CONSTANTS {
   RATE_LIMIT_MAX_REQUESTS: number;
 }
 
+export interface SonicErrorContext {
+  remainingTime?: number;
+  required?: number;
+  available?: number;
+  originalError?: unknown;
+  command?: string | null;
+  user?: string | null;
+  requiredPermission?: string | null;
+  userId?: string | null;
+  key?: string | null;
+  resource?: string | null;
+  reason?: string;
+  query?: unknown;
+  params?: unknown[];
+  field?: string;
+  value?: unknown;
+  [key: string]: unknown;
+}
+
+export interface SearchCommandOptions {
+  includeCategory?: boolean;
+  includeDescription?: boolean;
+  limit?: number;
+}
+
+export interface EmojiMap {
+  sonic: string;
+  speed: string;
+  bolt: string;
+  star: string;
+  ring: string;
+  check: string;
+  cross: string;
+  warn: string;
+  info: string;
+  menu: string;
+  group: string;
+  admin: string;
+  user: string;
+  time: string;
+  ping: string;
+  rocket: string;
+  tool: string;
+  coin: string;
+}
+
 export interface SonicErrorData {
   name: string;
   message: string;
@@ -209,7 +255,7 @@ export interface CooldownResult {
 
 export interface WhatsAppMessage {
   key: {
-    remoteJid: string;
+    remoteJid?: string | null;
     id: string;
     participant?: string;
     participantAlt?: string;

@@ -4,15 +4,19 @@ import { commands } from '../commands/index.js';
 import { config, emoji as e } from '../config/config.js';
 import { checkGlobalCooldown, formatCooldown } from '../utils/cooldown.js';
 import { getText, send, resolveSender } from '../utils/utils.js';
+import { getErrorMessage } from '../utils/error-message.js';
 
+/** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */
 export const handleMessage = async (sonic, msg) => {
-  if (!msg.message || isJidStatusBroadcast(msg.key.remoteJid)) return;
+  if (!msg.message || !msg.key.remoteJid || isJidStatusBroadcast(msg.key.remoteJid)) return;
 
   const text = getText(msg);
   if (!text.startsWith(config.prefix)) return;
 
   const [cmdName, ...args] = text.slice(config.prefix.length).trim().split(/\s+/);
-  const cmd = commands.get(cmdName?.toLowerCase());
+  if (!cmdName) return;
+
+  const cmd = commands.get(cmdName.toLowerCase());
 
   if (!cmd) return;
 
@@ -45,10 +49,15 @@ export const handleMessage = async (sonic, msg) => {
   }
 
   const helpers = {
+    /** @param {string} message */
     text: (message) => send.text(sonic, msg, message),
+    /** @param {string} text @param {string[]} mentions */
     mention: (text, mentions) => send.mention(sonic, msg, text, mentions),
+    /** @param {string} emoji @param {any} [key] */
     react: (emoji, key) => send.react(sonic, msg, emoji, key),
+    /** @param {any} key @param {string} text */
     edit: (key, text) => send.edit(sonic, msg, key, text),
+    /** @param {string} url @param {string} [caption] */
     image: (url, caption) => send.image(sonic, msg, url, caption),
     sonic,
     msg,
@@ -57,7 +66,7 @@ export const handleMessage = async (sonic, msg) => {
   try {
     await cmd.run(helpers, args);
   } catch (err) {
-    logger.error(`Error [${cmdName}]:`, err.message);
-    await send.text(sonic, msg, `❌ Error: ${err.message}`);
+    logger.error(`Error [${cmdName}]:`, getErrorMessage(err));
+    await send.text(sonic, msg, `❌ Error: ${getErrorMessage(err)}`);
   }
 };

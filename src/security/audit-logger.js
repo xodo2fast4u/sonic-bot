@@ -2,17 +2,31 @@ import { readdir, readFile, stat } from 'fs/promises';
 import { join } from 'path';
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { container } from '../core/container.js';
+import { getErrorMessage } from '../utils/error-message.js';
+
+/**
+ * @typedef {{name?:string,message?:string,stack?:string}} ErrorLike
+ */
 
 export class AuditLogger {
   constructor() {
+    /** @type {any|null} */
     this.logger = null;
+    /** @type {any|null} */
     this.configManager = null;
+    /** @type {any|null} */
     this.sessionManager = null;
+    /** @type {string|null} */
     this.auditFile = null;
+    /** @type {any[]} */
     this.buffer = [];
+    /** @type {number} */
     this.bufferSize = 100;
+    /** @type {number} */
     this.flushInterval = 5000;
+    /** @type {any|null} */
     this.flushTimer = null;
+    /** @type {string[]} */
     this.sensitiveFields = ['password', 'token', 'key', 'secret', 'auth'];
   }
 
@@ -38,6 +52,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} event @param {any} [options] */
   async log(event, options = {}) {
     const auditEvent = this.createAuditEvent(event, options);
 
@@ -56,6 +71,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {boolean} success @param {string} method @param {any} [details] */
   async logAuthAttempt(userId, success, method, details = {}) {
     await this.log({
       type: 'authentication',
@@ -71,6 +87,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} permission @param {string} action @param {any} grantedBy @param {any} [details] */
   async logPermissionChange(userId, permission, action, grantedBy, details = {}) {
     await this.log({
       type: 'authorization',
@@ -85,6 +102,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} resource @param {string} action @param {any} [details] */
   async logSensitiveDataAccess(userId, resource, action, details = {}) {
     await this.log({
       type: 'data_access',
@@ -98,6 +116,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} command @param {any[]} args @param {boolean} success @param {number} duration @param {any} [details] */
   async logCommandExecution(userId, command, args, success, duration, details = {}) {
     await this.log({
       type: 'command',
@@ -113,6 +132,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} resource @param {string} action @param {any} changes @param {any} [details] */
   async logDataModification(userId, resource, action, changes, details = {}) {
     await this.log({
       type: 'data_modification',
@@ -127,6 +147,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {string} event @param {string} [severity] @param {any} [details] */
   async logSecurityEvent(event, severity = 'medium', details = {}) {
     await this.log({
       type: 'security',
@@ -137,6 +158,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} action @param {string} resource @param {any} [details] */
   async logAdminAction(userId, action, resource, details = {}) {
     await this.log({
       type: 'admin',
@@ -148,6 +170,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} error @param {any} [context] */
   async logError(error, context = {}) {
     await this.log({
       type: 'error',
@@ -157,7 +180,7 @@ export class AuditLogger {
       details: {
         error: {
           name: error.name,
-          message: error.message,
+          message: getErrorMessage(error),
           stack: error.stack,
         },
         ...this.sanitizeDetails(context),
@@ -165,6 +188,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} method @param {string} endpoint @param {number} statusCode @param {number} duration @param {any} [details] */
   async logApiAccess(userId, method, endpoint, statusCode, duration, details = {}) {
     await this.log({
       type: 'api_access',
@@ -180,6 +204,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} userId @param {string} configKey @param {any} oldValue @param {any} newValue @param {any} [details] */
   async logConfigChange(userId, configKey, oldValue, newValue, details = {}) {
     await this.log({
       type: 'configuration',
@@ -195,6 +220,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} event @param {any} [options] @returns {any} */
   createAuditEvent(event, options) {
     const now = Date.now();
     const session = this.sessionManager
@@ -230,6 +256,7 @@ export class AuditLogger {
     return `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  /** @param {any} event @returns {string|null} */
   getClientIP(event) {
     const sources = [
       event?.ipAddress,
@@ -245,17 +272,21 @@ export class AuditLogger {
     ];
 
     for (const ip of sources) {
-      if (ip && typeof ip === 'string' && ip.trim() !== '') {
-        if (ip.includes(',')) {
-          return ip.split(',')[0].trim();
+      if (typeof ip === 'string' && ip.trim() !== '') {
+        if (ip) {
+          const s = String(ip || '');
+          if (s.includes(',')) {
+            return (s.split(',')[0] || '').trim();
+          }
+          return s.trim();
         }
-        return ip.trim();
       }
     }
 
     return null;
   }
 
+  /** @param {any} event @returns {string} */
   getUserAgent(event) {
     const sources = [
       event?.userAgent,
@@ -272,7 +303,7 @@ export class AuditLogger {
     ];
 
     for (const userAgent of sources) {
-      if (userAgent && typeof userAgent === 'string' && userAgent.trim() !== '') {
+      if (typeof userAgent === 'string' && userAgent.trim() !== '') {
         return userAgent.trim();
       }
     }
@@ -280,10 +311,12 @@ export class AuditLogger {
     return 'WhatsApp Bot Client';
   }
 
+  /** @param {any} details @returns {Record<string, any>} */
   sanitizeDetails(details) {
+    /** @type {Record<string, any>} */
     const sanitized = {};
 
-    for (const [key, value] of Object.entries(details)) {
+    for (const [key, value] of Object.entries(details || {})) {
       if (typeof value === 'string' && this.isSensitiveField(key)) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null) {
@@ -296,15 +329,18 @@ export class AuditLogger {
     return sanitized;
   }
 
+  /** @param {string} field @returns {boolean} */
   isSensitiveField(field) {
-    const lowerField = field.toLowerCase();
+    const lowerField = String(field || '').toLowerCase();
     return this.sensitiveFields.some((sensitive) => lowerField.includes(sensitive));
   }
 
+  /** @param {any} obj @returns {Record<string, any>} */
   sanitizeObject(obj) {
+    /** @type {Record<string, any>} */
     const sanitized = {};
 
-    for (const [key, value] of Object.entries(obj)) {
+    for (const [key, value] of Object.entries(obj || {})) {
       if (this.isSensitiveField(key)) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
@@ -321,8 +357,9 @@ export class AuditLogger {
     return sanitized;
   }
 
+  /** @param {any[]} args @returns {any[]} */
   sanitizeArgs(args) {
-    return args.map((arg) => {
+    return (args || []).map((/** @type {any} */ arg) => {
       if (typeof arg === 'string' && arg.length > 100) {
         return arg.substring(0, 100) + '...';
       }
@@ -330,6 +367,7 @@ export class AuditLogger {
     });
   }
 
+  /** @param {any} value */
   sanitizeValue(value) {
     if (typeof value === 'string') {
       return value.length > 500 ? value.substring(0, 500) + '...' : value;
@@ -337,14 +375,16 @@ export class AuditLogger {
     return value;
   }
 
+  /** @param {any} changes @returns {Record<string, any>} */
   sanitizeChanges(changes) {
+    /** @type {Record<string, any>} */
     const sanitized = {};
 
-    for (const [key, change] of Object.entries(changes)) {
+    for (const [key, change] of Object.entries(changes || {})) {
       sanitized[key] = {
         ...change,
-        oldValue: this.sanitizeValue(change.oldValue),
-        newValue: this.sanitizeValue(change.newValue),
+        oldValue: this.sanitizeValue(change?.oldValue),
+        newValue: this.sanitizeValue(change?.newValue),
       };
     }
 
@@ -361,22 +401,25 @@ export class AuditLogger {
 
     try {
       const logLines = events.map((event) => JSON.stringify(event)).join('\n');
-      appendFileSync(this.auditFile, logLines + '\n');
+      if (this.auditFile) appendFileSync(/** @type {string} */ (this.auditFile), logLines + '\n');
 
       this.logger.debug(`Flushed ${events.length} audit events to ${this.auditFile}`);
     } catch (error) {
+      const e = /** @type {any} */ (error);
       this.logger.error('Failed to flush audit events', {
-        error: error.message,
+        error: e?.message || String(e),
         eventsCount: events.length,
         auditFile: this.auditFile,
       });
 
       for (const event of events) {
         try {
-          appendFileSync(this.auditFile, JSON.stringify(event) + '\n');
+          if (this.auditFile)
+            appendFileSync(/** @type {string} */ (this.auditFile), JSON.stringify(event) + '\n');
         } catch (retryError) {
+          const re = /** @type {any} */ (retryError);
           this.logger.error('Failed to write audit event', {
-            error: retryError.message,
+            error: re?.message || String(re),
             event,
           });
         }
@@ -391,7 +434,8 @@ export class AuditLogger {
 
     this.flushTimer = setInterval(() => {
       this.flush().catch((error) => {
-        this.logger.error('Audit flush timer error', { error: error.message });
+        const e = /** @type {any} */ (error);
+        this.logger.error('Audit flush timer error', { error: e?.message || String(e) });
       });
     }, this.flushInterval);
   }
@@ -418,8 +462,17 @@ export class AuditLogger {
     };
   }
 
+  /** @param {{startDate?:any,endDate?:any,userId?:any,eventType?:any,severity?:any,limit?:number,offset?:number}} [filters] */
   async queryAuditLogs(filters = {}) {
-    const { startDate, endDate, userId, eventType, severity, limit = 100, offset = 0 } = filters;
+    const {
+      startDate,
+      endDate,
+      userId,
+      eventType,
+      severity,
+      limit = 100,
+      offset = 0,
+    } = /** @type {any} */ (filters);
 
     try {
       const auditDir = this.configManager?.constant('AUDIT_LOG_DIR') || './logs/audit';
@@ -455,10 +508,11 @@ export class AuditLogger {
             const event = JSON.parse(line);
             allEvents.push(event);
           } catch (parseError) {
+            const pe = /** @type {any} */ (parseError);
             this.logger?.warn('Failed to parse audit log line', {
               file,
               line: line.substring(0, 100),
-              error: parseError.message,
+              error: pe?.message || String(pe),
             });
           }
         }
@@ -502,8 +556,9 @@ export class AuditLogger {
         hasMore: offset + limit < total,
       };
     } catch (error) {
+      const e = /** @type {any} */ (error);
       this.logger?.error('Failed to query audit logs', {
-        error: error.message,
+        error: e?.message || String(e),
         filters,
       });
 
@@ -513,7 +568,7 @@ export class AuditLogger {
         limit,
         offset,
         filters,
-        error: error.message,
+        error: e?.message || String(e),
       };
     }
   }
@@ -545,8 +600,9 @@ export class AuditLogger {
     }
   }
 
+  /** @param {any[]} events */
   convertToCSV(events) {
-    if (events.length === 0) {
+    if (!events || events.length === 0) {
       return '';
     }
 
@@ -560,8 +616,10 @@ export class AuditLogger {
     return [headers, ...rows].join('\n');
   }
 
+  /** @param {any[]} events */
+  /** @param {any[]} events */
   convertToXML(events) {
-    if (events.length === 0) {
+    if (!events || events.length === 0) {
       return '<?xml version="1.0" encoding="UTF-8"?><events></events>';
     }
 
@@ -588,10 +646,12 @@ export class AuditLogger {
     await this.forceFlush();
 
     const date = new Date().toISOString().split('T')[0];
-    this.auditFile = this.auditFile.replace(
-      /audit-\d{4}-\d{2}-\d{2}\.jsonl$/,
-      `audit-${date}.jsonl`,
-    );
+    if (this.auditFile) {
+      this.auditFile = this.auditFile.replace(
+        /audit-\d{4}-\d{2}-\d{2}\.jsonl$/,
+        `audit-${date}.jsonl`,
+      );
+    }
 
     this.logger.info('Audit log rotated', {
       newFile: this.auditFile,
@@ -618,7 +678,8 @@ export class AuditLogger {
         }
       }
     } catch (error) {
-      this.logger.error('Failed to clean old audit logs', { error: error.message });
+      const e = /** @type {any} */ (error);
+      this.logger.error('Failed to clean old audit logs', { error: e?.message || String(e) });
     }
   }
 
@@ -631,3 +692,7 @@ export class AuditLogger {
 }
 
 container.singleton('auditLogger', () => new AuditLogger());
+
+// reference imports to avoid 'declared but never read' (kept intentionally)
+void stat;
+void writeFileSync;

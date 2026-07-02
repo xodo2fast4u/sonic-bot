@@ -1,5 +1,7 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['define'],
   desc: 'Look up English definitions for a word',
@@ -28,13 +30,21 @@ export default {
         return;
       }
 
-      const phonetic = entry.phonetics?.find((p) => p.text)?.text || entry.phonetic || '';
+      const phonetic =
+        entry.phonetics?.find((/** @type {{ text?: string }} */ p) => p.text)?.text ||
+        entry.phonetic ||
+        '';
 
       const lines = [];
       for (const meaning of entry.meanings.slice(0, 3)) {
         const defs = meaning.definitions?.slice(0, 2) || [];
         if (!defs.length) continue;
-        const block = defs.map((d, i) => `${i + 1}. ${d.definition}`).join('\n');
+        const block = defs
+          .map(
+            (/** @type {{ definition: string }} */ d, /** @type {number} */ i) =>
+              `${i + 1}. ${d.definition}`,
+          )
+          .join('\n');
         lines.push(`*${meaning.partOfSpeech}*\n${block}`);
       }
 
@@ -46,7 +56,7 @@ export default {
       const header = phonetic ? `📖 *${entry.word}* (${phonetic})\n\n` : `📖 *${entry.word}*\n\n`;
       await text(`${header}${lines.join('\n\n')}`);
     } catch (err) {
-      await text(`${e.cross} Error looking up word: ${err.message}`);
+      await text(`${e.cross} Error looking up word: ${getErrorMessage(err)}`);
     }
   },
 };

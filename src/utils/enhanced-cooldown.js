@@ -2,9 +2,13 @@ import { container } from '../core/container.js';
 import { CooldownError } from '../core/errors.js';
 
 class CooldownEntry {
+  /** @param {any} userId @param {string} command @param {number} duration */
   constructor(userId, command, duration) {
+    /** @type {any} */
     this.userId = userId;
+    /** @type {string} */
     this.command = command;
+    /** @type {number} */
     this.duration = duration;
     this.startTime = Date.now();
     this.endTime = this.startTime + duration;
@@ -20,6 +24,7 @@ class CooldownEntry {
     return Math.max(0, this.endTime - Date.now());
   }
 
+  /** @param {number} duration */
   update(duration) {
     this.lastUsed = Date.now();
     this.usageCount++;
@@ -60,6 +65,7 @@ export class EnhancedCooldownManager {
     this.logger.info('Enhanced cooldown manager initialized');
   }
 
+  /** @param {any} userId @param {string} command @param {number} duration */
   checkCommandCooldown(userId, command, duration) {
     if (!this.initialized) {
       throw new Error('Cooldown manager not initialized');
@@ -94,10 +100,12 @@ export class EnhancedCooldownManager {
     return {
       allowed: false,
       remaining: existing.getRemaining(),
-      action: this.getCooldownAction(userId, existing),
+      action: this.getCooldownAction(userId, command, existing),
+      message: new CooldownError(command, existing.getRemaining(), { userId }).getUserMessage(),
     };
   }
 
+  /** @param {any} userId */
   checkGlobalCooldown(userId) {
     const existing = this.globalCooldowns.get(userId);
 
@@ -129,23 +137,36 @@ export class EnhancedCooldownManager {
     return {
       allowed: false,
       remaining: existing.getRemaining(),
-      action: this.getCooldownAction(userId, existing),
+      action: this.getCooldownAction(userId, 'global', existing),
+      message: new CooldownError('global', existing.getRemaining(), { userId }).getUserMessage(),
     };
   }
 
-  getCooldownAction(userId, entry) {
+  /** @param {any} userId @param {string} command @param {CooldownEntry} entry */
+  getCooldownAction(userId, command, entry) {
     const warnThreshold = this.configManager.constant('COOLDOWN_WARN_THRESHOLD');
     const ignoreThreshold = this.configManager.constant('COOLDOWN_IGNORE_THRESHOLD');
 
+    let action;
     if (entry.usageCount >= ignoreThreshold) {
-      return 'ignore';
+      action = 'ignore';
     } else if (entry.usageCount >= warnThreshold) {
-      return 'react';
+      action = 'react';
     } else {
-      return 'warn';
+      action = 'warn';
     }
+
+    this.logger.debug('Cooldown action determined', {
+      userId,
+      command,
+      usageCount: entry.usageCount,
+      action,
+    });
+
+    return action;
   }
 
+  /** @param {any} userId @param {string} command @param {number} duration */
   setCooldown(userId, command, duration) {
     const userCooldowns = this.getUserCooldowns(userId);
     const entry = new CooldownEntry(userId, command, duration);
@@ -153,6 +174,7 @@ export class EnhancedCooldownManager {
     this.saveToCache(userId);
   }
 
+  /** @param {any} userId @param {string} command */
   removeCooldown(userId, command) {
     const userCooldowns = this.cooldowns.get(userId);
     if (userCooldowns) {
@@ -161,6 +183,7 @@ export class EnhancedCooldownManager {
     }
   }
 
+  /** @param {any} userId */
   clearUserCooldowns(userId) {
     this.cooldowns.delete(userId);
     this.globalCooldowns.delete(userId);
@@ -168,6 +191,7 @@ export class EnhancedCooldownManager {
     this.cache.delete(`global_cooldowns:${userId}`);
   }
 
+  /** @param {any} userId @returns {Map<string, CooldownEntry>} */
   getUserCooldowns(userId) {
     if (!this.cooldowns.has(userId)) {
       this.cooldowns.set(userId, new Map());
@@ -175,6 +199,7 @@ export class EnhancedCooldownManager {
     return this.cooldowns.get(userId);
   }
 
+  /** @param {number} milliseconds @returns {string} */
   formatCooldown(milliseconds) {
     const seconds = Math.ceil(milliseconds / 1000);
 
@@ -191,6 +216,7 @@ export class EnhancedCooldownManager {
     }
   }
 
+  /** @param {any} userId */
   getUserStats(userId) {
     const userCooldowns = this.cooldowns.get(userId);
     const globalCooldown = this.globalCooldowns.get(userId);
@@ -199,7 +225,7 @@ export class EnhancedCooldownManager {
 
     if (userCooldowns) {
       for (const [command, entry] of userCooldowns) {
-        commandStats.push(entry.getStats());
+        commandStats.push({ command, ...entry.getStats() });
       }
     }
 
@@ -222,11 +248,12 @@ export class EnhancedCooldownManager {
     for (const [userId, userCooldowns] of this.cooldowns) {
       stats.totalCommandCooldowns += userCooldowns.size;
 
-      for (const entry of userCooldowns.values()) {
+      for (const [command, entry] of userCooldowns) {
         if (entry.isExpired()) {
           stats.expiredCooldowns++;
         } else {
           stats.activeCooldowns++;
+          this.logger.debug('Active cooldown counted', { userId, command });
         }
       }
     }
@@ -278,10 +305,12 @@ export class EnhancedCooldownManager {
     return cleaned;
   }
 
+  /** @param {any} userId */
   async saveToCache(userId) {
     const userCooldowns = this.cooldowns.get(userId);
     if (!userCooldowns) return;
 
+    /** @type {Record<string, any>} */
     const data = {};
     for (const [command, entry] of userCooldowns) {
       data[command] = {
@@ -298,6 +327,7 @@ export class EnhancedCooldownManager {
     await this.cache.set(`cooldowns:${userId}`, data, 3600000); // 1 hour
   }
 
+  /** @param {any} userId */
   async saveGlobalToCache(userId) {
     const entry = this.globalCooldowns.get(userId);
     if (!entry) return;
@@ -319,6 +349,7 @@ export class EnhancedCooldownManager {
     this.logger.debug('Cooldown cache loading implemented (lazy loading)');
   }
 
+  /** @param {any} userId */
   async loadUserFromCache(userId) {
     try {
       const data = await this.cache.get(`cooldowns:${userId}`);
@@ -350,7 +381,7 @@ export class EnhancedCooldownManager {
           this.globalCooldowns.set(userId, entry);
         }
       }
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this.logger.warn('Failed to load cooldowns from cache', { userId, error: error.message });
     }
   }

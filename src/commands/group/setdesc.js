@@ -2,6 +2,7 @@ import { emoji as e } from '../../config/config.js';
 import { checkPerms } from './_utils.js';
 import logger from '../../utils/logger.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['setdesc'],
   desc: 'Change group description',

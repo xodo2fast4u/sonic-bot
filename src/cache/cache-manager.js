@@ -1,12 +1,19 @@
 import { EventEmitter } from 'events';
 import { container } from '../core/container.js';
 import { CacheError } from '../core/errors.js';
+import { getErrorMessage } from '../utils/error-message.js';
+
+/**
+ * @typedef {import('../../types/index.js').CacheOptions} CacheOptions
+ */
 
 class CacheEntry {
+  /** @param {any} key @param {any} value @param {number|null} [ttl] */
   constructor(key, value, ttl = null) {
     this.key = key;
     this.value = value;
     this.createdAt = Date.now();
+    /** @type {number|null} */
     this.ttl = ttl;
     this.accessCount = 0;
     this.lastAccessed = Date.now();
@@ -37,6 +44,7 @@ class CacheEntry {
 }
 
 export class CacheManager extends EventEmitter {
+  /** @param {CacheOptions} [options] */
   constructor(options = {}) {
     super();
     this.options = {
@@ -56,8 +64,10 @@ export class CacheManager extends EventEmitter {
       expirations: 0,
     };
 
+    /** @type {any|null} */
     this.logger = null;
     this.initialized = false;
+    /** @type {ReturnType<typeof setInterval>|null} */
     this.cleanupTimer = null;
   }
 
@@ -74,6 +84,7 @@ export class CacheManager extends EventEmitter {
     });
   }
 
+  /** @param {any} key @param {any} value @param {number|null} [ttl] */
   async set(key, value, ttl = null) {
     if (!this.initialized) {
       throw new CacheError('Cache manager not initialized');
@@ -94,11 +105,12 @@ export class CacheManager extends EventEmitter {
 
       return true;
     } catch (error) {
-      this.logger.error('Cache set failed', { key, error: error.message });
-      throw new CacheError(`Failed to set cache key ${key}: ${error.message}`, key);
+      this.logger.error('Cache set failed', { key, error: getErrorMessage(error) });
+      throw new CacheError(`Failed to set cache key ${key}: ${getErrorMessage(error)}`, key);
     }
   }
 
+  /** @param {any} key */
   async get(key) {
     if (!this.initialized) {
       throw new CacheError('Cache manager not initialized');
@@ -125,11 +137,12 @@ export class CacheManager extends EventEmitter {
 
       return entry.access();
     } catch (error) {
-      this.logger.error('Cache get failed', { key, error: error.message });
-      throw new CacheError(`Failed to get cache key ${key}: ${error.message}`, key);
+      this.logger.error('Cache get failed', { key, error: getErrorMessage(error) });
+      throw new CacheError(`Failed to get cache key ${key}: ${getErrorMessage(error)}`, key);
     }
   }
 
+  /** @param {any} key */
   async has(key) {
     const entry = this.cache.get(key);
 
@@ -144,6 +157,7 @@ export class CacheManager extends EventEmitter {
     return true;
   }
 
+  /** @param {any} key */
   async delete(key) {
     const deleted = this.cache.delete(key);
 
@@ -164,6 +178,7 @@ export class CacheManager extends EventEmitter {
     this.emit('clear', { entries: size });
   }
 
+  /** @param {any[]} keys */
   async mget(keys) {
     const results = new Map();
 
@@ -177,6 +192,7 @@ export class CacheManager extends EventEmitter {
     return results;
   }
 
+  /** @param {Iterable<[any, any]>} entries @param {number|null} [ttl] */
   async mset(entries, ttl = null) {
     const results = new Map();
 
@@ -186,12 +202,14 @@ export class CacheManager extends EventEmitter {
         results.set(key, true);
       } catch (error) {
         results.set(key, false);
+        this.logger.debug('Cache mset entry failed', { key, error: getErrorMessage(error) });
       }
     }
 
     return results;
   }
 
+  /** @param {any} key @param {() => Promise<any>} factory @param {number|null} [ttl] */
   async getOrSet(key, factory, ttl = null) {
     let value = await this.get(key);
 
@@ -203,6 +221,7 @@ export class CacheManager extends EventEmitter {
     return value;
   }
 
+  /** @param {any} key @param {number} [amount] */
   async increment(key, amount = 1) {
     const current = (await this.get(key)) || 0;
     const newValue = current + amount;
@@ -210,6 +229,7 @@ export class CacheManager extends EventEmitter {
     return newValue;
   }
 
+  /** @param {any} key @param {number} [amount] */
   async decrement(key, amount = 1) {
     const current = (await this.get(key)) || 0;
     const newValue = current - amount;
@@ -217,6 +237,7 @@ export class CacheManager extends EventEmitter {
     return newValue;
   }
 
+  /** @param {string} [pattern] */
   async keys(pattern = '*') {
     const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     const matchingKeys = [];
@@ -230,6 +251,7 @@ export class CacheManager extends EventEmitter {
     return matchingKeys;
   }
 
+  /** @param {string} pattern */
   async deletePattern(pattern) {
     const keysToDelete = await this.keys(pattern);
     let deleted = 0;
@@ -280,8 +302,8 @@ export class CacheManager extends EventEmitter {
     }
 
     if (expiredKeys.length > 0) {
-      this.logger.debug('Cache cleanup', { expired: expiredKeys.length });
-      this.emit('cleanup', { expired: expiredKeys.length });
+      this.logger.debug('Cache cleanup', { expired: expiredKeys.length, now });
+      this.emit('cleanup', { expired: expiredKeys.length, now });
     }
 
     while (this.cache.size > this.options.maxSize) {
@@ -325,18 +347,20 @@ export class CacheManager extends EventEmitter {
     const entries = [];
 
     for (const [key, entry] of this.cache) {
-      entries.push(entry.getStats());
+      entries.push({ key, ...entry.getStats() });
     }
 
     return entries.sort((a, b) => b.accessCount - a.accessCount);
   }
 
+  /** @param {number} [limit] */
   getHotKeys(limit = 10) {
     return this.getEntryStats()
       .filter((entry) => entry.accessCount > 1)
       .slice(0, limit);
   }
 
+  /** @param {number} [limit] */
   getColdKeys(limit = 10) {
     return this.getEntryStats()
       .filter((entry) => entry.accessCount <= 1)
@@ -372,6 +396,7 @@ export class CacheManager extends EventEmitter {
   }
 
   async export() {
+    /** @type {Record<string, any>} */
     const data = {};
 
     for (const [key, entry] of this.cache) {
@@ -387,6 +412,7 @@ export class CacheManager extends EventEmitter {
     return data;
   }
 
+  /** @param {Record<string, any>} data */
   async import(data) {
     await this.clear();
 

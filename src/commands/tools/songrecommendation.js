@@ -1,7 +1,9 @@
 import { emoji as e } from '../../config/config.js';
+import { getErrorMessage } from '../../utils/error-message.js';
 
 const BASE_URL = 'https://itunes.apple.com';
 
+/** @param {string} query */
 const searchArtist = async (query) => {
   const res = await fetch(
     `${BASE_URL}/search?term=${encodeURIComponent(query)}&media=music&entity=musicTrack&limit=50`,
@@ -10,16 +12,25 @@ const searchArtist = async (query) => {
   return res.json();
 };
 
+/**
+ * @param {Array<{ artistName: string }>} results
+ * @param {string} artistName
+ */
 const getTopSongsByArtist = (results, artistName) => {
   const normalized = artistName.toLowerCase();
   return results.filter((t) => t.artistName.toLowerCase().includes(normalized)).slice(0, 5);
 };
 
+/**
+ * @param {{ trackName: string; artistName: string; collectionName?: string; previewUrl?: string }} track
+ * @param {number} index
+ */
 const formatTrack = (track, index) => {
   const preview = track.previewUrl ? `\n   🎧 Preview: ${track.previewUrl}` : '';
   return `${index + 1}. 🎵 *${track.trackName}*\n   👤 ${track.artistName} | 💿 ${track.collectionName || 'Single'}${preview}`;
 };
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['songrecommendation', 'songreccomendation', 'recommend'],
   desc: 'Get song recommendations based on an artist or genre',
@@ -49,13 +60,20 @@ export default {
         return;
       }
 
-      const list = tracks.map((t, i) => formatTrack(t, i)).join('\n\n');
+      const list = tracks
+        .map(
+          (
+            /** @type {{ trackName: string; artistName: string; collectionName?: string; previewUrl?: string }} */ t,
+            /** @type {number} */ i,
+          ) => formatTrack(t, i),
+        )
+        .join('\n\n');
 
       await text(
         `${e.check} *Song Recommendations for:* ${query}\n\n${list}\n\n💡 Try another artist or genre for more.`,
       );
     } catch (err) {
-      await text(`${e.cross} Error fetching recommendations: ${err.message}`);
+      await text(`${e.cross} Error fetching recommendations: ${getErrorMessage(err)}`);
     }
   },
 };

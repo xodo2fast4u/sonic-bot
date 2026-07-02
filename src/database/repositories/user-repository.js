@@ -5,14 +5,17 @@ import { InsufficientFundsError, InvalidTransactionError } from '../../core/erro
 export class UserRepository extends BaseRepository {
   constructor() {
     super('users');
+    /** @type {any|null} */
     this.jidUtils = null;
   }
 
+  /** @override */
   async initialize() {
     await super.initialize();
     this.jidUtils = container.resolve('utils').jid;
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getOrCreate(userId) {
     const id = this.jidUtils.fromUser(userId);
     if (!id) {
@@ -29,11 +32,14 @@ export class UserRepository extends BaseRepository {
     return this.mapUser(user);
   }
 
+  /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async addCoins(userId, amount) {
-    if (amount === 0) return;
-
     const id = this.jidUtils.fromUser(userId);
-    const user = await this.getOrCreate(id);
+    if (amount === 0) {
+      return await this.getBalance(id);
+    }
+
+    await this.getOrCreate(id);
 
     const updateQuery = `
       UPDATE users 
@@ -49,6 +55,7 @@ export class UserRepository extends BaseRepository {
     return await this.getBalance(id);
   }
 
+  /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async removeCoins(userId, amount) {
     const id = this.jidUtils.fromUser(userId);
     const user = await this.getOrCreate(id);
@@ -69,6 +76,7 @@ export class UserRepository extends BaseRepository {
     return await this.getBalance(id);
   }
 
+  /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async setBalance(userId, amount) {
     const id = this.jidUtils.fromUser(userId);
     await this.getOrCreate(id);
@@ -79,6 +87,7 @@ export class UserRepository extends BaseRepository {
     return amount;
   }
 
+  /** @param {any} fromId @param {any} toId @param {number} amount @returns {Promise<any>} */
   async transferCoins(fromId, toId, amount) {
     const from = this.jidUtils.fromUser(fromId);
     const to = this.jidUtils.fromUser(toId);
@@ -112,12 +121,14 @@ export class UserRepository extends BaseRepository {
     });
   }
 
+  /** @param {any} userId @returns {Promise<number>} */
   async getBalance(userId) {
     const id = this.jidUtils.fromUser(userId);
     const result = await this.get('SELECT balance FROM users WHERE id = ?', [id], 'getBalance');
     return result ? result.balance : 0;
   }
 
+  /** @param {any} userId @param {number} amount @returns {Promise<any>} */
   async deposit(userId, amount) {
     const id = this.jidUtils.fromUser(userId);
     const user = await this.getOrCreate(id);
@@ -144,6 +155,7 @@ export class UserRepository extends BaseRepository {
     };
   }
 
+  /** @param {any} userId @param {number} amount @returns {Promise<any>} */
   async withdraw(userId, amount) {
     const id = this.jidUtils.fromUser(userId);
     const user = await this.getOrCreate(id);
@@ -170,6 +182,7 @@ export class UserRepository extends BaseRepository {
     };
   }
 
+  /** @param {number} [limit] @param {string} [sortBy] @returns {Promise<any[]>} */
   async getLeaderboard(limit = 10, sortBy = 'total') {
     let orderBy;
     switch (sortBy) {
@@ -193,9 +206,10 @@ export class UserRepository extends BaseRepository {
     `;
 
     const results = await this.all(query, [limit], 'getLeaderboard');
-    return results.map((user) => this.mapUser(user));
+    return results.map((/** @type {any} */ user) => this.mapUser(user));
   }
 
+  /** @returns {Promise<any>} */
   async getEconomyStats() {
     const query = `
       SELECT 
@@ -212,6 +226,7 @@ export class UserRepository extends BaseRepository {
     return await this.get(query, [], 'getEconomyStats');
   }
 
+  /** @param {any} userId @returns {Promise<any>} */
   async getUserStats(userId) {
     const id = this.jidUtils.fromUser(userId);
     const user = await this.getOrCreate(id);
@@ -229,6 +244,7 @@ export class UserRepository extends BaseRepository {
     };
   }
 
+  /** @param {any} fromId @param {any} toId @param {number} amount @param {any} type @returns {Promise<any>} */
   async logTransaction(fromId, toId, amount, type) {
     const query = `
       INSERT INTO transactions (from_id, to_id, amount, type)
@@ -238,6 +254,7 @@ export class UserRepository extends BaseRepository {
     await this.execute(query, [fromId, toId, amount, type], 'logTransaction');
   }
 
+  /** @param {any} userId @param {number} [limit] @param {number} [offset] @returns {Promise<any[]>} */
   async getTransactions(userId, limit = 10, offset = 0) {
     const id = this.jidUtils.fromUser(userId);
     const query = `
@@ -250,6 +267,7 @@ export class UserRepository extends BaseRepository {
     return await this.all(query, [id, id, limit, offset], 'getTransactions');
   }
 
+  /** @param {any} query @param {number} [limit] @returns {Promise<any[]>} */
   async searchUsers(query, limit = 10) {
     const searchQuery = `
       SELECT id, balance, bank, total_earned, created_at
@@ -260,9 +278,10 @@ export class UserRepository extends BaseRepository {
     `;
 
     const results = await this.all(searchQuery, [`%${query}%`, limit], 'searchUsers');
-    return results.map((user) => this.mapUser(user));
+    return results.map((/** @type {any} */ user) => this.mapUser(user));
   }
 
+  /** @param {any} dbUser @returns {any|null} */
   mapUser(dbUser) {
     if (!dbUser) return null;
 
@@ -276,6 +295,7 @@ export class UserRepository extends BaseRepository {
     };
   }
 
+  /** @param {Array<{userId:any}>} updates @returns {Promise<any[]>} */
   async batchUpdateUsers(updates) {
     return await this.transaction(async () => {
       const results = [];
@@ -298,6 +318,7 @@ export class UserRepository extends BaseRepository {
     });
   }
 
+  /** @param {number} [days] @returns {Promise<any[]>} */
   async getInactiveUsers(days = 30) {
     const query = `
       SELECT u.* FROM users u
@@ -309,6 +330,6 @@ export class UserRepository extends BaseRepository {
 
     const cutoffTime = Date.now() - days * 24 * 60 * 60 * 1000;
     const results = await this.all(query, [cutoffTime, cutoffTime], 'getInactiveUsers');
-    return results.map((user) => this.mapUser(user));
+    return results.map((/** @type {any} */ user) => this.mapUser(user));
   }
 }

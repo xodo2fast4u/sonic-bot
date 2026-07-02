@@ -4,6 +4,7 @@ import { COOLDOWN } from '../../utils/cooldown.js';
 import { JOBS, random, randomFrom, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
 
+/** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['work', 'job'],
   desc: 'Work a random job for coins',
