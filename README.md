@@ -4,14 +4,20 @@
 
 <p align="center">
   <a href="https://deepwiki.com/xodo2fast4u/sonic-bot">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+    <img src="https://img.shields.io/badge/DeepWiki-Ask%20DeepWiki-0078D4?style=for-the-badge" alt="Ask DeepWiki" />
+  </a>
+  <a href="https://github.com/xodo2fast4u/sonic-bot/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-2E8B57?style=for-the-badge" alt="License: MIT" />
+  </a>
+  <a href="https://nodejs.org/">
+    <img src="https://img.shields.io/badge/node.js-22.17%2B-339933?logo=node.js&style=for-the-badge" alt="Node.js 22.17+" />
+  </a>
+  <a href="https://github.com/GIScience/badges#active">
+    <img src="https://img.shields.io/badge/status-active-2ECC71?style=for-the-badge" alt="Status: active" />
   </a>
 </p>
 
-Sonic WhatsApp bot streamlines group management, enhances user engagement and
-delivers instant responses at lightning speed. This professional grade bot
-transforms WhatsApp into a powerful platform for community management and user
-interaction.
+Sonic WhatsApp bot streamlines group management, enhances user engagement and delivers instant responses at lightning speed. This professional grade bot transforms WhatsApp into a powerful platform for community management and user interaction.
 
 ## Disclaimer
 
@@ -33,6 +39,15 @@ messages.
 > WhatsApp may suspend or ban accounts that violate their terms of
 > service. Use sonic at your own risk.
 
+## Why Sonic?
+
+Sonic combines several capabilities into one bot experience:
+
+- Group and community management tools for admins
+- An economy system with balances, work, daily rewards, inventory and leaderboards
+- Chat utilities such as labels, presence, quick replies and status handling
+- A modular command architecture that makes it straightforward to add new features
+
 ## Features
 
 ### Technical Features
@@ -43,10 +58,15 @@ messages.
 - **Auto-Save Configuration**: Persistent settings
 - **Emoji-Rich Interface**: Beautiful, colorful responses
 
-## Prerequisites for Local Installation
+### Core capabilities
 
-Before cloning and running Sonic on your laptop or computer ensure you have the
-following installed:
+- **Group management**: add, kick, promote, demote, mute, unmute, invite links, tag-all and group info commands
+- **Newsletter management**: follow, unfollow, mute newsletter, unmute newsletter, react, admincount and change owner.
+- **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, slots and leaderboards
+
+## Prerequisites
+
+Install the following before running Sonic locally:
 
 ### Windows
 
@@ -79,109 +99,117 @@ git --version
 ```
 
 Once these are installed, you can proceed to clone the repository and follow the
-installation steps in Below.
+installation steps below.
 
 ## Quick Start
 
-### Installation
+### 1. Clone the repository
 
-1. **Clone or download sonic**
+```bash
+git clone https://github.com/xodo2fast4u/sonic-bot.git
+cd sonic-bot
+```
 
-   ```bash
-   git clone https://github.com/xodo2fast4u/sonic-bot.git
-   cd sonic-bot
-   ```
+### 2. Install dependencies
 
-2. **Install dependencies**
+```bash
+npm install
+```
 
-   ```bash
-   npm install
-   # or
-   npm i
-   ```
+### 3. **Configure environment**
 
-3. **Configure environment**
+```bash
+# Sonic will create a .env file automatically
+# Or create one manually with:
+# For Linux And Mac OS
+touch .env
 
-   ```bash
-   # Sonic will create a .env file automatically
-   # Or create one manually with:
-   # For Linux And Mac OS
-   touch .env
+# For Windows
+> .env
+```
 
-   # For Windows
-   > .env
-   ```
+Example:
 
-4. **Run sonic**
+```env
+PREFIX=!
+OWNER_NUMBER=
+```
 
-   ```bash
-   npm start
-   ```
+### 4. **Run sonic**
 
-5. **Connect WhatsApp**
-   - Sonic will prompt for your phone number
-   - Enter your number with country code (e.g., 27724913058)
-   - Check your phone for the pairing code
-   - Enter the pairing code when prompted
+```bash
+npm start
+```
+
+### 5. **Connect WhatsApp**
+
+- Sonic will prompt for your phone number
+- Enter your number with country code and without the `+` sign (e.g., 27724913058)
+- Check your phone for WhatsApp notification to enter pairing code displayed in terminal
+- You have successfully connected sonic
 
 ## Configuration
 
-Sonic uses a `.env` file for configuration. It will be created automatically or
-you can create it manually:
+Sonic reads configuration from `.env` and a built-in config module.
 
-```env
-# Sonic Configuration
-PREFIX=!                    # Command prefix
-OWNER_NUMBER=27724913058   # Bot owner number not necessary to be filled will be auto filled once paired
-```
+| Variable       | Description                               | Default |
+| -------------- | ----------------------------------------- | ------- |
+| `PREFIX`       | Command prefix for bot commands           | `!`     |
+| `OWNER_NUMBER` | Owner number used for owner-only features | empty   |
 
-### Configuration Options
+## Project structure
 
-| Variable       | Description                     | Default |
-| -------------- | ------------------------------- | ------- |
-| `PREFIX`       | Command prefix for bot commands | `!`     |
-| `OWNER_NUMBER` | Bot owner WhatsApp number       | Empty   |
+The main code lives under [src](src) and the folders are organized like this:
+
+| Path                         | Purpose                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| [src/core](src/core)         | Message handling, routing, socket lifecycle and shared state                          |
+| [src/commands](src/commands) | Command implementations grouped by category such as general, economy, group and tools |
+| [src/services](src/services) | Business logic for user and economy features                                          |
+| [src/database](src/database) | SQLite access, repositories and migrations                                            |
+| [src/config](src/config)     | Bot configuration and environment helpers                                             |
+| [src/utils](src/utils)       | Logging, cooldowns, formatting and shared utilities                                   |
+| [src/cache](src/cache)       | Session and cache management                                                          |
+
+## Command overview
+
+The command registry automatically loads command modules from the category folders in [src/commands](src/commands). A few examples include:
+
+- General: `!ping`, `!info`, `!menu` and `!runtime`
+- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!inventory` and `!leaderboard`
+- Group: `!ginfo`, `!groupcreate`, `!tagall`, `!mute`, `!unmute`, `!promote` and `!demote`
 
 ## Development
 
-### Adding New Commands
+### Adding a new command
 
-1. **Create a new command file** in the appropriate folder:
+1. Create a new file in the appropriate folder inside [src/commands](src/commands), such as [src/commands/general](src/commands/general) or [src/commands/economy](src/commands/economy).
+2. Export a command object with `cmd`, `desc`, and `run`.
+3. Keep the logic focused and use the shared helpers for text replies, mentions, reactions, edits, and images.
 
-2. **Command structure**:
-
-   ```javascript
-   export default {
-     cmd: ['command', 'alias'], // Command names an alias is optional
-     desc: 'Command description', // Help text
-     run: async (text) => {
-       // Your command logic here
-     },
-   };
-   ```
-
-3. **Use utilities**:
-   - `text()` - Send text messages
-   - `mention()` - Send messages with mentions
-   - `react()` - React to message
-   - `edit()` - Edit sent message
-   - `checkPerms()` - Check user permissions
-   - `jid` helpers - Handle WhatsApp IDs
-
-### Example Command
+Example:
 
 ```javascript
-import { emoji as e } from '../../config.js';
+import { emoji as e } from '../../config/config.js';
 
 export default {
   cmd: ['hello'],
   desc: 'Greet the bot',
-
-  run: async (text) => {
+  run: async ({ text }) => {
     await text(`${e.sonic} Hello! I'm Sonic!`);
   },
 };
 ```
+
+The command loader scans each folder and picks up new files automatically, so adding a new module usually only requires creating the file.
+
+### Useful helpers
+
+- `text(message)` sends a plain text reply.
+- `mention(text, mentions)` sends a reply with mentions.
+- `react(emoji, key)` reacts to a message.
+- `edit(key, text)` edits an existing outgoing message.
+- `image(url, caption)` sends an image message.
 
 ## Security & Privacy
 
@@ -198,8 +226,6 @@ export default {
 > 5. **Privacy**: Bot respects WhatsApp's privacy settings
 
 ## Deployment Options
-
-Sonic can be run on various platforms besides your local machine/PC:
 
 ### Termux (Android)
 
@@ -230,28 +256,14 @@ Run Sonic on your Android device using Termux:
 - Keep Termux open or use a process manager like `pm2` (`npm install -g pm2`)
 - Keep your device plugged in for uninterrupted operation
 
-### Optiklink
+### Cloud hosting
 
-You can deploy Sonic on [Optiklink](https://optiklink.net/home) for cloud-based
-hosting:
+Sonic can also be deployed on services such as [Optiklink](https://optiklink.net/home) or similar Node.js hosts. Make sure to:
 
-1. **Sign up** and create a new project
-2. **Deploy Sonic**
-   - Choose Node.js runtime
-   - Upload Sonic zip
-   - Unzip and move content to root
-   - Set environment variables (`PREFIX`, `OWNER_NUMBER`)
-3. **Configure .env** via Optiklink's environment settings or let Sonic
-   auto-create it
-4. **Run**
-   - Start the bot and Optiklink will keep it running 24/7
-   - Monitor logs and bot status from the dashboard
-
-**Benefits:**
-
-- Always-on hosting
-- No need to keep your device running
-- Easy deployment and monitoring
+1. Upload the repository contents.
+2. Install dependencies with `npm install`.
+3. Set the required environment variables, `PREFIX` and `OWNER_NUMBER`.
+4. Start the bot with `npm start`.
 
 ## Troubleshooting
 
@@ -289,13 +301,6 @@ hosting:
 4. Test thoroughly
 5. Submit a pull request
 
-### Development Guidelines
-
-- Follow existing code style
-- Add proper error handling
-- Include command descriptions
-- Test with various scenarios
-
 ## Support
 
 For issues, questions or contributions:
@@ -303,6 +308,10 @@ For issues, questions or contributions:
 - Create an issue in the repository
 - Check existing documentation
 - Review code examples
+
+## License
+
+This project is under the [MIT License](./LICENSE)
 
 ---
 
