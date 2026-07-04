@@ -262,7 +262,7 @@ Sonic can also be deployed on services such as [Optiklink](https://optiklink.net
 
 1. Upload the repository contents.
 2. Install dependencies with `npm install`.
-3. Set the required environment variables, `PREFIX` and `OWNER_NUMBER`.
+3. Set the required environment variable `PREFIX`.
 4. Start the bot with `npm start`.
 
 ## Troubleshooting
