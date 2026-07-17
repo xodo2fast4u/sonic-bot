@@ -209,7 +209,10 @@ export class ConfigManager {
         envContent
           .split('\n')
           .filter((line) => line.includes('='))
-          .map((line) => line.split('=').map((s) => s.trim())),
+          .map((line) => {
+            const separatorIndex = line.indexOf('=');
+            return [line.slice(0, separatorIndex).trim(), line.slice(separatorIndex + 1).trim()];
+          }),
       );
     }
 

@@ -148,7 +148,8 @@ export class EconomyService {
     if (winAmount > 0) {
       finalBalance = await this.userService.addCoins(userId, winAmount, 'slots_win');
     } else {
-      finalBalance = await this.userService.getUserProfile(userId);
+      const updatedUser = await this.userService.getUserProfile(userId);
+      finalBalance = updatedUser.balance;
     }
 
     await this.eventBus.emitEvent('economy:slots:played', {
@@ -331,15 +332,18 @@ export class EconomyService {
   /** @param {any} userId @returns {Promise<number>} */
   async calculateDailyStreak(userId) {
     const streakKey = `daily:streak:${userId}`;
-    let streak = (await this.cache.get(streakKey)) || 0;
-
     const lastDaily = await this.cache.get(`daily:${userId}`);
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
+    let streak = (await this.cache.get(streakKey)) || 0;
+
     if (lastDaily && lastDaily < yesterday.getTime()) {
       streak = 0;
     }
+
+    streak += 1;
+    await this.cache.set(streakKey, streak, 86400000);
 
     return streak;
   }

@@ -152,10 +152,10 @@ npm start
 
 Sonic reads configuration from `.env` and a built-in config module.
 
-| Variable       | Description                               | Default |
-| -------------- | ----------------------------------------- | ------- |
-| `PREFIX`       | Command prefix for bot commands           | `!`     |
-| `OWNER_NUMBER` | Owner number used for owner-only features | empty   |
+| Variable       | Description                               | Default                                       |
+| -------------- | ----------------------------------------- | --------------------------------------------- |
+| `PREFIX`       | Command prefix for bot commands           | `!`                                           |
+| `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing)  |
 
 ## Project structure
 
@@ -213,7 +213,7 @@ The command loader scans each folder and picks up new files automatically, so ad
 
 ## Security & Privacy
 
-- **No Data Storage**: Messages are not stored permanently
+- **No Message Storage**: Messages are not stored permanently
 - **Owner-Only Commands**: Sensitive commands restricted to bot owner
 - **Permission Checks**: Proper permission validation for group commands
 

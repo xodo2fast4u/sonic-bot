@@ -1,25 +1,43 @@
 import { isJidStatusBroadcast } from 'baileys';
 import { EventEmitter } from 'events';
 import { container } from './container.js';
+import { config as botConfig } from '../config/config.js';
+import { MiddlewareContext } from '../commands/middleware-pipeline.js';
+import '../commands/command-registry.js';
+import '../commands/middleware-pipeline.js';
 import { getErrorMessage } from '../utils/error-message.js';
+import { jid, send } from '../utils/utils.js';
 
 export class MessageRouter extends EventEmitter {
   constructor() {
     super();
     /** @type {Array<(context: any) => Promise<boolean|void>>} */
     this.middlewares = [];
-    this.commandRegistry = new Map();
+    /** @type {any|null} */
+    this.commandRegistry = null;
+    /** @type {any|null} */
+    this.middlewarePipeline = null;
     /** @type {any|null} */
     this.cooldownManager = null;
     /** @type {any|null} */
     this.logger = null;
+    this.initialized = false;
   }
 
   async initialize() {
+    if (this.initialized) return;
+
     this.cooldownManager = container.resolve('cooldownManager');
     this.logger = container.resolve('logger');
     this.commandRegistry = container.resolve('commandRegistry');
+    this.middlewarePipeline = container.resolve('middlewarePipeline');
 
+    await this.cooldownManager.initialize?.();
+    await this.commandRegistry.initialize?.();
+    await this.middlewarePipeline.initialize?.();
+
+    this.middlewares = this.middlewarePipeline.middlewares;
+    this.initialized = true;
     this.logger.info('MessageRouter initialized');
   }
 
@@ -31,6 +49,8 @@ export class MessageRouter extends EventEmitter {
 
   /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */
   async processMessage(sonic, msg) {
+    await this.initialize();
+
     const context = {
       sonic,
       msg,
@@ -39,13 +59,6 @@ export class MessageRouter extends EventEmitter {
     };
 
     try {
-      for (const middleware of this.middlewares) {
-        const result = await middleware(context);
-        if (result === false) {
-          return;
-        }
-      }
-
       await this.processCommand(context);
     } catch (error) {
       this.handleError(error, context);
@@ -66,29 +79,30 @@ export class MessageRouter extends EventEmitter {
     }
 
     const [cmdName, ...args] = this.parseCommand(text);
-    const command = this.commandRegistry.get(cmdName?.toLowerCase());
+    if (!cmdName) {
+      return;
+    }
 
+    const command = await this.commandRegistry.get(cmdName?.toLowerCase());
     if (!command) {
       return;
     }
 
     const sender = this.resolveSender(msg);
-    const cooldown = this.cooldownManager.checkGlobalCooldown(sender);
-
-    if (!cooldown.allowed) {
-      await this.handleCooldown(sonic, msg, cooldown);
-      return;
-    }
-
     const helpers = this.createHelpers(sonic, msg);
+    const middlewareContext = new MiddlewareContext(helpers, args, command, sender, msg);
+    middlewareContext.correlationId = correlationId;
+    middlewareContext.set('commandName', cmdName);
 
     try {
-      await command.run(helpers, args);
-      this.emit('command:executed', {
-        command: cmdName,
-        sender,
-        correlationId,
-      });
+      await this.middlewarePipeline.execute(middlewareContext);
+      if (!middlewareContext.stopped) {
+        this.emit('command:executed', {
+          command: cmdName,
+          sender,
+          correlationId,
+        });
+      }
     } catch (error) {
       this.logger.error(`Command execution failed [${cmdName}]:`, getErrorMessage(error));
       await this.sendError(sonic, msg, error);
@@ -121,20 +135,16 @@ export class MessageRouter extends EventEmitter {
   }
 
   getPrefix() {
-    const config = container.resolve('config');
-    return config.prefix;
+    return botConfig.prefix;
   }
 
   /** @param {import('../../types/index.js').WhatsAppMessage} msg */
   resolveSender(msg) {
-    const { jid } = container.resolve('utils');
     return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid;
   }
 
   /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */
   createHelpers(sonic, msg) {
-    const { send } = container.resolve('utils');
-
     return {
       /** @param {string} message */
       text: (message) => send.text(sonic, msg, message),
@@ -151,39 +161,14 @@ export class MessageRouter extends EventEmitter {
     };
   }
 
-  /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg @param {import('../../types/index.js').CooldownResult} cooldown */
-  async handleCooldown(sonic, msg, cooldown) {
-    const { emoji } = container.resolve('config');
-    const { send } = container.resolve('utils');
-    const { formatCooldown } = this.cooldownManager;
-
-    switch (cooldown.action) {
-      case 'warn':
-        await send.text(
-          sonic,
-          msg,
-          `${emoji.time} Slow down! Wait *${formatCooldown(cooldown.remaining)}* before using another command.`,
-        );
-        break;
-
-      case 'react':
-        await send.react(sonic, msg, '⏳');
-        break;
-
-      case 'ignore':
-        break;
-    }
-  }
-
   /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg @param {any} error */
   async sendError(sonic, msg, error) {
-    const { send } = container.resolve('utils');
     await send.text(sonic, msg, `❌ Error: ${getErrorMessage(error)}`);
   }
 
   /** @param {any} error @param {{ correlationId: string; msg: import('../../types/index.js').WhatsAppMessage }} context */
   handleError(error, context) {
-    this.logger.error('Message routing error:', getErrorMessage(error), {
+    this.logger?.error('Message routing error:', getErrorMessage(error), {
       correlationId: context.correlationId,
       messageId: context.msg.key.id,
     });
@@ -198,7 +183,7 @@ export class MessageRouter extends EventEmitter {
   getStats() {
     return {
       middlewareCount: this.middlewares.length,
-      registeredCommands: this.commandRegistry.size,
+      registeredCommands: this.commandRegistry?.commands?.size || 0,
       uptime: process.uptime(),
     };
   }

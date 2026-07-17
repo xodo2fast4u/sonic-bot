@@ -37,12 +37,14 @@ export class Container extends EventEmitter {
       if (!this.singletons.has(name)) {
         const instance = factory(this);
         this.singletons.set(name, instance);
+        this.services.set(name, instance);
         this.emit('service:created', { name, instance, singleton: true });
       }
       return this.singletons.get(name);
     }
 
     const instance = factory(this);
+    this.services.set(name, instance);
     this.emit('service:created', { name, instance, singleton: false });
     return instance;
   }

@@ -1,7 +1,5 @@
-/** @type {import('jest').Config} */
-export default {
+module.exports = {
   testEnvironment: 'node',
-  rootDir: '.',
   testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
   collectCoverage: true,
@@ -28,29 +26,21 @@ export default {
       statements: 85,
     },
   },
-
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
-
-  moduleNameMapping: {
+  setupFilesAfterEnv: ['./tests/setup.js'],
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@config/(.*)$': '<rootDir>/src/config/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
     '^@cache/(.*)$': '<rootDir>/src/cache/$1',
   },
-
   transform: {},
   transformIgnorePatterns: ['node_modules/(?!(baileys|better-sqlite3)/)'],
-
   verbose: true,
-
   clearMocks: true,
   restoreMocks: true,
-
   testTimeout: 10000,
-
   maxWorkers: '50%',
-
   reporters: [
     'default',
     [
@@ -61,7 +51,6 @@ export default {
       },
     ],
   ],
-
   globals: {
     'process.env': {},
   },

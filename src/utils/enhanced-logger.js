@@ -370,8 +370,12 @@ export function createLogger(config = {}) {
 }
 
 container.singleton('logger', (/** @type {any} */ c) => {
-  const configManager = c.resolve('configManager');
-  return createLogger(configManager.getAll());
+  try {
+    const configManager = c.resolve('configManager');
+    return createLogger(configManager.getAll());
+  } catch {
+    return createLogger({ logLevel: 'info' });
+  }
 });
 
 export const logger = () => container.resolve('logger');

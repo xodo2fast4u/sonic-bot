@@ -1,35 +1,18 @@
-import { readdir } from 'fs/promises';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import logger from '../utils/logger.js';
-import { getErrorMessage } from '../utils/error-message.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { container } from '../core/container.js';
 
 /** @type {Map<string, import('../../types/index.js').Command>} */
 export const commands = new Map();
 
-const loadCommands = async () => {
-  const folders = await readdir(__dirname, { withFileTypes: true });
+export const loadCommands = async () => {
+  commands.clear();
 
-  for (const folder of folders.filter((f) => f.isDirectory())) {
-    try {
-      const module = await import(join(__dirname, folder.name, 'index.js'));
+  const registry = container.resolve('commandRegistry');
+  await registry.initialize?.();
 
-      for (const cmd of Object.values(module.default || module)) {
-        if (!cmd?.cmd || !cmd?.run) continue;
-        for (const alias of cmd.cmd) {
-          commands.set(alias.toLowerCase(), cmd);
-        }
-      }
-
-      logger.info(`📂 Loaded: ${folder.name}`);
-    } catch (err) {
-      logger.error(`❌ Failed to load ${folder.name}:`, getErrorMessage(err));
-    }
+  const loadedCommands = await registry.getAllLoaded();
+  for (const [name, command] of loadedCommands.entries()) {
+    commands.set(name.toLowerCase(), command);
   }
 
-  logger.info(`📦 Total: ${commands.size} command aliases\n`);
+  return commands;
 };
-
-await loadCommands();

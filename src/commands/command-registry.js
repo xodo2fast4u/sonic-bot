@@ -166,28 +166,18 @@ export class CommandRegistry {
    */
   async preRegisterCommands(metadata) {
     try {
-      // Read file content to extract command names without importing
-      const fs = await import('fs');
-      const content = fs.readFileSync(metadata.modulePath, 'utf-8');
+      const module = await import(metadata.modulePath);
+      const exports = module.default || module;
+      const commandList = Array.isArray(exports) ? exports : Object.values(exports);
 
-      // Simple regex to find cmd arrays
-      const cmdMatches = content.match(/cmd:\s*\[([^\]]*)\]/g);
+      for (const cmd of commandList) {
+        if (!cmd?.cmd || !cmd?.run) continue;
 
-      if (cmdMatches) {
-        for (const match of cmdMatches) {
-          const aliases = match
-            .replace(/cmd:\s*\[|\]/g, '')
-            .split(',')
-            .map((alias) => alias.trim().replace(/['"]/g, '').toLowerCase())
-            .filter((alias) => alias.length > 0);
-
-          for (const alias of aliases) {
-            this.commands.set(alias, metadata);
-          }
+        for (const alias of cmd.cmd) {
+          this.commands.set(alias.toLowerCase(), metadata);
         }
       }
     } catch (error) {
-      // If pre-registration fails, we'll load the module when needed
       this.logger.debug(
         `Pre-registration failed for ${metadata.fileName}:`,
         getErrorMessage(error),
@@ -367,7 +357,6 @@ export class CommandRegistry {
 
       for (const metadata of categoryMetadata.values()) {
         stats.totalFiles++;
-        categoryStats.files++;
 
         if (metadata.loaded) {
           stats.loadedFiles++;

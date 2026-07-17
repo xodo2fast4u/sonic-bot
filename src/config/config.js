@@ -14,7 +14,10 @@ const updateEnvFile = (key, value) => {
         readFileSync(ENV_PATH, 'utf-8')
           .split('\n')
           .filter((l) => l.includes('='))
-          .map((l) => l.split('=').map((s) => s.trim())),
+          .map((l) => {
+            const separatorIndex = l.indexOf('=');
+            return [l.slice(0, separatorIndex).trim(), l.slice(separatorIndex + 1).trim()];
+          }),
       )
     : {};
 

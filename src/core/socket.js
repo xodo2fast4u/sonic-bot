@@ -7,7 +7,7 @@ import makeWASocket, {
 import NodeCache from '@cacheable/node-cache';
 import readline from 'readline';
 import logger from '../utils/logger.js';
-import { handleMessage } from '../core/handler.js';
+import { ensureRuntimeInitialized, handleMessage } from '../core/handler.js';
 import { useSqliteAuthState } from '../database/use-sqlite-file-auth-state.js';
 import { config, getOwner, setOwner } from '../config/config.js';
 import { getErrorMessage } from '../utils/error-message.js';
@@ -66,6 +66,8 @@ export const startSocket = async () => {
     currentSocket.ws.close();
     currentSocket = null;
   }
+
+  await ensureRuntimeInitialized();
 
   const { state, saveCreds } = await useSqliteAuthState(config.authDir);
   const { version, isLatest } = await fetchLatestBaileysVersion();
@@ -137,12 +139,9 @@ export const startSocket = async () => {
 
       if (connection === 'open') {
         rl.close();
-        baileysLogger.info(`
-╔══════════════════════════════════╗
-║  🦔 ${config.botName.toUpperCase()} CONNECTED!
-║  Prefix: ${config.prefix}
-║  Owner: ${getOwner() || 'Not set'}
-╚══════════════════════════════════╝`);
+        baileysLogger.info(`🦔 ${config.botName.toUpperCase()} CONNECTED!`);
+        baileysLogger.info(`Prefix: ${config.prefix}`);
+        baileysLogger.info(`Owner: ${getOwner() || 'Not set'}`);
       }
     }
 

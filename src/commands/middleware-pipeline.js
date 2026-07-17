@@ -60,6 +60,7 @@ export class MiddlewarePipeline {
     this.cooldownManager = null;
     this.utils = null;
     this.configManager = null;
+    this.rateLimitBuckets = new Map();
   }
 
   async initialize() {
@@ -94,7 +95,8 @@ export class MiddlewarePipeline {
         const commandTimer = this.logger.timer(`command:${context.command.cmd[0]}`);
 
         try {
-          await context.command.run(context.helpers, context.args);
+          const commandRunner = context.get('commandRunner') || context.command.run;
+          await commandRunner(context.helpers, context.args);
           commandTimer.end(true, { user: context.user });
 
           this.logger.info('Command executed successfully', {
@@ -269,14 +271,26 @@ export class MiddlewarePipeline {
         const window = this.configManager.constant('RATE_LIMIT_WINDOW');
         const maxRequests = this.configManager.constant('RATE_LIMIT_MAX_REQUESTS');
 
-        this.logger.debug('Rate limit check', {
-          user,
-          chatId,
-          window,
-          maxRequests,
-          correlationId: context.correlationId,
-        });
+        const rateLimitKey = `ratelimit:${user}:${chatId}`;
+        const now = Date.now();
+        const previous = this.rateLimitBuckets.get(rateLimitKey);
 
+        if (!previous || now - previous.windowStart >= window) {
+          this.rateLimitBuckets.set(rateLimitKey, { windowStart: now, count: 1 });
+          context.set(rateLimitKey, now);
+          context.set('rateLimited', false);
+          return;
+        }
+
+        previous.count += 1;
+
+        if (previous.count > maxRequests) {
+          context.stop(new Error('Rate limit exceeded'));
+          await context.helpers.text('⏱️ Rate limit exceeded. Please wait before trying again.');
+          return;
+        }
+
+        context.set(rateLimitKey, now);
         context.set('rateLimited', false);
       }
     );
@@ -318,21 +332,33 @@ export class MiddlewarePipeline {
         context.set('metricsStart', startTime);
 
         const originalRun = context.command.run;
+        const wrappedRun = async (...args) => {
+          try {
+            const result = await originalRun(
+              .../** @type {[import('../../types/index.js').CommandHelpers, string[]]} */ (args),
+            );
 
-        context.command.run = async (...args) => {
-          const result = await originalRun(
-            .../** @type {[import('../../types/index.js').CommandHelpers, string[]]} */ (args),
-          );
+            const duration = Date.now() - startTime;
 
-          const duration = Date.now() - startTime;
+            this.logger.logPerformance(`command:${context.command.cmd[0]}`, duration, true, {
+              user: context.user,
+              argsCount: context.args.length,
+            });
 
-          this.logger.logPerformance(`command:${context.command.cmd[0]}`, duration, true, {
-            user: context.user,
-            argsCount: context.args.length,
-          });
+            return result;
+          } catch (error) {
+            const duration = Date.now() - startTime;
 
-          return result;
+            this.logger.logPerformance(`command:${context.command.cmd[0]}`, duration, false, {
+              user: context.user,
+              argsCount: context.args.length,
+            });
+
+            throw error;
+          }
         };
+
+        context.set('commandRunner', wrappedRun);
       }
     );
   }
