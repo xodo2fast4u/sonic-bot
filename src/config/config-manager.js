@@ -114,14 +114,17 @@ class ConfigValidator {
 
     for (const [key, rules] of Object.entries(schema)) {
       const value = config[key];
+      const finalValue =
+        value !== undefined && value !== null
+          ? value
+          : 'default' in rules
+            ? rules.default
+            : undefined;
 
-      if ('required' in rules && rules.required && (value === undefined || value === null)) {
+      if ('required' in rules && rules.required && finalValue === undefined) {
         errors.push(`Missing required field: ${key}`);
         continue;
       }
-
-      const finalValue =
-        value !== undefined ? value : 'default' in rules ? rules.default : undefined;
 
       if (
         finalValue !== undefined &&
@@ -216,14 +219,25 @@ export class ConfigManager {
       );
     }
 
+    /**
+     * @param {string} key
+     * @returns {string|undefined}
+     */
+    const getEnvValue = (key) => {
+      const rawValue = process.env[key] ?? envVars[key];
+      return rawValue !== undefined && String(rawValue).trim() !== ''
+        ? String(rawValue).trim()
+        : undefined;
+    };
+
     return {
-      prefix: process.env['PREFIX'] || envVars['PREFIX'],
-      ownerNumber: process.env['OWNER_NUMBER'] || envVars['OWNER_NUMBER'],
-      botName: process.env['BOT_NAME'] || envVars['BOT_NAME'],
-      version: process.env['VERSION'] || envVars['VERSION'],
-      authDir: process.env['AUTH_DIR'] || envVars['AUTH_DIR'],
-      environment: process.env['NODE_ENV'] || envVars['NODE_ENV'] || 'development',
-      logLevel: process.env['LOG_LEVEL'] || envVars['LOG_LEVEL'],
+      prefix: getEnvValue('PREFIX'),
+      ownerNumber: getEnvValue('OWNER_NUMBER'),
+      botName: getEnvValue('BOT_NAME'),
+      version: getEnvValue('VERSION'),
+      authDir: getEnvValue('AUTH_DIR'),
+      environment: getEnvValue('NODE_ENV') || 'development',
+      logLevel: getEnvValue('LOG_LEVEL'),
     };
   }
 

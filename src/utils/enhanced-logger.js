@@ -1,6 +1,9 @@
 import pino from 'pino';
 import { AsyncLocalStorage } from 'async_hooks';
+import { createRequire } from 'module';
 import { container } from '../core/container.js';
+
+const require = createRequire(import.meta.url);
 
 /**
  * @typedef {{count:number,totalTime:number,errors:number}} Metric
@@ -150,14 +153,19 @@ export class EnhancedLogger {
     };
 
     if (this.config.prettyPrint) {
-      pinoConfig.transport = {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
-        },
-      };
+      try {
+        require.resolve('pino-pretty');
+        pinoConfig.transport = {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+          },
+        };
+      } catch (err) {
+        console.warn('pino-pretty is unavailable; using standard pino output');
+      }
     }
 
     return pino(pinoConfig);

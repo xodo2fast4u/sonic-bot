@@ -13,6 +13,7 @@ import {
 } from 'baileys';
 import { getOwner } from '../config/config.js';
 import { state } from '../core/state.js';
+import { container } from '../core/container.js';
 
 /** @param {any} jidStr */
 const userDigitsFromJid = (jidStr) => jidDecode(jidStr)?.user || '';
@@ -207,3 +208,13 @@ export const send = {
   image: (sonic, msg, url, caption = '') =>
     sonic.sendMessage(msg.key.remoteJid, { image: { url }, caption }, { quoted: msg }),
 };
+
+container.singleton('utils', () => ({
+  jid,
+  getText,
+  getTarget,
+  isOwner,
+  resolveSender,
+  format,
+  send,
+}));

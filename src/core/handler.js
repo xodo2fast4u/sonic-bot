@@ -1,4 +1,5 @@
 import { container } from './container.js';
+import '../utils/enhanced-logger.js';
 import '../commands/command-registry.js';
 import '../commands/middleware-pipeline.js';
 import './message-router.js';
