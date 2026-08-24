@@ -131,7 +131,7 @@ touch .env
 Example:
 
 ```env
-PREFIX=!
+SONIC_PREFIX=!
 OWNER_NUMBER=
 ```
 
@@ -154,7 +154,7 @@ Sonic reads configuration from `.env` and a built-in config module.
 
 | Variable       | Description                               | Default                                       |
 | -------------- | ----------------------------------------- | --------------------------------------------- |
-| `PREFIX`       | Command prefix for bot commands           | `!`                                           |
+| `SONIC_PREFIX` | Command prefix for bot commands           | `!`                                           |
 | `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing)  |
 
 ## Project structure
@@ -249,7 +249,7 @@ Run Sonic on your Android device using Termux:
 4. **Create and setup .env file**
    ```bash
    touch .env
-   printf 'PREFIX=!\nOWNER_NUMBER=\n' > .env
+   printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\n' > .env
    ```
 
 5. **Run Sonic**
@@ -269,7 +269,7 @@ Sonic can also be deployed on services such as [Optiklink](https://optiklink.net
 
 1. Upload the repository contents.
 2. Install dependencies with `npm install`.
-3. Set the required environment variable `PREFIX`.
+3. Set the required environment variable `SONIC_PREFIX`.
 4. Start the bot with `npm start`.
 
 ## Troubleshooting

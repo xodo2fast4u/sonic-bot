@@ -31,7 +31,7 @@ const updateEnvFile = (key, value) => {
 };
 
 export const config = Object.freeze({
-  prefix: process.env['PREFIX'] || '!',
+  prefix: process.env['SONIC_PREFIX'] || '!',
   ownerNumber: process.env['OWNER_NUMBER'] || '',
   botName: 'Sonic',
   version: '3.0.0',

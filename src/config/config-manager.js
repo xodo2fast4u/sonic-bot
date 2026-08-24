@@ -231,7 +231,7 @@ export class ConfigManager {
     };
 
     return {
-      prefix: getEnvValue('PREFIX'),
+      prefix: getEnvValue('SONIC_PREFIX'),
       ownerNumber: getEnvValue('OWNER_NUMBER'),
       botName: getEnvValue('BOT_NAME'),
       version: getEnvValue('VERSION'),
