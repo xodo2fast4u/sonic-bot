@@ -235,7 +235,7 @@ Run Sonic on your Android device using Termux:
 2. **Update and install dependencies**
    ```bash
    pkg update && pkg upgrade
-   pkg install nodejs git
+   pkg install nodejs-lts git
    ```
 3. **Clone and setup Sonic**
    ```bash
@@ -245,11 +245,18 @@ Run Sonic on your Android device using Termux:
    #or
    npm i
    ```
-4. **Run Sonic**
+
+4. **Create and setup .env file**
+   ```bash
+   touch .env
+   printf 'PREFIX=!\nOWNER_NUMBER=\n' > .env
+   ```
+
+5. **Run Sonic**
    ```bash
    npm start
    ```
-5. **Pair WhatsApp** as usual
+6. **Pair WhatsApp** as usual
 
 **Tips:**
 
