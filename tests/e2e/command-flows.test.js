@@ -3,6 +3,7 @@ import { CommandRegistry } from '../../src/commands/command-registry.js';
 import { UserRepository } from '../../src/database/repositories/user-repository.js';
 import { CacheManager } from '../../src/cache/cache-manager.js';
 import { SessionManager } from '../../src/cache/session-manager.js';
+import { container } from '../../src/core/container.js';
 
 describe('End-to-End Command Flows', () => {
   let messageRouter;
@@ -11,7 +12,6 @@ describe('End-to-End Command Flows', () => {
   let cache;
   let sessionManager;
   let mockSonic;
-  let mockMessage;
 
   beforeEach(async () => {
     commandRegistry = new CommandRegistry();
@@ -35,17 +35,6 @@ describe('End-to-End Command Flows', () => {
         process: jest.fn(),
       },
     };
-
-    mockMessage = testUtils.createMockMessage({
-      key: {
-        remoteJid: '1234567890@g.us',
-        id: 'test-msg-id',
-        participant: '1234567890@s.whatsapp.net',
-      },
-      message: {
-        conversation: '!test',
-      },
-    });
   });
 
   afterEach(async () => {
@@ -150,7 +139,6 @@ describe('End-to-End Command Flows', () => {
         expect.any(String),
         expect.stringContaining('Deposited'),
       );
-      e;
       const user = await userRepo.getOrCreate(userId);
       expect(user.balance).toBe(500); // 1000 - 500
       expect(user.bank).toBe(500); // 0 + 500
@@ -433,7 +421,7 @@ describe('End-to-End Command Flows', () => {
     test('should handle concurrent command processing', async () => {
       const users = Array.from({ length: 10 }, (_, i) => `user${i}@test.com`);
 
-      const promises = users.map((userId, index) => {
+      const promises = users.map((userId, _index) => {
         const msg = testUtils.createMockMessage({
           key: { participant: userId },
           message: { conversation: `!work` },

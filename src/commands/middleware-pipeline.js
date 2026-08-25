@@ -332,11 +332,12 @@ export class MiddlewarePipeline {
         context.set('metricsStart', startTime);
 
         const originalRun = context.command.run;
-        const wrappedRun = async (...args) => {
+        const wrappedRun = async (
+          /** @type {import('../../types/index.js').CommandHelpers} */ helpers,
+          /** @type {string[]} */ cmdArgs,
+        ) => {
           try {
-            const result = await originalRun(
-              .../** @type {[import('../../types/index.js').CommandHelpers, string[]]} */ (args),
-            );
+            const result = await originalRun(helpers, cmdArgs);
 
             const duration = Date.now() - startTime;
 

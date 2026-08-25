@@ -1,5 +1,6 @@
 import { readdir, readFile, stat } from 'fs/promises';
 import { join } from 'path';
+import { hostname } from 'os';
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { container } from '../core/container.js';
 import { getErrorMessage } from '../utils/error-message.js';
@@ -244,7 +245,7 @@ export class AuditLogger {
       details: event.details || {},
       metadata: {
         ...options.metadata,
-        hostname: require('os').hostname(),
+        hostname: hostname(),
         pid: process.pid,
         memory: process.memoryUsage(),
         version: this.configManager?.constant('VERSION'),

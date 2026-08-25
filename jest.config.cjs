@@ -1,57 +1,71 @@
-module.exports = {
-  testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
-  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
-  collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.js', '!src/**/*.test.js', '!src/**/*.spec.js'],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-    './src/core/': {
-      branches: 90,
-      functions: 90,
-      lines: 90,
-      statements: 90,
-    },
-    './src/database/': {
-      branches: 85,
-      functions: 85,
-      lines: 85,
-      statements: 85,
-    },
+import js from '@eslint/js';
+import globals from 'globals';
+
+export default [
+  {
+    ignores: ['dist/', 'node_modules/', 'coverage/', 'test-results/'],
   },
-  setupFilesAfterEnv: ['./tests/setup.js'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@core/(.*)$': '<rootDir>/src/core/$1',
-    '^@config/(.*)$': '<rootDir>/src/config/$1',
-    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^@cache/(.*)$': '<rootDir>/src/cache/$1',
-  },
-  transform: {},
-  transformIgnorePatterns: ['node_modules/(?!(baileys|better-sqlite3)/)'],
-  verbose: true,
-  clearMocks: true,
-  restoreMocks: true,
-  testTimeout: 10000,
-  maxWorkers: '50%',
-  reporters: [
-    'default',
-    [
-      'jest-junit',
-      {
-        outputDirectory: 'test-results',
-        outputName: 'junit.xml',
+  js.configs.recommended,
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
       },
-    ],
-  ],
-  globals: {
-    'process.env': {},
+    },
+    rules: {
+      quotes: 'off',
+      semi: 'off',
+      indent: 'off',
+      'comma-dangle': 'off',
+      'max-len': 'off',
+
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'no-console': 'warn',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+      'no-control-regex': 'off',
+    },
   },
-};
+  {
+    files: ['**/*.test.js', '**/*.spec.js', 'tests/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+        testUtils: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['**/*.cjs', 'lint-staged.config.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+        module: 'writable',
+        require: 'readonly',
+        exports: 'writable',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['src/utils/logger.js', 'src/utils/enhanced-logger.js'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+];

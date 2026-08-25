@@ -6,3 +6,5 @@ sonic_session.db-shm
 sonic_session.db-wal
 sonic-logs.txt
 src/data
+test-results
+coverage

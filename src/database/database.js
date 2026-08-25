@@ -178,12 +178,14 @@ export const transferCoins = (
 };
 
 export const getLeaderboard = (/** @type {number} */ limit = 10) => {
-  return statements.getLeaderboard.all(limit).map((user) => ({
-    id: user.id,
-    balance: user.balance,
-    bank: user.bank,
-    totalEarned: user.total_earned,
-  }));
+  return statements.getLeaderboard.all(limit).map(
+    (/** @type {{ id: string, balance: number, bank: number, total_earned: number }} */ user) => ({
+      id: user.id,
+      balance: user.balance,
+      bank: user.bank,
+      totalEarned: user.total_earned,
+    }),
+  );
 };
 
 export const getInventory = (/** @type {string} */ userId) => {
@@ -222,7 +224,9 @@ export const hasItem = (
 ) => {
   const id = jid.fromUser(userId);
   const inventory = getInventory(id);
-  const item = inventory.find((i) => i.item_name === itemName);
+  const item = inventory.find(
+    (/** @type {{ item_name: string, quantity: number }} */ i) => i.item_name === itemName,
+  );
   return item && item.quantity >= quantity;
 };
 

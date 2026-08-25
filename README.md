@@ -235,7 +235,7 @@ Run Sonic on your Android device using Termux:
 2. **Update and install dependencies**
    ```bash
    pkg update && pkg upgrade
-   pkg install nodejs-lts git
+   pkg install nodejs-lts git clang make python pkg-config
    ```
 3. **Clone and setup Sonic**
    ```bash
@@ -246,22 +246,57 @@ Run Sonic on your Android device using Termux:
    npm i
    ```
 
-4. **Create and setup .env file**
+4. **Build the native SQLite module for Android ARM64**
+   `better-sqlite3` uses a native Node addon and must be compiled for Android ARM64 inside Termux:
+
+   ```bash
+   cd node_modules/better-sqlite3
+   npm run build-release
+   cd ../..
+   ```
+
+   You can verify the native module was created with:
+
+   ```bash
+   ls node_modules/better-sqlite3/build/Release
+   ```
+
+   You should see:
+
+   `better_sqlite3.node`
+
+5. **Create and setup .env file**
    ```bash
    touch .env
    printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\n' > .env
    ```
 
-5. **Run Sonic**
+6. **Keep Termux active**
+
+   Before starting Sonic, acquire a wake lock so Android is less likely to suspend the Termux process while you switch to other apps or turn the screen off:
+
+   ```bash
+   termux-wake-lock
+   ```
+
+   This helps keep Sonic active while it is running.
+
+7. **Run Sonic**
    ```bash
    npm start
    ```
-6. **Pair WhatsApp** as usual
 
-**Tips:**
+8. **Pair WhatsApp** as usual
 
-- Keep Termux open or use a process manager like `pm2` (`npm install -g pm2`)
-- Keep your device plugged in for uninterrupted operation
+   When you no longer need Sonic running, release the wake lock:
+
+   ```bash
+   termux-wake-unlock
+   ```
+
+**Recommended:**
+
+- `termux-wake-lock` will show a pop-up to disable Android battery optimization for Termux if you intend to keep Sonic running for long periods if the pop-up does not show up, manually disable Android battery optimization for Termux. Android may otherwise suspend or terminate Termux independently of the wake lock.
 
 ### Cloud hosting
 

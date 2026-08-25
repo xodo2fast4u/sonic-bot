@@ -163,7 +163,7 @@ export class EnhancedLogger {
             ignore: 'pid,hostname',
           },
         };
-      } catch (err) {
+      } catch {
         console.warn('pino-pretty is unavailable; using standard pino output');
       }
     }

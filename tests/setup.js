@@ -2,8 +2,6 @@ process.env.NODE_ENV = 'test';
 
 import logger from '../src/utils/logger.js';
 
-const originalConsole = { ...console };
-
 beforeEach(() => {
   jest.spyOn(console, 'log').mockImplementation(() => {});
   jest.spyOn(console, 'warn').mockImplementation(() => {});

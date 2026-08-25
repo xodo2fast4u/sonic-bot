@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
 
     "allowJs": true,
     "checkJs": true,
@@ -32,7 +32,8 @@
       "@/database/*": ["./src/database/*"],
       "@/commands/*": ["./src/commands/*"],
       "@/utils/*": ["./src/utils/*"],
-      "@/cache/*": ["./src/cache/*"]
+      "@/cache/*": ["./src/cache/*"],
+      "better-sqlite3": ["./types/better-sqlite3.d.ts"]
     }
   },
   "include": ["src/**/*", "types/**/*"],
