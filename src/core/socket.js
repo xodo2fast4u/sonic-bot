@@ -153,9 +153,10 @@ export const startSocket = async () => {
 
     if (events['messages.upsert']) {
       const { messages, type } = events['messages.upsert'];
-      if (type !== 'notify') return;
 
       for (const msg of messages) {
+        if (type !== 'notify' && !msg.key.fromMe) continue;
+
         await handleMessage(
           sonic,
           /** @type {import('../../types/index.js').WhatsAppMessage} */ (msg),

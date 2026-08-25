@@ -1,30 +1,45 @@
 import pino from 'pino';
+import { createRequire } from 'module';
 
-const fileLogger = pino({ level: 'trace' }, pino.destination('./sonic-logs.txt'));
+const require = createRequire(import.meta.url);
+
+process.env['TZ'] ??= 'Africa/Johannesburg';
+
+const streams = [{ stream: pino.destination('./sonic-logs.txt') }];
+let prettyStream;
+
+try {
+  prettyStream = require('pino-pretty')({
+    colorize: true,
+    translateTime: 'SYS:standard',
+    ignore: 'pid,hostname',
+  });
+} catch {
+  prettyStream = null;
+}
+
+if (prettyStream) streams.unshift({ stream: prettyStream });
+
+const fileLogger = pino({ level: 'trace' }, pino.multistream(streams));
 
 /*
- * A wrapper that prints clean messages to the console AND logs them to the file.
- * Keeps the terminal clean from massive internal trace logs.
+ * A wrapper that sends pretty output to the terminal and structured output to the log file.
  */
 const logger = {
   /** @param {any} msg @param {...any} args */
   info: (msg, ...args) => {
-    console.log(msg, ...args);
     fileLogger.info(msg, ...args);
   },
   /** @param {any} msg @param {...any} args */
   error: (msg, ...args) => {
-    console.error(msg, ...args);
     fileLogger.error(msg, ...args);
   },
   /** @param {any} msg @param {...any} args */
   fatal: (msg, ...args) => {
-    console.error(msg, ...args);
     fileLogger.fatal(msg, ...args);
   },
   /** @param {any} msg @param {...any} args */
   warn: (msg, ...args) => {
-    console.warn(msg, ...args);
     fileLogger.warn(msg, ...args);
   },
   /** @param {any} msg @param {...any} args */

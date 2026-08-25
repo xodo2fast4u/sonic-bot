@@ -11,6 +11,13 @@ import { getErrorMessage } from '../utils/error-message.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+/** @param {any} exports */
+const getCommandList = (exports) => {
+  if (Array.isArray(exports)) return exports;
+  if (exports?.cmd && exports?.run) return [exports];
+  return Object.values(exports || {});
+};
+
 /**
  * Command metadata
  */
@@ -46,8 +53,7 @@ class CommandMetadata {
 
       this.commands = new Map();
 
-      // Handle both object exports and array exports
-      const commandList = Array.isArray(exports) ? exports : Object.values(exports);
+      const commandList = getCommandList(exports);
 
       for (const cmd of commandList) {
         if (!cmd?.cmd || !cmd?.run) continue;
@@ -168,7 +174,7 @@ export class CommandRegistry {
     try {
       const module = await import(metadata.modulePath);
       const exports = module.default || module;
-      const commandList = Array.isArray(exports) ? exports : Object.values(exports);
+      const commandList = getCommandList(exports);
 
       for (const cmd of commandList) {
         if (!cmd?.cmd || !cmd?.run) continue;

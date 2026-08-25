@@ -4,6 +4,18 @@ import logger from '../utils/logger.js';
 
 const ENV_PATH = resolve(process.cwd(), '.env');
 
+/** @param {string} key */
+const loadEnvValue = (key) => {
+  if (process.env[key]?.trim()) return process.env[key].trim();
+  if (!existsSync(ENV_PATH)) return undefined;
+
+  const line = readFileSync(ENV_PATH, 'utf-8')
+    .split('\n')
+    .find((entry) => entry.trim().startsWith(`${key}=`));
+
+  return line?.slice(line.indexOf('=') + 1).trim() || undefined;
+};
+
 /**
  * @param {string} key
  * @param {string} value
@@ -31,8 +43,8 @@ const updateEnvFile = (key, value) => {
 };
 
 export const config = Object.freeze({
-  prefix: process.env['SONIC_PREFIX'] || '!',
-  ownerNumber: process.env['OWNER_NUMBER'] || '',
+  prefix: loadEnvValue('SONIC_PREFIX') || '!',
+  ownerNumber: loadEnvValue('OWNER_NUMBER') || '',
   botName: 'Sonic',
   version: '3.0.0',
   authDir: 'sonic_session.db',

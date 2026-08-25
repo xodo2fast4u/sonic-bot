@@ -238,26 +238,6 @@ export class MiddlewarePipeline {
           }
         }
 
-        const globalCooldown = this.cooldownManager.checkGlobalCooldown(user);
-
-        if (!globalCooldown.allowed) {
-          context.stop(new CooldownError('global', globalCooldown.remaining));
-
-          switch (globalCooldown.action) {
-            case 'warn':
-              await context.helpers.text(
-                `⏱️ Slow down! Wait *${this.cooldownManager.formatCooldown(globalCooldown.remaining)}* before using another command.`,
-              );
-              break;
-            case 'react':
-              await context.helpers.react('⏳');
-              break;
-            case 'ignore':
-              break;
-          }
-          return;
-        }
-
         context.set('cooldownChecked', true);
       }
     );
