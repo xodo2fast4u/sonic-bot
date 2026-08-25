@@ -3,8 +3,6 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 
-process.env['TZ'] ??= 'Africa/Johannesburg';
-
 const streams = [{ stream: pino.destination('./sonic-logs.txt') }];
 let prettyStream;
 

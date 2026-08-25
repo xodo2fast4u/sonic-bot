@@ -159,7 +159,7 @@ export class EnhancedLogger {
           target: 'pino-pretty',
           options: {
             colorize: true,
-            translateTime: 'HH:MM:ss Z',
+            translateTime: 'SYS:standard',
             ignore: 'pid,hostname',
           },
         };
