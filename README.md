@@ -119,8 +119,8 @@ npm install
 ### 3. **Configure environment**
 
 ```bash
-# Sonic will create a .env file automatically
-# Or create one manually with:
+# Sonic doesn't create a .env file automatically
+# You must create one manually with:
 # For Linux And Mac OS
 touch .env
 
