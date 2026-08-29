@@ -3,7 +3,7 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 
-const streams = [{ stream: pino.destination('./sonic-logs.txt') }];
+const streams = [{ stream: pino.destination({ dest: './sonic-logs.txt', sync: true }) }];
 let prettyStream;
 
 try {

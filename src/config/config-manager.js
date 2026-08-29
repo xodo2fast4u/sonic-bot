@@ -17,7 +17,7 @@ const CONFIG_SCHEMA = {
   ownerNumber: {
     type: 'string',
     required: false,
-    pattern: /^[0-9]+$/,
+    pattern: /^[0-9+,\s]+$/,
   },
   botName: {
     type: 'string',

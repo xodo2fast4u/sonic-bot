@@ -68,6 +68,7 @@ export const emoji = Object.freeze({
   ping: '🏓',
   rocket: '🚀',
   tool: '⚒️',
+  maker: '✨',
   coin: '🪙',
 });
 

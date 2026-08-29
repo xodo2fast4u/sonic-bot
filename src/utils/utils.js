@@ -16,7 +16,13 @@ import { state } from '../core/state.js';
 import { container } from '../core/container.js';
 
 /** @param {any} jidStr */
-const userDigitsFromJid = (jidStr) => jidDecode(jidStr)?.user || '';
+const userDigitsFromJid = (jidStr) => {
+  if (!jidStr || typeof jidStr !== 'string') return '';
+  if (/^\d+$/.test(jidStr)) return jidStr;
+  const decoded = jidDecode(jidStr);
+  if (decoded?.user) return decoded.user;
+  return (jidStr.split('@').shift() ?? '').replace(/[^0-9]/g, '') || '';
+};
 
 export const jid = {
   /** @param {any} rawJid */
@@ -136,10 +142,14 @@ export const isOwner = (userJid) => {
   if (!owner) return false;
 
   const userNum = jid.fromUser(userJid);
+  if (!userNum) return false;
 
-  const ownerNum = owner.replace(/[^0-9]/g, '');
+  const ownerNumbers = owner
+    .split(',')
+    .map((num) => num.replace(/[^0-9]/g, ''))
+    .filter(Boolean);
 
-  return userNum === ownerNum;
+  return ownerNumbers.includes(userNum);
 };
 
 /*

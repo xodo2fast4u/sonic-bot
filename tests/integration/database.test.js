@@ -1,9 +1,13 @@
 import Database from 'better-sqlite3';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { ConnectionPool } from '../../src/database/connection-pool.js';
 import { UserRepository } from '../../src/database/repositories/user-repository.js';
 import { InventoryRepository } from '../../src/database/repositories/inventory-repository.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('Database Integration', () => {
   let dbPath;
@@ -12,7 +16,9 @@ describe('Database Integration', () => {
   let inventoryRepo;
 
   beforeEach(async () => {
-    dbPath = join(__dirname, '../test-data', `test-${Date.now()}.db`);
+    const testDir = join(__dirname, '../test-data');
+    mkdirSync(testDir, { recursive: true });
+    dbPath = join(testDir, `test-${Date.now()}.db`);
 
     connectionPool = new ConnectionPool({
       maxConnections: 5,

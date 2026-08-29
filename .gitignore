@@ -8,4 +8,5 @@ sonic-logs.txt
 src/data
 test-results
 coverage
+tests/test-data
 .env

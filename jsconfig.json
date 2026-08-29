@@ -22,7 +22,7 @@
     "allowUnusedLabels": true,
     "allowUnreachableCode": true,
     "noUncheckedSideEffectImports": true,
-    
+
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"],

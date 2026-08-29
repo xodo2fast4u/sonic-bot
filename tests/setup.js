@@ -1,4 +1,16 @@
+import { jest } from '@jest/globals';
+
+import '../src/config/config-manager.js';
+import '../src/utils/enhanced-logger.js';
+import '../src/utils/enhanced-cooldown.js';
+import '../src/utils/utils.js';
+import '../src/cache/cache-manager.js';
+import '../src/database/connection-pool.js';
+import '../src/commands/middleware-pipeline.js';
+import '../src/commands/command-registry.js';
+
 process.env.NODE_ENV = 'test';
+global.jest = jest;
 
 import logger from '../src/utils/logger.js';
 

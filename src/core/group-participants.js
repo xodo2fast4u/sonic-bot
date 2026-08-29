@@ -1,5 +1,6 @@
 import logger from '../utils/logger.js';
 import { getErrorMessage } from '../utils/error-message.js';
+import { getGroupParticipantMessageState } from './state.js';
 
 /**
  * Handle group participant updates (add, remove, promote, demote)
@@ -10,6 +11,22 @@ export const handleGroupParticipantsUpdate = async (sonic, update) => {
   const { id, participants, action } = update;
 
   try {
+    /** @type {'add'|'remove'|'promote'|'demote'|null} */
+    const actionKey =
+      action === 'add' || action === 'remove' || action === 'promote' || action === 'demote'
+        ? action
+        : null;
+
+    if (!actionKey) {
+      return;
+    }
+
+    const isEnabled = getGroupParticipantMessageState(actionKey);
+
+    if (!isEnabled) {
+      return;
+    }
+
     let groupName = 'this group';
     try {
       const groupMetadata = await sonic.groupMetadata(id);

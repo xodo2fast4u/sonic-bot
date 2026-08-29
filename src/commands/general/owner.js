@@ -7,6 +7,14 @@ export default {
 
   run: async ({ text }) => {
     const owner = getOwner();
-    await text(`${e.admin} *${config.botName} Owner:* ${owner ? `+${owner}` : 'Not configured'}`);
+    const formattedOwners = owner
+      ? owner
+          .split(',')
+          .map((n) => n.trim().replace(/[^0-9]/g, ''))
+          .filter(Boolean)
+          .map((n) => `+${n}`)
+          .join(', ')
+      : 'Not configured';
+    await text(`${e.admin} *${config.botName} Owner:* ${formattedOwners || 'Not configured'}`);
   },
 };

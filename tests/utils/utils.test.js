@@ -1,13 +1,18 @@
-import { jid, getText, getTarget, isOwner, resolveSender, format } from '../../src/utils/utils.js';
+import { jest } from '@jest/globals';
 
-jest.mock('../../src/config/config.js', () => ({
+const mockedConfig = {
   getOwner: jest.fn(() => '1234567890'),
   emoji: {
     sonic: '🦔',
     speed: '💨',
     bolt: '⚡',
   },
-}));
+};
+
+jest.unstable_mockModule('../../src/config/config.js', () => mockedConfig);
+
+const { jid, getText, getTarget, isOwner, resolveSender, format } =
+  await import('../../src/utils/utils.js');
 
 describe('Utils', () => {
   describe('jid utilities', () => {
@@ -139,6 +144,14 @@ describe('Utils', () => {
     test('should identify owner correctly', () => {
       const result = isOwner('1234567890@s.whatsapp.net');
       expect(result).toBe(true);
+    });
+
+    test('should identify owner in comma-separated list', () => {
+      const { getOwner } = jest.requireMock('../../src/config/config.js');
+      getOwner.mockReturnValueOnce('1234567890,9876543210');
+      expect(isOwner('9876543210@s.whatsapp.net')).toBe(true);
+      expect(isOwner('1234567890@s.whatsapp.net')).toBe(true);
+      expect(isOwner('5555555555@s.whatsapp.net')).toBe(false);
     });
 
     test('should identify non-owner correctly', () => {

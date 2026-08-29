@@ -146,7 +146,7 @@ export const randomFrom = (arr) => {
 };
 
 /** @param {number} amount */
-export const formatCoins = (amount) => `${e.ring} ${amount.toLocaleString()}`;
+export const formatCoins = (amount) => `${amount.toLocaleString()}`;
 
 /** @param {import('../../../types/index.js').WhatsAppSocket} sonic @param {import('../../../types/index.js').WhatsAppMessage} msg @param {string} command @param {number} duration */
 export const checkEconCooldown = async (sonic, msg, command, duration) => {

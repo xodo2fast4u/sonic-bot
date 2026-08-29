@@ -1,6 +1,6 @@
 import { emoji as e } from '../../config/config.js';
 import { getUser, addCoins, removeCoins } from '../../database/database.js';
-import { random, formatCoins, checkEconCooldown } from './_utils.js';
+import { random, formatCoins, checkEconCooldown } from '../economy/_utils.js';
 import { resolveSender } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */

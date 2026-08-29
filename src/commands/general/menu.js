@@ -30,18 +30,30 @@ export default {
 ┃ ${p}owner - Bot owner
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
-╭━━━ ${e.ring} *ECONOMY* ━━━╮
+╭━━━ ${e.coin} *ECONOMY* ━━━╮
 ┃ ${p}balance - Check coins
 ┃ ${p}daily - Daily reward
 ┃ ${p}work - Work for coins
+┃ ${p}mine - Go mining
+┃ ${p}fish - Go fishing
+┃ ${p}hunt - Go hunting
 ┃ ${p}beg - Beg for coins
+┃ ${p}rob - Rob someone
 ┃ ${p}pay - Pay someone
-┃ ${p}slots - Slot machine
+┃ ${p}shop - Buy items
 ┃ ${p}deposit - To bank
 ┃ ${p}withdraw - From bank
 ┃ ${p}inventory - Your items
 ┃ ${p}leaderboard - Top rich
-┃ ${p}economy - Stats
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━ 🎰 *GAMBLING* ━━━╮
+┃ ${p}slots - Slot machine
+┃ ${p}coinflip - Heads or tails
+┃ ${p}dice - Roll a dice
+┃ ${p}roulette - Spin the wheel
+┃ ${p}blackjack - Beat the dealer
+┃ ${p}crash - Ride the rocket
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.tool} *TOOLS* ━━━╮
@@ -58,6 +70,10 @@ export default {
 ┃ ${p}songrecommendation - Music suggestion
 ┃ ${p}wiki - Wikipedia search
 ┃ ${p}wallpaper - Gets a wallpaper
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━ ${e.maker} *MAKER* ━━━╮
+┃ ${p}sticker - Convert image to sticker
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.ring} *NEWSLETTER* ━━━╮
@@ -78,6 +94,12 @@ export default {
 ┃ ${p}groupcreate / ${p}grouplist
 ┃ ${p}groupmode / ${p}groupv4
 ┃ ${p}groupinviteinfo / ${p}grouprequest
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━ ${e.admin} *OWNER* ━━━╮
+┃ ${p}welcomegoodbyeoff / ${p}welcomegoodbyeon
+┃ ${p}promoterdemoteoff / ${p}promoterdemoteon
+┃ ${p}participantsoff / ${p}participantson
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ${e.rocket} *Gotta go fast!* ${e.sonic}`.trim(),

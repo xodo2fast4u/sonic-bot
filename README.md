@@ -60,9 +60,12 @@ Sonic combines several capabilities into one bot experience:
 
 ### Core capabilities
 
-- **Group management**: add, kick, promote, demote, mute, unmute, invite links, tag-all and group info commands
-- **Newsletter management**: follow, unfollow, mute newsletter, unmute newsletter, react, admincount and change owner.
-- **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, slots and leaderboards
+- **Group management**: add, kick, promote, demote, mute, unmute, invite links, tag-all, group info and admin tools
+- **Newsletter management**: follow, unfollow, mute and unmute newsletter, react, admincount and change owner
+- **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, fish, hunt, mine, shop, rob, stats and leaderboards
+- **Gambling and risk games**: coinflip, dice, roulette, slots, crash and blackjack for fast mini-game action
+- **Tools and maker features**: sticker generation, weather, wiki, search, calculator, image tools, encoding/decoding and utility commands
+- **Owner controls**: participant toggles, welcome/goodbye controls, promote/demote toggles and maintenance actions
 
 ## Prerequisites
 
@@ -152,10 +155,10 @@ npm start
 
 Sonic reads configuration from `.env` and a built-in config module.
 
-| Variable       | Description                               | Default                                       |
-| -------------- | ----------------------------------------- | --------------------------------------------- |
-| `SONIC_PREFIX` | Command prefix for bot commands           | `!`                                           |
-| `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing)  |
+| Variable       | Description                               | Default                                      |
+| -------------- | ----------------------------------------- | -------------------------------------------- |
+| `SONIC_PREFIX` | Command prefix for bot commands           | `!`                                          |
+| `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing) |
 
 ## Project structure
 
@@ -173,11 +176,18 @@ The main code lives under [src](src) and the folders are organized like this:
 
 ## Command overview
 
-The command registry automatically loads command modules from the category folders in [src/commands](src/commands). A few examples include:
+The command registry automatically loads command modules from the category folders in [src/commands](src/commands). The currently implemented command families are:
 
-- General: `!ping`, `!info`, `!menu` and `!runtime`
-- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!inventory` and `!leaderboard`
-- Group: `!ginfo`, `!groupcreate`, `!tagall`, `!mute`, `!unmute`, `!promote` and `!demote`
+- General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`
+- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!additem`, `!removeitem`, `!resetcooldown`
+- Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`
+- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`
+- Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
+- Maker: `!sticker`
+- Newsletter: `!newslettermanage`, `!newsletteractions`
+- Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`
+
+> Community, chats, and business command folders are intentionally excluded from this overview because they are not part of the current implementation scope.
 
 ## Development
 
@@ -238,6 +248,7 @@ Run Sonic on your Android device using Termux:
    pkg install nodejs-lts git clang make python pkg-config
    ```
 3. **Clone and setup Sonic**
+
    ```bash
    git clone https://github.com/xodo2fast4u/sonic-bot.git
    cd sonic-bot
@@ -266,6 +277,7 @@ Run Sonic on your Android device using Termux:
    `better_sqlite3.node`
 
 5. **Create and setup .env file**
+
    ```bash
    touch .env
    printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\n' > .env
@@ -282,6 +294,7 @@ Run Sonic on your Android device using Termux:
    This helps keep Sonic active while it is running.
 
 7. **Run Sonic**
+
    ```bash
    npm start
    ```

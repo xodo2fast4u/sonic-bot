@@ -1,7 +1,6 @@
 import { emoji as e } from '../../config/config.js';
-import { getTarget, resolveSender, jid } from '../../utils/utils.js';
+import { getTarget, resolveSender, jid, isOwner } from '../../utils/utils.js';
 import { addItem, getInventory } from '../../database/database.js';
-import { getOwner } from '../../config/config.js';
 import logger from '../../utils/logger.js';
 
 /** @type {import('../../../types/index.js').Command} */
@@ -11,10 +10,7 @@ export default {
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
-    const owner = getOwner();
-
-    const senderNum = jid.fromUser(sender)?.replace('@s.whatsapp.net', '').replace('@lid', '');
-    if (senderNum !== owner) {
+    if (!isOwner(sender)) {
       return text(`${e.cross} This command is only available to the bot owner!`);
     }
 
