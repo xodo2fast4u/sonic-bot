@@ -26,7 +26,6 @@ class Connection {
     try {
       this.db = new Database(this.dbPath, {
         ...this.options,
-        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined,
       });
 
       this.db.pragma('journal_mode = WAL');

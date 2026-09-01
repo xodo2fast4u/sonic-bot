@@ -160,7 +160,7 @@ export class InputValidator {
       }
 
       if (rules.trim) {
-        value = value.trim();
+        // Validation checks run on the original string; normalization happens in processValue().
       }
     }
 
@@ -303,11 +303,11 @@ export class InputValidator {
 
       switch (operator) {
         case '==':
-          return contextValue == value;
+          return contextValue === value;
         case '===':
           return contextValue === value;
         case '!=':
-          return contextValue != value;
+          return contextValue !== value;
         case '!==':
           return contextValue !== value;
         case '>':
@@ -608,7 +608,12 @@ export class InputValidator {
       );
     }
 
-    sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
+    sanitized = [...sanitized]
+      .filter((char) => {
+        const code = char.charCodeAt(0);
+        return code >= 32 && code !== 127;
+      })
+      .join('');
 
     sanitized = sanitized.trim();
 

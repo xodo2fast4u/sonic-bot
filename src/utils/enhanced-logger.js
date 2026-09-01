@@ -164,7 +164,7 @@ export class EnhancedLogger {
           },
         };
       } catch {
-        console.warn('pino-pretty is unavailable; using standard pino output');
+        // pino-pretty is unavailable; fall back to the default transport.
       }
     }
 

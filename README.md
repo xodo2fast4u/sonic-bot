@@ -187,8 +187,6 @@ The command registry automatically loads command modules from the category folde
 - Newsletter: `!newslettermanage`, `!newsletteractions`
 - Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`
 
-> Community, chats, and business command folders are intentionally excluded from this overview because they are not part of the current implementation scope.
-
 ## Development
 
 ### Adding a new command
@@ -350,11 +348,25 @@ Sonic can also be deployed on services such as [Optiklink](https://optiklink.net
 
 ## Contributing
 
+We welcome contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) guide for detailed information on:
+
+- Code style and formatting standards
+- File organization and naming conventions
+- How to write tests
+- Git workflow and commit message guidelines
+- Security best practices
+- Performance considerations
+
+Quick start:
+
 1. Fork the repository
-2. Create a feature branch
-3. Add your command or improvement
-4. Test thoroughly
-5. Submit a pull request
+2. Install dependencies: `npm install`
+3. Create a feature branch: `git checkout -b feature/your-feature`
+4. Make your changes and test: `npm test`
+5. Format and type-check: `npm run format && npm run type-check`
+6. Submit a pull request
+
+For detailed guidance, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Support
 

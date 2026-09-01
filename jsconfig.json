@@ -19,8 +19,8 @@
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
-    "allowUnusedLabels": true,
-    "allowUnreachableCode": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
     "noUncheckedSideEffectImports": true,
 
     "skipLibCheck": true,

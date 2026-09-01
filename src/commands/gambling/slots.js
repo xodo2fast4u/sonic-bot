@@ -41,7 +41,7 @@ export default {
     const isDouble = result[0] === result[1] || result[1] === result[2] || result[0] === result[2];
 
     let winnings = 0;
-    let status = '';
+    let status;
 
     if (isJackpot) {
       winnings = bet * 5;

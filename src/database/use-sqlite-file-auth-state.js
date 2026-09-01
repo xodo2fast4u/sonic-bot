@@ -224,7 +224,7 @@ export function useSqliteAuthState(
 
   /** @param {string} type @param {any} value @returns {any} */
   const decodeIfNeeded = (type, value) => {
-    if (value == null) return null;
+    if (value === null || value === undefined) return null;
     if (type === 'app-state-sync-key') {
       return proto.Message.AppStateSyncKeyData.create(value);
     }
@@ -268,7 +268,7 @@ export function useSqliteAuthState(
             if (!records) continue;
             for (const id of Object.keys(records)) {
               const value = records[id];
-              if (value == null) {
+              if (value === null || value === undefined) {
                 st.deleteKey.run(accountId, type, id);
               } else {
                 st.upsertKey.run(accountId, type, id, J.to(value));

@@ -27,23 +27,23 @@ project.
 
 ### Formatting
 
-We use automated tools to enforce consistent formatting:
+We use automated tools to maintain consistent code:
 
-- **ESLint**: Enforces code quality and style rules
-- **Prettier**: Handles code formatting automatically
-- **Husky**: Git hooks to ensure code quality before commits
+- **Prettier**: Handles code formatting automatically (`npm run format`)
+- **ESLint**: Flags unused variables and console usage (warnings, not errors)
+- **Husky**: Git hooks to run formatters before commits
 
-#### Key Rules
+#### Key Practices
 
-- Use 2 spaces for indentation (no tabs)
-- Maximum line length: 100 characters
-- Use single quotes for strings
-- No semicolons at end of statements
+- Use 2 spaces for indentation
+- Prettier normalizes quote style and spacing automatically
+- Semicolons are optional (left to Prettier)
+- Use const by default, let when needed, avoid var
 - Use trailing commas in multi-line objects/arrays
-- One variable declaration per line
+- One variable declaration per line where practical
 
 ```javascript
-/* Good */
+/* Good Prettier will normalize this */
 const userName = 'Sonic';
 const isActive = true;
 const config = {
@@ -51,10 +51,9 @@ const config = {
   timeout: 5000,
 };
 
-/* Bad */
-const userName = 'Sonic';
-var isActive = true;
-const config = { prefix: '!', timeout: 5000 };
+/* Avoid */
+var isActive = true; // Use const/let instead
+const ub = 1000; // Use descriptive names
 ```
 
 ### Functions
@@ -86,9 +85,15 @@ src/
 ├── config/         # Configuration management
 ├── database/       # Database layer and migrations
 ├── commands/       # Command handlers by category
+├── services/       # Business logic services
 ├── utils/          # Utility functions
 ├── cache/          # Caching layer
-└── types/          # TypeScript definitions
+├── monitoring/     # Health checks and metrics
+├── security/       # Audit logging
+├── validation/     # Input validation
+└── data/           # Data files
+
+types/             # TypeScript definitions (root level)
 ```
 
 ### File Naming
@@ -244,6 +249,8 @@ counter++;
 
 ### Test Structure
 
+Tests run on ESM with Jest using `node --experimental-vm-modules`.
+
 ```javascript
 /* Good test structure */
 describe('UserService', () => {
@@ -263,6 +270,12 @@ describe('UserService', () => {
     });
   });
 });
+```
+
+**Run tests:**
+
+```bash
+npm test
 ```
 
 ### Test Naming
@@ -288,37 +301,42 @@ describe('UserService', () => {
 
 ### Commit Messages
 
-Follow conventional commits format:
+Write commits with one coherent intent. Use an imperative subject and explain
+the why, not just the what.
+
+**Format:**
 
 ```
-type(scope): description
+Imperative verb plus a precise object
 
-[optional body]
-
-[optional footer]
+Optional body explaining problem, solution and tradeoffs.
 ```
 
-Types:
+**Examples:**
 
-- `feat`: New feature
-- `fix`: Bug fix
+```
+Add daily reward system to economy commands
+
+Resolve token expiration in session rotation
+
+Update installation instructions in README
+
+Centralize connection pooling in database layer
+```
+
+**Scope guidance (optional):**
+
+- `economy`: Economy system (balance, work, rewards, inventory)
+- `gambling`: Gambling commands (coinflip, dice, slots, blackjack)
+- `group`: Group management (admin, participants, settings)
+- `commands`: Command infrastructure and registry
+- `database`: Database, repositories, migrations
+- `cache`: Caching and session management
+- `config`: Configuration and environment
 - `docs`: Documentation
-- `style`: Code style (formatting, etc.)
-- `refactor`: Code refactoring
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
 
-Examples:
-
-```
-feat(economy): add daily reward system
-
-fix(auth): resolve token expiration issue
-
-docs(readme): update installation instructions
-
-refactor(database): implement connection pooling
-```
+Focus on clarity and explaining intent. Scopes help organize history but
+are not required.
 
 ## Security
 
@@ -451,32 +469,43 @@ async function fetchUserData(userId) {
 4. Create a feature branch: `git checkout -b feature/your-feature`
 5. Make your changes
 6. Run tests: `npm test`
-7. Run linting: `npm run lint`
-8. Commit changes: `git commit -m "feat: add new feature"`
-9. Push to your fork: `git push origin feature/your-feature`
-10. Create pull request
+7. Format code: `npm run format`
+8. Type-check: `npm run type-check`
+9. Commit changes with a clear message explaining the intent
+10. Push to your fork: `git push origin feature/your-feature`
+11. Create pull request
 
 ## Tools and Configuration
 
 ### Required Tools
 
-- **Node.js**: Latest LTS version
+- **Node.js**: 22.17+
 - **npm**: Latest version
 - **Git**: Latest version
 
 ### Development Tools
 
-- **ESLint**: Code linting and quality
-- **Prettier**: Code formatting
-- **Husky**: Git hooks
-- **Jest**: Testing framework
-- **TypeScript**: Type checking (optional but recommended)
+- **ESLint**: Code linting (loose config by design; warns on unused variables)
+- **Prettier**: Code formatting (enforces consistency automatically)
+- **Jest**: Testing framework (runs on ESM with `node --experimental-vm-modules`)
+- **TypeScript**: Type checking via `tsc --noEmit -p jsconfig.json`
+
+### Available Scripts
+
+```bash
+npm start           # Start the bot
+npm test            # Run tests
+npm run format      # Format all files with Prettier
+npm run format:check # Check formatting without making changes
+npm run type-check  # Run TypeScript type checking
+```
 
 ### IDE Configuration
 
 Recommended extensions for VS Code:
 
 - ESLint extension
+- Prettier extension
 - GitLens
 
 ## Questions?

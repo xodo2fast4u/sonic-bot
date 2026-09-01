@@ -74,7 +74,7 @@ export default {
     const dealerBust = dealerTotal > 21;
     const playerBJ = playerTotal === 21 && playerHand.length === 2;
 
-    let result = '';
+    let result;
     let won = false;
     let payout = 0;
 

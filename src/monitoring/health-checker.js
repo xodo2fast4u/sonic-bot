@@ -74,9 +74,9 @@ export class HealthChecker {
     try {
       const result = await Promise.race([
         healthCheck.check(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Health check timeout')), healthCheck.timeout),
-        ),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Health check timeout')), healthCheck.timeout);
+        }),
       ]);
 
       const duration = Date.now() - startTime;
@@ -292,7 +292,9 @@ export class HealthChecker {
       async () => {
         const start = process.hrtime.bigint();
 
-        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => {
+          setImmediate(resolve);
+        });
 
         const lag = Number(process.hrtime.bigint() - start) / 1000000; // Convert to milliseconds
 

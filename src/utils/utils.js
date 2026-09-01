@@ -177,11 +177,13 @@ export const format = {
       [60, 'm'],
       [1, 's'],
     ];
+
+    let remaining = seconds;
     return (
       units
         .map(([div, unit]) => {
-          const val = Math.floor(seconds / div);
-          seconds %= div;
+          const val = Math.floor(remaining / div);
+          remaining %= div;
           return val ? `${val}${unit}` : '';
         })
         .filter(Boolean)

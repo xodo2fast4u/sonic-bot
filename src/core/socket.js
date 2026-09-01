@@ -21,7 +21,10 @@ const rl = readline.createInterface({
 });
 
 /** @param {string} q */
-const ask = (q) => new Promise((r) => rl.question(q, r));
+const ask = (q) =>
+  new Promise((resolve) => {
+    rl.question(q, resolve);
+  });
 
 /** @type {any|null} */
 let currentSocket = null;

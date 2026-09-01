@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'url';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { container } from '../../core/container.js';
 import { DatabaseError } from '../../core/errors.js';
@@ -304,7 +304,7 @@ export default new Migration(
 );
 `;
 
-    require('fs').writeFileSync(filePath, template);
+    writeFileSync(filePath, template);
     this.logger.info(`Created migration file: ${filename}`);
 
     return filePath;

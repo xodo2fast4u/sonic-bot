@@ -49,8 +49,8 @@ export default {
     const landedColor = getColor(landed);
     const colorEmoji = landedColor === 'red' ? '🔴' : landedColor === 'black' ? '⚫' : '🟢';
 
-    let won = false;
-    let multiplier = 0;
+    let won;
+    let multiplier;
 
     if (isBettingNumber) {
       won = numericBet === landed;

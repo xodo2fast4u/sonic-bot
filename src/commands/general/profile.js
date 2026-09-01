@@ -13,7 +13,9 @@ export default {
     let pp;
     try {
       pp = await sonic.profilePictureUrl(target, 'image');
-    } catch (error) {}
+    } catch (error) {
+      void error;
+    }
 
     const text = `
 ╭━━━ ${e.user} *PROFILE* ━━━╮
