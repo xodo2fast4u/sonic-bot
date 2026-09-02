@@ -164,24 +164,29 @@ Sonic reads configuration from `.env` and a built-in config module.
 
 The main code lives under [src](src) and the folders are organized like this:
 
-| Path                         | Purpose                                                                               |
-| ---------------------------- | ------------------------------------------------------------------------------------- |
-| [src/core](src/core)         | Message handling, routing, socket lifecycle and shared state                          |
-| [src/commands](src/commands) | Command implementations grouped by category such as general, economy, group and tools |
-| [src/services](src/services) | Business logic for user and economy features                                          |
-| [src/database](src/database) | SQLite access, repositories and migrations                                            |
-| [src/config](src/config)     | Bot configuration and environment helpers                                             |
-| [src/utils](src/utils)       | Logging, cooldowns, formatting and shared utilities                                   |
-| [src/cache](src/cache)       | Session and cache management                                                          |
+| Path                             | Purpose                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| [src/core](src/core)             | Message handling, routing, socket lifecycle, dependency injection and shared state |
+| [src/commands](src/commands)     | Command implementations grouped by category                                        |
+| [src/services](src/services)     | Business logic for user and economy features                                       |
+| [src/database](src/database)     | SQLite access, repositories and migrations                                         |
+| [src/config](src/config)         | Bot configuration and environment helpers                                          |
+| [src/utils](src/utils)           | Logging, cooldowns, formatting and shared utilities                                |
+| [src/cache](src/cache)           | Session and cache management                                                       |
+| [src/monitoring](src/monitoring) | Health checks and metrics collection                                               |
+| [src/security](src/security)     | Audit logging and security-related utilities                                       |
+| [src/validation](src/validation) | Input validation                                                                   |
+| [src/data](src/data)             | Where Economy Database gets created and lives                                      |
+| [types](types)                   | TypeScript declarations for project dependencies and modules                       |
 
 ## Command overview
 
 The command registry automatically loads command modules from the category folders in [src/commands](src/commands). The currently implemented command families are:
 
 - General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`
-- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!additem`, `!removeitem`, `!resetcooldown`
+- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
 - Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`
-- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`
+- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
 - Maker: `!sticker`
 - Newsletter: `!newslettermanage`, `!newsletteractions`
