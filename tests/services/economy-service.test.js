@@ -35,8 +35,12 @@ test('processSlots returns a numeric final balance when the player loses', async
       return 50;
     },
   };
-  service.eventBus = { emitEvent: async () => {} };
-  service.logger = { info() {} };
+  service.eventBus = { emitEvent: async () => undefined };
+  service.logger = {
+    info() {
+      return undefined;
+    },
+  };
   service.generateSlotsResult = () => [];
   service.calculateSlotsWin = () => 0;
 

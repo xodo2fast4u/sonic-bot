@@ -1,4 +1,7 @@
 import { jest } from '@jest/globals';
+import { state } from '../../src/core/state.js';
+
+process.env.OWNER_NUMBER = '1234567890';
 
 const mockedConfig = {
   getOwner: jest.fn(() => '1234567890'),
@@ -147,11 +150,11 @@ describe('Utils', () => {
     });
 
     test('should identify owner in comma-separated list', () => {
-      const { getOwner } = jest.requireMock('../../src/config/config.js');
-      getOwner.mockReturnValueOnce('1234567890,9876543210');
+      process.env.OWNER_NUMBER = '1234567890,9876543210';
       expect(isOwner('9876543210@s.whatsapp.net')).toBe(true);
       expect(isOwner('1234567890@s.whatsapp.net')).toBe(true);
       expect(isOwner('5555555555@s.whatsapp.net')).toBe(false);
+      process.env.OWNER_NUMBER = '1234567890';
     });
 
     test('should identify non-owner correctly', () => {
@@ -248,14 +251,12 @@ describe('Utils', () => {
 
     describe('getUptime', () => {
       beforeEach(() => {
-        jest.doMock('../../src/core/state.js', () => ({
-          startTime: Date.now() - 3600000, // 1 hour ago
-        }));
+        state.startTime = Date.now() - 3600000;
       });
 
       test('should get uptime since start', () => {
         const result = format.getUptime();
-        expect(result).toMatch(/h \d+m \d+s/);
+        expect(result).toMatch(/1h(?: \d+m)?(?: \d+s)?/);
       });
     });
   });

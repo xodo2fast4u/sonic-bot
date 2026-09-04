@@ -16,7 +16,7 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} userId @returns {Promise<any[]>} */
   async getUserInventory(userId) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.jidUtils.toUser(this.jidUtils.fromUser(userId));
     const query = `
       SELECT item_name, quantity 
       FROM inventory 
@@ -30,7 +30,7 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} userId @param {any} itemName @param {number} [quantity] @returns {Promise<any>} */
   async addItem(userId, itemName, quantity = 1) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.jidUtils.toUser(this.jidUtils.fromUser(userId));
 
     await this.getOrCreateUser(id);
 
@@ -50,7 +50,7 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} userId @param {any} itemName @param {number} [quantity] @returns {Promise<void>} */
   async removeItem(userId, itemName, quantity = 1) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.jidUtils.toUser(this.jidUtils.fromUser(userId));
 
     const updateQuery = `
       UPDATE inventory 
@@ -66,7 +66,7 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} userId @param {any} itemName @param {number} [quantity] @returns {Promise<boolean>} */
   async hasItem(userId, itemName, quantity = 1) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.jidUtils.toUser(this.jidUtils.fromUser(userId));
     const query = `
       SELECT quantity FROM inventory 
       WHERE user_id = ? AND item_name = ?
@@ -78,7 +78,7 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} userId @param {any} itemName @returns {Promise<number>} */
   async getItemQuantity(userId, itemName) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.jidUtils.toUser(this.jidUtils.fromUser(userId));
     const query = `
       SELECT quantity FROM inventory 
       WHERE user_id = ? AND item_name = ?
@@ -114,8 +114,8 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} fromId @param {any} toId @param {any} itemName @param {number} quantity @returns {Promise<any>} */
   async transferItem(fromId, toId, itemName, quantity) {
-    const from = this.jidUtils.fromUser(fromId);
-    const to = this.jidUtils.fromUser(toId);
+    const from = this.jidUtils.toUser(this.jidUtils.fromUser(fromId));
+    const to = this.jidUtils.toUser(this.jidUtils.fromUser(toId));
 
     const fromQuantity = await this.getItemQuantity(from, itemName);
 
@@ -215,7 +215,8 @@ export class InventoryRepository extends BaseRepository {
       LIMIT ?
     `;
 
-    return await this.all(query, [`%${searchTerm}%`, limit], 'searchItems');
+    const results = await this.all(query, [`%${searchTerm}%`, limit], 'searchItems');
+    return results.map((/** @type {any} */ item) => this.mapItem(item));
   }
 
   /** @param {any} itemName @param {number} [limit] @returns {Promise<any[]>} */
@@ -306,8 +307,12 @@ export class InventoryRepository extends BaseRepository {
 
   /** @param {any} userId @returns {Promise<any>} */
   async getOrCreateUser(userId) {
-    const userRepo = container.resolve('userRepository');
-    return await userRepo.getOrCreate(userId);
+    const id = this.jidUtils.toUser(this.jidUtils.fromUser(userId));
+    if (!id) throw new Error('Invalid user ID');
+
+    await this.execute('INSERT OR IGNORE INTO users (id) VALUES (?)', [id], 'getOrCreateUser');
+
+    return id;
   }
 
   /** @param {any} userId @returns {Promise<void>} */

@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { getTarget, resolveSender, jid, isOwner } from '../../utils/utils.js';
+import { getTarget, jid } from '../../utils/utils.js';
 import { setBalance, getUser } from '../../database/database.js';
 import logger from '../../utils/logger.js';
 
@@ -7,21 +7,18 @@ import logger from '../../utils/logger.js';
 export default {
   cmd: ['setbalance'],
   desc: "Set a user's balance (Owner only)",
+  ownerOnly: true,
 
   run: async ({ text, sonic, msg }, args) => {
-    const sender = resolveSender(msg);
-    if (!isOwner(sender)) {
-      return text(`${e.cross} This command is only available to the bot owner!`);
-    }
-
     const target = getTarget(msg);
     if (!target) {
       return text(`${e.cross} Mention or reply to someone to set their balance!`);
     }
 
-    const amount = parseInt(args[0] ?? '', 10);
-    const parsedAmount = Number.isNaN(amount) ? parseInt(args[1] ?? '', 10) : amount;
-    if (Number.isNaN(parsedAmount) || parsedAmount < 0) {
+    const amountArgs = args[0]?.startsWith('@') ? args.slice(1) : args;
+    const amountToken = amountArgs.at(-1) ?? '';
+    const parsedAmount = Number(amountToken);
+    if (!/^\d+$/.test(amountToken) || !Number.isSafeInteger(parsedAmount)) {
       return text(`${e.cross} Provide a valid amount! Example: !setbalance @user 1000`);
     }
 

@@ -278,6 +278,17 @@ describe('UserService', () => {
 npm test
 ```
 
+`npm test` runs the full Jest suite without collecting coverage and exits after
+the test process completes. Use the coverage-threshold check separately:
+
+```bash
+npm run lint
+npm run test:coverage
+```
+
+Run `npm run lint` before submitting changes. The lint command must complete
+without errors or warnings.
+
 ### Test Naming
 
 - Use descriptive test names that explain behavior

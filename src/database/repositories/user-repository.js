@@ -15,18 +15,24 @@ export class UserRepository extends BaseRepository {
     this.jidUtils = container.resolve('utils').jid;
   }
 
+  /** @param {any} userId @returns {string} */
+  normalizeUserId(userId) {
+    const digits = this.jidUtils.fromUser(userId);
+    return digits ? this.jidUtils.toUser(digits) : '';
+  }
+
   /** @param {any} userId @returns {Promise<any>} */
   async getOrCreate(userId) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.normalizeUserId(userId);
     if (!id) {
       throw new InvalidTransactionError('Invalid user ID');
     }
 
-    let user = await this.findById(id);
+    let user = await this.findById(id, false);
 
     if (!user) {
       await this.create({ id });
-      user = await this.findById(id);
+      user = await this.findById(id, false);
     }
 
     return this.mapUser(user);
@@ -34,7 +40,10 @@ export class UserRepository extends BaseRepository {
 
   /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async addCoins(userId, amount) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.normalizeUserId(userId);
+    if (!id || amount < 0) {
+      throw new InvalidTransactionError('Invalid coin amount or user ID');
+    }
     if (amount === 0) {
       return await this.getBalance(id);
     }
@@ -49,6 +58,7 @@ export class UserRepository extends BaseRepository {
     `;
 
     await this.execute(updateQuery, [amount, amount, id], 'addCoins');
+    await this.clearCache();
 
     await this.logTransaction(null, id, Math.abs(amount), amount > 0 ? 'earn' : 'lose');
 
@@ -57,7 +67,10 @@ export class UserRepository extends BaseRepository {
 
   /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async removeCoins(userId, amount) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.normalizeUserId(userId);
+    if (!id || amount < 0) {
+      throw new InvalidTransactionError('Invalid coin amount or user ID');
+    }
     const user = await this.getOrCreate(id);
 
     if (user.balance < amount) {
@@ -89,8 +102,8 @@ export class UserRepository extends BaseRepository {
 
   /** @param {any} fromId @param {any} toId @param {number} amount @returns {Promise<any>} */
   async transferCoins(fromId, toId, amount) {
-    const from = this.jidUtils.fromUser(fromId);
-    const to = this.jidUtils.fromUser(toId);
+    const from = this.normalizeUserId(fromId);
+    const to = this.normalizeUserId(toId);
 
     const fromUser = await this.getOrCreate(from);
 
@@ -123,14 +136,14 @@ export class UserRepository extends BaseRepository {
 
   /** @param {any} userId @returns {Promise<number>} */
   async getBalance(userId) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.normalizeUserId(userId);
     const result = await this.get('SELECT balance FROM users WHERE id = ?', [id], 'getBalance');
     return result ? result.balance : 0;
   }
 
   /** @param {any} userId @param {number} amount @returns {Promise<any>} */
   async deposit(userId, amount) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.normalizeUserId(userId);
     const user = await this.getOrCreate(id);
 
     if (user.balance < amount) {
@@ -146,8 +159,12 @@ export class UserRepository extends BaseRepository {
 
     await this.execute(updateQuery, [amount, amount, id], 'deposit');
     await this.logTransaction(id, null, amount, 'deposit');
+    await this.cache.delete(`users:${id}`);
+    await this.clearCache();
 
-    const updated = await this.getOrCreate(id);
+    const updated = this.mapUser(
+      await this.get('SELECT * FROM users WHERE id = ?', [id], 'getUpdatedUser'),
+    );
     return {
       success: true,
       balance: updated.balance,
@@ -157,7 +174,7 @@ export class UserRepository extends BaseRepository {
 
   /** @param {any} userId @param {number} amount @returns {Promise<any>} */
   async withdraw(userId, amount) {
-    const id = this.jidUtils.fromUser(userId);
+    const id = this.normalizeUserId(userId);
     const user = await this.getOrCreate(id);
 
     if (user.bank < amount) {
@@ -173,8 +190,12 @@ export class UserRepository extends BaseRepository {
 
     await this.execute(updateQuery, [amount, amount, id], 'withdraw');
     await this.logTransaction(null, id, amount, 'withdraw');
+    await this.cache.delete(`users:${id}`);
+    await this.clearCache();
 
-    const updated = await this.getOrCreate(id);
+    const updated = this.mapUser(
+      await this.get('SELECT * FROM users WHERE id = ?', [id], 'getUpdatedUser'),
+    );
     return {
       success: true,
       balance: updated.balance,

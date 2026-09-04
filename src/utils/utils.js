@@ -89,7 +89,11 @@ export const jid = {
   },
 
   /** @param {any} jidStr */
-  normalize: (jidStr) => jidNormalizedUser(jidStr) || '',
+  normalize: (jidStr) => {
+    const normalized = jidNormalizedUser(jidStr) || '';
+    const [user, server] = normalized.split('@');
+    return user && server ? `${user}@${server.toLowerCase()}` : normalized;
+  },
 };
 
 /** @param {any} msg */
@@ -138,7 +142,7 @@ export const getTarget = (msg) => {
 
 /** @param {any} userJid */
 export const isOwner = (userJid) => {
-  const owner = getOwner();
+  const owner = process.env['OWNER_NUMBER']?.trim() || getOwner();
   if (!owner) return false;
 
   const userNum = jid.fromUser(userJid);

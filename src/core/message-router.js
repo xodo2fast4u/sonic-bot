@@ -9,14 +9,15 @@ import { getErrorMessage } from '../utils/error-message.js';
 import { jid, send } from '../utils/utils.js';
 
 export class MessageRouter extends EventEmitter {
-  constructor() {
+  /** @param {{ commandRegistry?: any, middlewarePipeline?: any }} [options] */
+  constructor(options = {}) {
     super();
     /** @type {Array<(context: any) => Promise<boolean|void>>} */
     this.middlewares = [];
     /** @type {any|null} */
-    this.commandRegistry = null;
+    this.commandRegistry = options.commandRegistry || null;
     /** @type {any|null} */
-    this.middlewarePipeline = null;
+    this.middlewarePipeline = options.middlewarePipeline || null;
     /** @type {any|null} */
     this.cooldownManager = null;
     /** @type {any|null} */
@@ -29,8 +30,8 @@ export class MessageRouter extends EventEmitter {
 
     this.cooldownManager = container.resolve('cooldownManager');
     this.logger = container.resolve('logger');
-    this.commandRegistry = container.resolve('commandRegistry');
-    this.middlewarePipeline = container.resolve('middlewarePipeline');
+    this.commandRegistry ||= container.resolve('commandRegistry');
+    this.middlewarePipeline ||= container.resolve('middlewarePipeline');
 
     await this.cooldownManager.initialize?.();
     await this.commandRegistry.initialize?.();
@@ -117,6 +118,15 @@ export class MessageRouter extends EventEmitter {
 
   /** @param {import('../../types/index.js').WhatsAppMessage} msg */
   async extractText(msg) {
+    const rawMessage = msg.message || {};
+    const rawText =
+      rawMessage.conversation ||
+      rawMessage.extendedTextMessage?.text ||
+      rawMessage.imageMessage?.caption ||
+      rawMessage.videoMessage?.caption;
+
+    if (rawText) return rawText;
+
     const { extractMessageContent } = await import('baileys');
     const m = extractMessageContent(msg.message);
     return (
@@ -128,10 +138,14 @@ export class MessageRouter extends EventEmitter {
     );
   }
 
-  /** @param {string} text */
+  /** @param {string} text @returns {string[]} */
   parseCommand(text) {
     const prefix = this.getPrefix();
-    return text.slice(prefix.length).trim().split(/\s+/);
+    const commandText = text.slice(prefix.length).trim();
+    return Array.from(
+      commandText.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g),
+      (match) => match[1] ?? match[2] ?? match[3] ?? '',
+    );
   }
 
   getPrefix() {

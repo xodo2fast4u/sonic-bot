@@ -23,10 +23,10 @@ test('setOwner preserves values containing equals signs in the env file', async 
 
 test('ConfigManager validates single and comma-separated owner numbers successfully', async () => {
   container.register('logger', () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
+    info: () => undefined,
+    warn: () => undefined,
+    error: () => undefined,
+    debug: () => undefined,
   }));
 
   const tempDir = mkdtempSync(join(tmpdir(), 'sonic-bot-'));

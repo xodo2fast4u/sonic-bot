@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { getTarget, resolveSender, jid, isOwner } from '../../utils/utils.js';
+import { getTarget, jid } from '../../utils/utils.js';
 import { removeItem, hasItem, getInventory } from '../../database/database.js';
 import logger from '../../utils/logger.js';
 
@@ -7,27 +7,26 @@ import logger from '../../utils/logger.js';
 export default {
   cmd: ['removeitem'],
   desc: "Remove items from a user's inventory (Owner only)",
+  ownerOnly: true,
 
   run: async ({ text, sonic, msg }, args) => {
-    const sender = resolveSender(msg);
-    if (!isOwner(sender)) {
-      return text(`${e.cross} This command is only available to the bot owner!`);
-    }
-
     const target = getTarget(msg);
     if (!target) {
       return text(`${e.cross} Mention or reply to someone to remove items from them!`);
     }
 
-    const itemName = args[0];
-    const quantity = args[1] ? parseInt(args[1], 10) : 1;
+    const itemArgs = args[0]?.startsWith('@') ? args.slice(1) : args;
+    const quantityToken = itemArgs.at(-1);
+    const hasQuantity = quantityToken && /^\d+$/.test(quantityToken);
+    const quantity = hasQuantity ? Number(quantityToken) : 1;
+    const itemName = (hasQuantity ? itemArgs.slice(0, -1) : itemArgs).join(' ').trim();
 
     if (!itemName) {
       return text(`${e.cross} Provide an item name! Example: !removeitem @user "Diamond Sword" 2`);
     }
 
-    if (quantity <= 0) {
-      return text(`${e.cross} Quantity must be greater than 0!`);
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+      return text(`${e.cross} Quantity must be a positive whole number!`);
     }
 
     if (!hasItem(target, itemName, quantity)) {

@@ -310,8 +310,7 @@ export class ConnectionPool extends EventEmitter {
   async transaction(callback) {
     const connection = await this.acquire();
     try {
-      const result = await connection.db.transaction(callback)();
-      return result;
+      return await callback();
     } finally {
       await this.release(connection);
     }

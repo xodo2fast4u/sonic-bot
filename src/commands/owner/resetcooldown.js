@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { getTarget, resolveSender, jid, isOwner } from '../../utils/utils.js';
+import { getTarget, resolveSender, jid } from '../../utils/utils.js';
 import { resetCooldown } from '../../utils/cooldown.js';
 import logger from '../../utils/logger.js';
 
@@ -7,15 +7,12 @@ import logger from '../../utils/logger.js';
 export default {
   cmd: ['resetcooldown', 'resetcd'],
   desc: "Reset a user's cooldowns (Owner only)",
+  ownerOnly: true,
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
-    if (!isOwner(sender)) {
-      return text(`${e.cross} This command is only available to the bot owner!`);
-    }
-
     const target = getTarget(msg);
-    const command = args[0];
+    const command = args[0]?.toLowerCase();
 
     if (!target && !command) {
       return text(
@@ -23,35 +20,21 @@ export default {
       );
     }
 
-    if (target === 'all') {
-      resetCooldown(sender);
-      logger.info('[economy:resetcooldown] All cooldowns reset', { bot: sonic.user?.id, sender });
-      return text(
-        `
-╭━━━ ${e.admin} *COOLDOWN RESET* ━━━╮
-┃
-┃ ${e.check} All your cooldowns have been reset!
-┃
-┃ ${e.ring} Reset by: Owner
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
-      );
-    }
+    const resetTarget = target || sender;
+    const resetCommand = command === 'all' ? null : command || null;
+    resetCooldown(resetTarget, resetCommand);
+    const targetNum = jid.fromUser(resetTarget);
 
-    if (target) {
-      const resetCommand = command || null;
-      resetCooldown(target, resetCommand);
-      const targetNum = jid.fromUser(target);
+    const commandText = resetCommand ? ` for command: ${resetCommand}` : '';
 
-      const commandText = resetCommand ? ` for command: ${resetCommand}` : '';
+    logger.info('[economy:resetcooldown] Cooldowns reset', {
+      bot: sonic.user?.id,
+      target: resetTarget,
+      command: resetCommand,
+    });
 
-      logger.info('[economy:resetcooldown] Cooldowns reset', {
-        bot: sonic.user?.id,
-        target,
-        command: resetCommand,
-      });
-
-      await text(
-        `
+    await text(
+      `
 ╭━━━ ${e.admin} *COOLDOWN RESET* ━━━╮
 ┃
 ┃ ${e.user} Target: @${targetNum}
@@ -59,7 +42,6 @@ export default {
 ┃
 ┃ ${e.ring} Reset by: Owner
 ╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
-      );
-    }
+    );
   },
 };

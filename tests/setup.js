@@ -1,13 +1,20 @@
 import { jest } from '@jest/globals';
 
-import '../src/config/config-manager.js';
-import '../src/utils/enhanced-logger.js';
-import '../src/utils/enhanced-cooldown.js';
-import '../src/utils/utils.js';
-import '../src/cache/cache-manager.js';
-import '../src/database/connection-pool.js';
-import '../src/commands/middleware-pipeline.js';
-import '../src/commands/command-registry.js';
+const isUtilityOnlyTest =
+  process.argv.some((argument) => argument.endsWith('utils.test.js')) &&
+  !process.argv.some((argument) => argument.endsWith('database.test.js'));
+
+if (!isUtilityOnlyTest) {
+  await import('../src/config/config-manager.js');
+  await import('../src/utils/utils.js');
+  await import('../src/commands/middleware-pipeline.js');
+}
+
+await import('../src/utils/enhanced-logger.js');
+await import('../src/utils/enhanced-cooldown.js');
+await import('../src/cache/cache-manager.js');
+await import('../src/database/connection-pool.js');
+await import('../src/commands/command-registry.js');
 
 process.env.NODE_ENV = 'test';
 global.jest = jest;
@@ -15,9 +22,9 @@ global.jest = jest;
 import logger from '../src/utils/logger.js';
 
 beforeEach(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => {});
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.spyOn(console, 'log').mockImplementation(() => undefined);
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
 afterEach(() => {
@@ -25,23 +32,34 @@ afterEach(() => {
 });
 
 global.testUtils = {
-  createMockMessage: (overrides = {}) => ({
-    key: {
+  createMockMessage: (overrides = {}) => {
+    const conversation = overrides.message?.conversation ?? 'test message';
+    const message = { conversation, ...overrides.message };
+    const key = {
       remoteJid: '1234567890@s.whatsapp.net',
       id: 'test-message-id',
       participant: '1234567890@s.whatsapp.net',
       ...overrides.key,
-    },
-    message: {
-      conversation: 'test message',
-      extendedTextMessage: {
-        text: 'test message',
-      },
-      ...overrides.message,
-    },
-    messageTimestamp: Date.now(),
-    ...overrides,
-  }),
+    };
+
+    if (overrides.key?.participant && !overrides.key.remoteJid) {
+      key.remoteJid = overrides.key.participant;
+    }
+
+    if (message.extendedTextMessage) {
+      message.extendedTextMessage = {
+        text: conversation,
+        ...message.extendedTextMessage,
+      };
+    }
+
+    return {
+      ...overrides,
+      key,
+      message,
+      messageTimestamp: Date.now(),
+    };
+  },
 
   createMockUser: (overrides = {}) => ({
     id: '1234567890@s.whatsapp.net',
@@ -60,7 +78,10 @@ global.testUtils = {
     ...overrides,
   }),
 
-  waitFor: (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms)),
+  waitFor: (ms = 0) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    }),
 
   createMockContainer: () => {
     const services = new Map();

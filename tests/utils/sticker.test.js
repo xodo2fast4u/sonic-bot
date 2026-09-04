@@ -1,4 +1,4 @@
-import { imageToWebp, addExifToWebp, createSticker } from '../../src/utils/sticker.js';
+import { imageToWebp, addExifToWebp, createSticker } from '../../src/utils/sticker-helpers.js';
 
 describe('Sticker Utility', () => {
   const samplePng = Buffer.from(

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { ConnectionPool } from '../../src/database/connection-pool.js';
 import { UserRepository } from '../../src/database/repositories/user-repository.js';
 import { InventoryRepository } from '../../src/database/repositories/inventory-repository.js';
+import { container } from '../../src/core/container.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,6 +15,7 @@ describe('Database Integration', () => {
   let connectionPool;
   let userRepo;
   let inventoryRepo;
+  let cache;
 
   beforeEach(async () => {
     const testDir = join(__dirname, '../test-data');
@@ -28,6 +30,40 @@ describe('Database Integration', () => {
     });
 
     await connectionPool.initialize(dbPath);
+    container.singletons.set('connectionPool', connectionPool);
+    await connectionPool.execute(`
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        balance INTEGER DEFAULT 0,
+        bank INTEGER DEFAULT 0,
+        total_earned INTEGER DEFAULT 0,
+        created_at INTEGER DEFAULT (strftime('%s', 'now'))
+      );
+    `);
+    await connectionPool.execute(`
+      CREATE TABLE inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        item_name TEXT NOT NULL,
+        quantity INTEGER DEFAULT 1,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE(user_id, item_name)
+      );
+    `);
+    await connectionPool.execute(`
+      CREATE TABLE transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_id TEXT,
+        to_id TEXT,
+        amount INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        timestamp INTEGER DEFAULT (strftime('%s', 'now'))
+      );
+    `);
+
+    cache = container.resolve('cache');
+    if (!cache.initialized) await cache.initialize();
+    await cache.clear();
 
     userRepo = new UserRepository();
     await userRepo.initialize();
@@ -40,6 +76,8 @@ describe('Database Integration', () => {
     if (connectionPool) {
       await connectionPool.close();
     }
+
+    if (cache) await cache.clear();
 
     if (existsSync(dbPath)) {
       unlinkSync(dbPath);

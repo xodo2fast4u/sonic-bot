@@ -61,15 +61,19 @@ export class MiddlewarePipeline {
     this.utils = null;
     this.configManager = null;
     this.rateLimitBuckets = new Map();
+    this.initialized = false;
   }
 
   async initialize() {
+    if (this.initialized) return;
+
     this.logger = container.resolve('logger');
     this.cooldownManager = container.resolve('cooldownManager');
     this.utils = container.resolve('utils');
     this.configManager = container.resolve('configManager');
 
     await this.registerDefaults();
+    this.initialized = true;
   }
 
   /** @param {(context: MiddlewareContext) => Promise<void>} middleware */
@@ -221,6 +225,15 @@ export class MiddlewarePipeline {
       async (context) => {
         const command = context.command;
         const user = context.user;
+
+        const globalCooldown = this.cooldownManager.checkGlobalCooldown(user);
+        if (!globalCooldown.allowed) {
+          context.stop(new CooldownError('global', globalCooldown.remaining));
+          await context.helpers.text(
+            `⏱️ Please slow down and wait ${Math.ceil(globalCooldown.remaining / 1000)} seconds.`,
+          );
+          return;
+        }
 
         if (command.cooldown) {
           const cooldown = this.cooldownManager.checkCommandCooldown(

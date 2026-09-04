@@ -55,7 +55,7 @@ Sonic combines several capabilities into one bot experience:
 - **Lightning Fast**: Optimized for speed and performance
 - **Modular Design**: Easy to extend with new commands
 - **Permission System**: Admin-only commands with proper checks
-- **Auto-Save Configuration**: Persistent settings
+- **Auto-Save Configuration**: Persistent authentication and environment settings
 - **Emoji-Rich Interface**: Beautiful, colorful responses
 
 ### Core capabilities
@@ -65,7 +65,7 @@ Sonic combines several capabilities into one bot experience:
 - **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, fish, hunt, mine, shop, rob, stats and leaderboards
 - **Gambling and risk games**: coinflip, dice, roulette, slots, crash and blackjack for fast mini-game action
 - **Tools and maker features**: sticker generation, weather, wiki, search, calculator, image tools, encoding/decoding and utility commands
-- **Owner controls**: participant toggles, welcome/goodbye controls, promote/demote toggles and maintenance actions
+- **Owner controls**: participant toggles, welcome/goodbye controls, promote/demote toggles and maintenance actions. Owner message toggles currently apply until the bot restarts; persistent toggle configuration is planned.
 
 ## Prerequisites
 
@@ -193,6 +193,21 @@ The command registry automatically loads command modules from the category folde
 - Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
 
 ## Development
+
+### Test and lint
+
+Run the full test suite and lint checks locally:
+
+```bash
+npm test
+npm run lint
+```
+
+For the Jest coverage report and configured coverage thresholds run:
+
+```bash
+npm run test:coverage
+```
 
 ### Adding a new command
 
