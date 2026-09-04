@@ -44,6 +44,7 @@ export default {
 ┃ ${p}deposit - To bank
 ┃ ${p}withdraw - From bank
 ┃ ${p}inventory - Your items
+┃ ${p}transactions - Coin history
 ┃ ${p}leaderboard - Top rich
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
@@ -54,6 +55,7 @@ export default {
 ┃ ${p}roulette - Spin the wheel
 ┃ ${p}blackjack - Beat the dealer
 ┃ ${p}crash - Ride the rocket
+┃ ${p}higherlower - Guess the next card
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.tool} *TOOLS* ━━━╮

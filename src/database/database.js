@@ -65,6 +65,14 @@ const statements = {
     `SELECT id, balance, bank, total_earned FROM users ORDER BY (balance + bank) DESC LIMIT ?`,
   ),
 
+  getTransactions: db.prepare(
+    `SELECT from_id, to_id, amount, type, timestamp
+     FROM transactions
+     WHERE from_id = ? OR to_id = ?
+     ORDER BY timestamp DESC, id DESC
+     LIMIT ?`,
+  ),
+
   logTransaction: db.prepare(
     `INSERT INTO transactions (from_id, to_id, amount, type) VALUES (?, ?, ?, ?)`,
   ),
@@ -190,6 +198,13 @@ export const getLeaderboard = (/** @type {number} */ limit = 10) => {
         totalEarned: user.total_earned,
       }),
     );
+};
+
+export const getTransactions = (/** @type {string} */ userId, /** @type {number} */ limit = 10) => {
+  const id = jid.fromUser(userId);
+  if (!id) return [];
+
+  return statements.getTransactions.all(id, id, limit);
 };
 
 export const getInventory = (/** @type {string} */ userId) => {

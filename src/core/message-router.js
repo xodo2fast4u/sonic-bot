@@ -60,7 +60,12 @@ export class MessageRouter extends EventEmitter {
     };
 
     try {
-      await this.processCommand(context);
+      const process = () => this.processCommand(context);
+      if (typeof this.logger.withCorrelationId === 'function') {
+        await this.logger.withCorrelationId(context.correlationId, process);
+      } else {
+        await process();
+      }
     } catch (error) {
       this.handleError(error, context);
     }
