@@ -216,9 +216,27 @@ export const send = {
       react: { text: emoji, key },
     }),
 
-  /** @param {any} sonic @param {any} msg @param {string} url @param {string} caption */
-  image: (sonic, msg, url, caption = '') =>
-    sonic.sendMessage(msg.key.remoteJid, { image: { url }, caption }, { quoted: msg }),
+  /**
+   * @param {any} sonic
+   * @param {any} msg
+   * @param {string|Buffer} source
+   * @param {string} caption
+   * @param {string} [mimetype]
+   */
+  image: (sonic, msg, source, caption = '', mimetype) =>
+    sonic.sendMessage(
+      msg.key.remoteJid,
+      {
+        image: typeof source === 'string' ? { url: source } : source,
+        caption,
+        ...(mimetype ? { mimetype } : {}),
+      },
+      { quoted: msg },
+    ),
+
+  /** @param {any} sonic @param {any} msg @param {Buffer} sticker */
+  sticker: (sonic, msg, sticker) =>
+    sonic.sendMessage(msg.key.remoteJid, { sticker }, { quoted: msg }),
 };
 
 container.singleton('utils', () => ({

@@ -184,13 +184,13 @@ The main code lives under [src](src) and the folders are organized like this:
 The command registry automatically loads command modules from the category folders in [src/commands](src/commands). The currently implemented command families are:
 
 - General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`
-- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
+- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`
 - Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`
 - Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
-- Maker: `!sticker`
+- Maker: `!sticker`, `!brat`, `!hd`
 - Newsletter: `!newslettermanage`, `!newsletteractions`
-- Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`
+- Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
 
 ## Development
 
@@ -222,7 +222,8 @@ The command loader scans each folder and picks up new files automatically, so ad
 - `mention(text, mentions)` sends a reply with mentions.
 - `react(emoji, key)` reacts to a message.
 - `edit(key, text)` edits an existing outgoing message.
-- `image(url, caption)` sends an image message.
+- `image(source, caption, mimetype)` sends an image message from a URL or buffer. The MIME type is optional.
+- `sticker(buffer)` sends a sticker buffer as a quoted sticker message.
 
 ## Security & Privacy
 

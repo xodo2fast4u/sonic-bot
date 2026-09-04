@@ -154,8 +154,10 @@ export class MessageRouter extends EventEmitter {
       react: (emoji, key) => send.react(sonic, msg, emoji, key),
       /** @param {any} key @param {string} text */
       edit: (key, text) => send.edit(sonic, msg, key, text),
-      /** @param {string} url @param {string} [caption] */
-      image: (url, caption) => send.image(sonic, msg, url, caption),
+      /** @param {string|Buffer} source @param {string} [caption] @param {string} [mimetype] */
+      image: (source, caption, mimetype) => send.image(sonic, msg, source, caption, mimetype),
+      /** @param {Buffer} sticker */
+      sticker: (sticker) => send.sticker(sonic, msg, sticker),
       sonic,
       msg,
     };

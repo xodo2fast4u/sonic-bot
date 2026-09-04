@@ -61,7 +61,7 @@ const getSourceMessage = (msg) => {
 export default {
   cmd: ['sticker', 's'],
   desc: 'Convert a replied image or video into a WhatsApp sticker',
-  run: async ({ sonic, msg, react, text }, args) => {
+  run: async ({ msg, react, sticker, text }, args) => {
     const mediaSource = getSourceMessage(msg);
 
     if (!mediaSource) {
@@ -101,13 +101,7 @@ export default {
         emojis: ['🦔'],
       });
 
-      await sonic.sendMessage(
-        msg.key.remoteJid,
-        {
-          sticker: stickerBuffer,
-        },
-        { quoted: msg },
-      );
+      await sticker(stickerBuffer);
     } catch (error) {
       await text(`${e.cross} Failed to create sticker: ${getErrorMessage(error)}`);
     }

@@ -156,7 +156,8 @@ export interface CommandHelpers {
   mention: (text: string, mentions: string[]) => Promise<void>;
   react: (emoji: string, key?: any) => Promise<void>;
   edit: (key: any, text: string) => Promise<void>;
-  image: (url: string, caption?: string) => Promise<void>;
+  image: (source: string | Buffer, caption?: string, mimetype?: string) => Promise<void>;
+  sticker: (sticker: Buffer) => Promise<void>;
   sonic: any;
   msg: any;
 }
@@ -304,9 +305,11 @@ export interface SendUtils {
   image: (
     sonic: WhatsAppSocket,
     msg: WhatsAppMessage,
-    url: string,
+    source: string | Buffer,
     caption?: string,
+    mimetype?: string,
   ) => Promise<void>;
+  sticker: (sonic: WhatsAppSocket, msg: WhatsAppMessage, sticker: Buffer) => Promise<void>;
 }
 
 export interface EventData {

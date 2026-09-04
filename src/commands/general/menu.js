@@ -74,6 +74,8 @@ export default {
 
 ╭━━━ ${e.maker} *MAKER* ━━━╮
 ┃ ${p}sticker - Convert image to sticker
+┃ ${p}brat - Create Brat sticker
+┃ ${p}hd - Enhance image quality
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.ring} *NEWSLETTER* ━━━╮
