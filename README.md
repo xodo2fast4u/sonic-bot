@@ -137,6 +137,7 @@ Example:
 ```env
 SONIC_PREFIX=!
 OWNER_NUMBER=
+FFMPEG_PATH=ffmpeg
 ```
 
 ### 4. **Run sonic**
@@ -160,6 +161,7 @@ Sonic reads configuration from `.env` and a built-in config module.
 | -------------- | ----------------------------------------- | -------------------------------------------- |
 | `SONIC_PREFIX` | Command prefix for bot commands           | `!`                                          |
 | `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing) |
+| `FFMPEG_PATH`  | Path or command used to run FFmpeg        | `ffmpeg`                                     |
 
 ## Project structure
 
@@ -242,12 +244,15 @@ The command loader scans each folder and picks up new files automatically, so ad
 - `edit(key, text)` edits an existing outgoing message.
 - `image(source, caption, mimetype)` sends an image message from a URL or buffer. The MIME type is optional.
 - `sticker(buffer)` sends a sticker buffer as a quoted sticker message.
+- `getTarget(msg)` returns the first mentioned user or the sender of a quoted message, or `null` when no target is present.
+- `resolveSender(msg)` returns the message sender and handles group participants and LID fallbacks.
 
 ### Voice changer requirements
 
 Voice commands process a sent or quoted audio message with the system `ffmpeg`
-executable. FFmpeg must include the `libopus` encoder. On Linux, install the
-distribution's FFmpeg package and verify it with:
+executable, or the executable configured with `FFMPEG_PATH`. FFmpeg must include
+the `libopus` encoder. On Linux, install the distribution's FFmpeg package and
+verify it with:
 
 ```bash
 ffmpeg -encoders | grep libopus
@@ -280,7 +285,7 @@ Run Sonic on your Android device using Termux:
 2. **Update and install dependencies**
    ```bash
    pkg update && pkg upgrade
-   pkg install nodejs-lts git clang make python pkg-config
+   pkg install nodejs-lts git clang make python pkg-config ffmpeg
    ```
 3. **Clone and setup Sonic**
 
@@ -315,7 +320,13 @@ Run Sonic on your Android device using Termux:
 
    ```bash
    touch .env
-   printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\n' > .env
+   printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\nFFMPEG_PATH=ffmpeg\n' > .env
+   ```
+
+   If FFmpeg is installed in a non-default location on Termux, set the absolute path instead:
+
+   ```bash
+   printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\nFFMPEG_PATH=/data/data/com.termux/files/usr/bin/ffmpeg\n' > .env
    ```
 
 6. **Keep Termux active**
