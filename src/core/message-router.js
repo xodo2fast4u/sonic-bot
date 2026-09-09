@@ -177,6 +177,8 @@ export class MessageRouter extends EventEmitter {
       image: (source, caption, mimetype) => send.image(sonic, msg, source, caption, mimetype),
       /** @param {Buffer} sticker */
       sticker: (sticker) => send.sticker(sonic, msg, sticker),
+      /** @param {Buffer} audio @param {Uint8Array} waveform @param {number} seconds */
+      voice: (audio, waveform, seconds) => send.voice(sonic, msg, audio, waveform, seconds),
       sonic,
       msg,
     };

@@ -70,6 +70,7 @@ export const emoji = Object.freeze({
   tool: '⚒️',
   maker: '✨',
   coin: '🪙',
+  download: '⬇️',
 });
 
 let ownerNumber = config.ownerNumber;

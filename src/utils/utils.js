@@ -241,6 +241,26 @@ export const send = {
   /** @param {any} sonic @param {any} msg @param {Buffer} sticker */
   sticker: (sonic, msg, sticker) =>
     sonic.sendMessage(msg.key.remoteJid, { sticker }, { quoted: msg }),
+
+  /**
+   * @param {any} sonic
+   * @param {any} msg
+   * @param {Buffer} audio
+   * @param {Uint8Array} waveform
+   * @param {number} seconds
+   */
+  voice: (sonic, msg, audio, waveform, seconds) =>
+    sonic.sendMessage(
+      msg.key.remoteJid,
+      {
+        audio,
+        mimetype: 'audio/ogg; codecs=opus',
+        ptt: true,
+        waveform,
+        seconds,
+      },
+      { quoted: msg },
+    ),
 };
 
 container.singleton('utils', () => ({

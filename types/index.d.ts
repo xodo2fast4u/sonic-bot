@@ -158,6 +158,7 @@ export interface CommandHelpers {
   edit: (key: any, text: string) => Promise<void>;
   image: (source: string | Buffer, caption?: string, mimetype?: string) => Promise<void>;
   sticker: (sticker: Buffer) => Promise<void>;
+  voice: (audio: Buffer, waveform: Uint8Array, seconds: number) => Promise<void>;
   sonic: any;
   msg: any;
 }
@@ -310,6 +311,13 @@ export interface SendUtils {
     mimetype?: string,
   ) => Promise<void>;
   sticker: (sonic: WhatsAppSocket, msg: WhatsAppMessage, sticker: Buffer) => Promise<void>;
+  voice: (
+    sonic: WhatsAppSocket,
+    msg: WhatsAppMessage,
+    audio: Buffer,
+    waveform: Uint8Array,
+    seconds: number,
+  ) => Promise<void>;
 }
 
 export interface EventData {

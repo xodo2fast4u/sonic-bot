@@ -3,7 +3,8 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 
-const streams = [{ stream: pino.destination({ dest: './sonic-logs.txt', sync: true }) }];
+const fileStream = pino.destination({ dest: './sonic-logs.txt', sync: true });
+const streams = [{ level: 'trace', stream: fileStream }];
 let prettyStream;
 
 try {
@@ -12,11 +13,10 @@ try {
     translateTime: 'SYS:standard',
     ignore: 'pid,hostname',
   });
+  streams.unshift({ level: 'info', stream: prettyStream });
 } catch {
   prettyStream = null;
 }
-
-if (prettyStream) streams.unshift({ stream: prettyStream });
 
 const fileLogger = pino({ level: 'trace' }, pino.multistream(streams));
 

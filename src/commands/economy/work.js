@@ -6,7 +6,7 @@ import { resolveSender } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['work', 'job'],
+  cmd: ['work'],
   desc: 'Work a random job for coins',
 
   run: async ({ text, sonic, msg }) => {

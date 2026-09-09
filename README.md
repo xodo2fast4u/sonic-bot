@@ -65,6 +65,7 @@ Sonic combines several capabilities into one bot experience:
 - **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, fish, hunt, mine, shop, rob, stats and leaderboards
 - **Gambling and risk games**: coinflip, dice, roulette, slots, crash and blackjack for fast mini-game action
 - **Tools and maker features**: sticker generation, weather, wiki, search, calculator, image tools, encoding/decoding and utility commands
+- **Downloader**: Play youtube songs
 - **Owner controls**: participant toggles, welcome/goodbye controls, promote/demote toggles and maintenance actions. Owner message toggles currently apply until the bot restarts; persistent toggle configuration is planned.
 
 ## Prerequisites
@@ -184,10 +185,12 @@ The main code lives under [src](src) and the folders are organized like this:
 The command registry automatically loads command modules from the category folders in [src/commands](src/commands). The currently implemented command families are:
 
 - General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`
-- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`
-- Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`
+- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
+- Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`, `!poker`, `!baccarat`, `!mines`, `!plinko`, `!derby`, `!keno`, `!wheel`, `!limbo`, `!war`, `!cups`
 - Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
+- Voice changer: `!deep`, `!chipmunk`, `!robot`, `!echo`, `!reverb`, `!bass`, `!nightcore`, `!underwater`, `!radio`, `!megaphone`
+- Downloader: `!play`
 - Maker: `!sticker`, `!brat`, `!hd`
 - Newsletter: `!newslettermanage`, `!newsletteractions`
 - Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
@@ -239,6 +242,19 @@ The command loader scans each folder and picks up new files automatically, so ad
 - `edit(key, text)` edits an existing outgoing message.
 - `image(source, caption, mimetype)` sends an image message from a URL or buffer. The MIME type is optional.
 - `sticker(buffer)` sends a sticker buffer as a quoted sticker message.
+
+### Voice changer requirements
+
+Voice commands process a sent or quoted audio message with the system `ffmpeg`
+executable. FFmpeg must include the `libopus` encoder. On Linux, install the
+distribution's FFmpeg package and verify it with:
+
+```bash
+ffmpeg -encoders | grep libopus
+```
+
+Each command sends a WhatsApp-compatible mono Opus voice note with a generated
+waveform. No `audio-decode` package is required.
 
 ## Security & Privacy
 

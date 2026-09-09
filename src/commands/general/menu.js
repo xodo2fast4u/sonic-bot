@@ -46,6 +46,16 @@ export default {
 ┃ ${p}inventory - Your items
 ┃ ${p}transactions - Coin history
 ┃ ${p}leaderboard - Top rich
+┃ ${p}sell - Sell items
+┃ ${p}use - Activate item
+┃ ${p}interest - Bank interest
+┃ ${p}gift - Gift items
+┃ ${p}heist - Bank vault heist
+┃ ${p}bounty - Bounty board
+┃ ${p}invest - Stock exchange
+┃ ${p}networth - Wealth appraisal
+┃ ${p}vault - Time-lock CD
+┃ ${p}career - Job promotion
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ 🎰 *GAMBLING* ━━━╮
@@ -56,6 +66,16 @@ export default {
 ┃ ${p}blackjack - Beat the dealer
 ┃ ${p}crash - Ride the rocket
 ┃ ${p}higherlower - Guess the next card
+┃ ${p}poker - Video poker
+┃ ${p}baccarat - Punto banco
+┃ ${p}mines - Minesweeper grid
+┃ ${p}plinko - Pegboard drop
+┃ ${p}derby - Horse race betting
+┃ ${p}keno - Number lottery
+┃ ${p}wheel - Prize wheel
+┃ ${p}limbo - Target multiplier
+┃ ${p}war - Casino card war
+┃ ${p}cups - Shell cup game
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.tool} *TOOLS* ━━━╮
@@ -72,6 +92,10 @@ export default {
 ┃ ${p}songrecommendation - Music suggestion
 ┃ ${p}wiki - Wikipedia search
 ┃ ${p}wallpaper - Gets a wallpaper
+╰━━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━ ${e.download} *DOWNLOADER* ━━━╮
+┃ ${p}play - Play YouTube song
 ╰━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━ ${e.maker} *MAKER* ━━━╮
