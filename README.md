@@ -17,7 +17,7 @@
   </a>
 </p>
 
-Sonic WhatsApp bot streamlines group management, enhances user engagement and delivers instant responses at lightning speed. This professional grade bot transforms WhatsApp into a powerful platform for community management and user interaction.
+Sonic is a self-hosted WhatsApp bot for community management and member engagement. It handles admin tools, economy systems, mini-games and modular commands in one place, making group chats more interactive with a virtual economy and run smoother with less manual work.
 
 ## Disclaimer
 
@@ -244,6 +244,7 @@ The command loader scans each folder and picks up new files automatically, so ad
 - `edit(key, text)` edits an existing outgoing message.
 - `image(source, caption, mimetype)` sends an image message from a URL or buffer. The MIME type is optional.
 - `sticker(buffer)` sends a sticker buffer as a quoted sticker message.
+- `voice(audio, waveform, seconds)` sends a WhatsApp voice note using an Opus payload with `ptt: true` and waveform metadata for voice commands.
 - `getTarget(msg)` returns the first mentioned user or the sender of a quoted message, or `null` when no target is present.
 - `resolveSender(msg)` returns the message sender and handles group participants and LID fallbacks.
 

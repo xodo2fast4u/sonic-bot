@@ -1,7 +1,7 @@
 {
   "name": "sonic-bot",
   "version": "3.0.0",
-  "description": "Sonic WhatsApp bot turns quiet WhatsApp groups into places people actually show up—interactive economy and games for members, faster admin workflows, less manual babysitting.",
+  "description": "Sonic is a self-hosted WhatsApp community bot for group management, member engagement and admin automation with economy, mini-games, and modular command tools.",
   "main": "src/index.js",
   "scripts": {
     "start": "node --env-file=.env src/index.js",
@@ -17,7 +17,9 @@
     "xodobyte",
     "baileys",
     "whatsapp",
-    "group engagement"
+    "group management",
+    "member engagement",
+    "admin automation"
   ],
   "author": "xodobyte",
   "license": "MIT",
