@@ -1,27 +1,29 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
+const HOME = 'https://ytmp3.gl/';
 const DOMAIN = 'ytmp3.gl';
-const ORIGIN = `https://${DOMAIN}`;
-const API = 'https://gamma.gammacloud.net/api/v1';
+const ORIGIN = 'https://ytmp3.gl';
+const API_HOSTS = [
+  'https://gamma.gammacloud.net/api/v1',
+  'https://ooocoo.gammacloud.net/api/v1',
+  'https://gammacloud.net/api/v1',
+];
 const FORMAT = 'mp3';
-const UA =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36';
+const UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0';
 const bunRuntime = /** @type {any} */ (globalThis)['Bun'];
 
 function browserHeaders(extra = {}) {
   return {
     Accept: 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Language': 'en-US,en;q=0.5',
     Origin: ORIGIN,
-    Referer: `${ORIGIN}/`,
+    Referer: HOME,
     'User-Agent': UA,
-    'Sec-CH-UA': '"Chromium";v="152", "Not?A_Brand";v="24", "Brave";v="152"',
-    'Sec-CH-UA-Mobile': '?0',
-    'Sec-CH-UA-Platform': '"Linux"',
     'Sec-Fetch-Dest': 'empty',
     'Sec-Fetch-Mode': 'cors',
     'Sec-Fetch-Site': 'cross-site',
+    Priority: 'u=4',
     ...extra,
   };
 }
@@ -375,8 +377,88 @@ async function getJson(url, headers = {}) {
   return body;
 }
 
-async function authorize() {
-  return getJson(`${API}/auth?_=${Date.now()}`);
+export async function fetchCurrentApiKey() {
+  const response = await fetch(HOME, {
+    method: 'GET',
+    headers: {
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'User-Agent': UA,
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      Priority: 'u=0, i',
+    },
+    redirect: 'follow',
+  });
+
+  const html = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Failed to load ${HOME}: HTTP ${response.status}: ${html.slice(0, 1000)}`);
+  }
+
+  const match = html.match(/\bvar\s+apiKey\s*=\s*['"]([^'"]+)['"]\s*;/);
+  if (!match) {
+    throw new Error('Could not extract apiKey from ytmp3.gl');
+  }
+
+  return match[1];
+}
+
+/**
+ * @param {string} path
+ * @param {Record<string, string>} [headers]
+ * @param {Record<string, string | number | boolean>} [query]
+ * @returns {Promise<any>}
+ */
+async function getJsonFromAnyApiHost(path, headers = {}, query = {}) {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    params.set(key, String(value));
+  }
+
+  const search = params.toString();
+  const errors = [];
+
+  for (const host of API_HOSTS) {
+    const url = `${host.replace(/\/$/, '')}${path}${search ? `?${search}` : ''}`;
+
+    try {
+      return await getJson(url, headers);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      errors.push(`${host}: ${detail}`);
+    }
+  }
+
+  throw new Error(`All Gamma Cloud API hosts failed: ${errors.join(' | ')}`);
+}
+
+/**
+ * @param {string} [apiKey]
+ * @returns {Promise<any>}
+ */
+export async function authorize(apiKey) {
+  const resolvedKey =
+    typeof apiKey === 'string' && apiKey.trim() ? apiKey : await fetchCurrentApiKey();
+
+  if (!resolvedKey || typeof resolvedKey !== 'string') {
+    throw new Error('No valid YouTube API key available');
+  }
+
+  return getJsonFromAnyApiHost(
+    '/auth',
+    {},
+    {
+      api_key: resolvedKey,
+      _: Date.now(),
+    },
+  );
 }
 
 /**
@@ -384,9 +466,15 @@ async function authorize() {
  * @returns {Promise<any>}
  */
 async function initialize(key) {
-  return getJson(`${API}/init?_=${Date.now()}`, {
-    Authorization: `Bearer ${key}`,
-  });
+  return getJsonFromAnyApiHost(
+    '/init',
+    {
+      Authorization: `Bearer ${key}`,
+    },
+    {
+      _: Date.now(),
+    },
+  );
 }
 
 /**
@@ -597,7 +685,8 @@ export async function download(downloadURL, videoId, title, outputDir = process.
 export async function downloadSongFromQuery(input, outputDir = process.cwd()) {
   const videoId = await resolveVideoId(input);
 
-  const auth = await authorize();
+  const apiKey = await fetchCurrentApiKey();
+  const auth = await authorize(apiKey);
   if (!auth.key) {
     throw new Error(`Authorization response did not contain a key: ${JSON.stringify(auth)}`);
   }
@@ -641,9 +730,13 @@ async function main() {
   const videoId = await resolveVideoId(input);
 
   console.log(`Video ID: ${videoId}`);
+  console.log('Fetching current API key');
+
+  const apiKey = await fetchCurrentApiKey();
+  console.log(`Using API key: ${apiKey}`);
   console.log('Authorizing');
 
-  const auth = await authorize();
+  const auth = await authorize(apiKey);
 
   if (!auth.key) {
     throw new Error(`Authorization response did not contain a key: ${JSON.stringify(auth)}`);

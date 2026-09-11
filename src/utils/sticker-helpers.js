@@ -58,6 +58,9 @@ export const imageToWebp = (imageBuffer) => {
 export const videoToWebp = (videoBuffer) => {
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn('ffmpeg', [
+      '-hide_banner',
+      '-loglevel',
+      'error',
       '-i',
       'pipe:0',
       '-t',
@@ -65,7 +68,7 @@ export const videoToWebp = (videoBuffer) => {
       '-vcodec',
       'libwebp',
       '-filter:v',
-      'scale=512:512:force_original_aspect_ratio=decrease,fps=12,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000',
+      'fps=12,scale=512:512:force_original_aspect_ratio=decrease:flags=lanczos,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000',
       '-lossless',
       '0',
       '-compression_level',
@@ -75,8 +78,6 @@ export const videoToWebp = (videoBuffer) => {
       '-loop',
       '0',
       '-an',
-      '-vsync',
-      '0',
       '-f',
       'webp',
       'pipe:1',

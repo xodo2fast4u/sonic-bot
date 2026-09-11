@@ -3,8 +3,28 @@ import { spawn } from 'child_process';
 import { emoji as e } from '../../config/config.js';
 import { createVoiceWaveform } from '../../utils/voice-changer.js';
 import { downloadSongFromQuery } from '../../utils/youtube-to-mp3-converter.js';
+import { checkEconCooldown } from '../economy/_utils.js';
 
 const FFMPEG = process.env['FFMPEG_PATH'] || 'ffmpeg';
+const PLAY_COOLDOWN_MS = 5 * 60 * 1000;
+
+/**
+ * @param {string} filePath
+ * @returns {Promise<void>}
+ */
+export async function cleanupDownloadedSong(filePath) {
+  if (!filePath || typeof filePath !== 'string') {
+    return;
+  }
+
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
+      console.warn('Failed to clean up downloaded song', error);
+    }
+  }
+}
 
 /**
  * @param {Buffer} audio
@@ -65,7 +85,9 @@ export default {
   cmd: ['play'],
   desc: 'Download a song from YouTube and send it back as a voice note with waveform',
 
-  run: async ({ msg, react, text, voice }, args) => {
+  run: async ({ msg, react, text, voice, sonic }, args) => {
+    if (!(await checkEconCooldown(sonic, msg, 'play', PLAY_COOLDOWN_MS))) return;
+
     try {
       const query =
         (args.length ? args.join(' ') : '').trim() ||
@@ -84,6 +106,7 @@ export default {
       const { waveform, seconds } = await createVoiceWaveform(voiceAudio);
 
       await voice(voiceAudio, waveform, seconds);
+      await cleanupDownloadedSong(result.filePath);
     } catch (error) {
       console.error('play command failed', error);
       await text(

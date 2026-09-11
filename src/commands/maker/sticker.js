@@ -1,6 +1,7 @@
 import { downloadMediaMessage, extractMessageContent } from 'baileys';
 import { config, emoji as e } from '../../config/config.js';
 import { getErrorMessage } from '../../utils/error-message.js';
+import logger from '../../utils/logger.js';
 import { createSticker } from '../../utils/sticker-helpers.js';
 
 /**
@@ -103,7 +104,10 @@ export default {
 
       await sticker(stickerBuffer);
     } catch (error) {
-      await text(`${e.cross} Failed to create sticker: ${getErrorMessage(error)}`);
+      logger.error('[sticker] Failed to create sticker', { error: getErrorMessage(error) });
+      await text(
+        `${e.cross} I could not create that sticker. Try a shorter GIF or a different image/video.`,
+      );
     }
   },
 };
