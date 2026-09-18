@@ -15,7 +15,7 @@ export default {
     const input = args[0]?.toLowerCase();
 
     if (input && !Object.hasOwn(durations, input)) {
-      return text(`${e.warn} Use: off, 24h, 7d, or 90d`);
+      return text(`${e.warn} Use: off, 24h, 7d or 90d`);
     }
 
     const duration = input ? durations[input] : durations['7d'];

@@ -14,7 +14,7 @@ const getColor = (n) => {
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['roulette', 'rl'],
-  desc: 'Spin the roulette wheel — bet red/black/green or a number',
+  desc: 'Spin the roulette wheel - bet red/black/green or a number',
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
@@ -73,14 +73,14 @@ export default {
 
     await text(
       `
-╭━━━ 🎡 *ROULETTE* ━━━╮
-┃
-┃ ${colorEmoji} Landed: *${landed}* (${landedColor})
-┃ Your bet: *${betOn.toUpperCase()}*
-┃
-┃ ${won ? `${e.check} Won: ${formatCoins(bet * multiplier)} (x${multiplier + 1})` : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎡 *ROULETTE*
+
+${colorEmoji} Landed: *${landed}* (${landedColor})
+Your bet: *${betOn.toUpperCase()}*
+
+${won ? `${e.check} Won: ${formatCoins(bet * multiplier)} (x${multiplier + 1})` : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

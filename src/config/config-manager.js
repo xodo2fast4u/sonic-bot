@@ -30,7 +30,7 @@ const CONFIG_SCHEMA = {
     type: 'string',
     required: true,
     pattern: /^\d+\.\d+\.\d+$/,
-    default: '3.0.0',
+    default: '3.5.0',
   },
   authDir: {
     type: 'string',
@@ -86,7 +86,7 @@ const ENVIRONMENT_CONFIGS = {
     logLevel: 'debug',
     dbPath: './data/sonic_dev.db',
     enableDebugCommands: true,
-    enableHotReload: false,
+    enableHotReload: true,
   },
   production: {
     logLevel: 'info',
@@ -233,11 +233,7 @@ export class ConfigManager {
     return {
       prefix: getEnvValue('SONIC_PREFIX'),
       ownerNumber: getEnvValue('OWNER_NUMBER'),
-      botName: getEnvValue('BOT_NAME'),
-      version: getEnvValue('VERSION'),
-      authDir: getEnvValue('AUTH_DIR'),
-      environment: getEnvValue('NODE_ENV') || 'development',
-      logLevel: getEnvValue('LOG_LEVEL'),
+      environment: getEnvValue('NODE_ENV') || 'production',
     };
   }
 

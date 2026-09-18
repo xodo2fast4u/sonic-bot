@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { spawn } from 'child_process';
 import { emoji as e } from '../../config/config.js';
+import logger from '../../utils/logger.js';
 import { createVoiceWaveform } from '../../utils/voice-changer.js';
 import { downloadSongFromQuery } from '../../utils/youtube-to-mp3-converter.js';
 import { checkEconCooldown } from '../economy/_utils.js';
@@ -21,7 +22,7 @@ export async function cleanupDownloadedSong(filePath) {
     await fs.unlink(filePath);
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
-      console.warn('Failed to clean up downloaded song', error);
+      logger.warn('Failed to clean up downloaded song', error);
     }
   }
 }
@@ -108,10 +109,8 @@ export default {
       await voice(voiceAudio, waveform, seconds);
       await cleanupDownloadedSong(result.filePath);
     } catch (error) {
-      console.error('play command failed', error);
-      await text(
-        `${e.cross} Song failed. Please try a more specific title, a direct YouTube link, or a different search.`,
-      );
+      logger.error('play command failed', error);
+      await text(`${e.cross} Song failed.`);
     }
   },
 };

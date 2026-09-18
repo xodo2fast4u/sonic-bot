@@ -17,13 +17,13 @@ export default {
 
     await text(
       `
-╭━━━ ${e.sonic} *ABOUT ${config.botName.toUpperCase()}* ━━━╮
-┃ ${e.star} Name: ${config.botName}
-┃ ${e.rocket} Version: ${config.version}
-┃ ${e.info} A WhatsApp bot with economic features
-┃ ${e.bolt} Fast, reliable & feature-rich
-┃ ${e.admin} Owner: ${ownerDisplay}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.sonic} *ABOUT ${config.botName.toUpperCase()}*
+${e.star} Name: ${config.botName}
+${e.rocket} Version: ${config.version}
+${e.info} A WhatsApp bot with economic features
+${e.bolt} Fast, reliable & feature-rich
+${e.admin} Owner: ${ownerDisplay}
+`.trim(),
     );
   },
 };

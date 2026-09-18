@@ -1,7 +1,20 @@
 import { emoji as e } from '../../config/config.js';
-import { getUser, addCoins, addItem } from '../../database/database.js';
+import {
+  getUser,
+  addCoins,
+  addItem,
+  getCharacter,
+  setEquippedItem,
+  setEquippedArmour,
+} from '../../database/database.js';
 import { formatCoins } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
+import {
+  BATTLE_ITEMS,
+  getBattleItem,
+  ARMOUR_ITEMS,
+  getArmourItem,
+} from '../../services/rpg-service.js';
 
 /** @type {{ id: string, name: string, emoji: string, price: number, desc: string }[]} */
 export const SHOP_ITEMS = [
@@ -21,63 +34,130 @@ export const SHOP_ITEMS = [
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['shop', 'store'],
-  desc: 'Browse or buy items from the shop',
+  cmd: ['shop'],
+  desc: 'Browse or buy items and battle weapons from the shop',
 
   run: async ({ text, msg }, args) => {
     const sender = resolveSender(msg);
     const action = args[0]?.toLowerCase();
 
     if (!action || action === 'list' || action === 'view') {
-      const listing = SHOP_ITEMS.map(
+      const utilityListing = SHOP_ITEMS.map(
         (item) =>
-          `┃ ${item.emoji} *${item.name}* — ${formatCoins(item.price)}\n┃   ${item.desc} (ID: ${item.id})`,
-      ).join('\n┃\n');
+          `${item.emoji} *${item.name}* - ${formatCoins(item.price)} coins\n  ${item.desc} (ID: \`${item.id}\`)`,
+      ).join('\n\n');
+
+      const battleListing = BATTLE_ITEMS.map(
+        (item) =>
+          `${item.emoji} *${item.name}* [Lvl ${item.minLevel}+] - ${formatCoins(item.price)} coins\n  ${item.desc} (ID: \`${item.id}\`)`,
+      ).join('\n\n');
+
+      const armourListing = ARMOUR_ITEMS.map(
+        (item) =>
+          `${item.emoji} *${item.name}* [Lvl ${item.minLevel}+] - ${formatCoins(item.price)} coins\n  ${item.desc} (ID: \`${item.id}\`)`,
+      ).join('\n\n');
 
       return text(
         `
-╭━━━ 🏪 *SHOP* ━━━╮
-┃
-${listing}
-┃
-┃ Buy with: !shop buy <id>
-╰━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏪 *SONIC SHOP*
+
+🛠️ *UTILITY ITEMS*
+${utilityListing}
+
+⚔️ *BATTLE WEAPONS*
+${battleListing}
+
+🛡️ *ARMOUR*
+${armourListing}
+
+💡 Buy with: *!shop buy <id>*
+💡 Equip weapons: *!equip <id>*
+💡 Equip armour: *!equip <id>*
+`.trim(),
       );
     }
 
     if (action === 'buy') {
       const itemId = args[1]?.toLowerCase();
-      const item = SHOP_ITEMS.find((i) => i.id === itemId);
-
-      if (!item) {
-        return text(`${e.cross} Item not found! Use !shop to see available items.`);
+      if (!itemId) {
+        return text(`${e.info} Provide an item ID! Example: !shop buy dragon_katana`);
       }
 
+      const utilityItem = SHOP_ITEMS.find((i) => i.id === itemId);
+      const battleItem = getBattleItem(itemId);
+      const armourItem = getArmourItem(itemId);
+      const item = utilityItem || battleItem || armourItem;
+
+      if (!item) {
+        return text(`${e.cross} Item not found! Use *!shop* to see available items.`);
+      }
+
+      const char = getCharacter(sender, msg.pushName);
       const user = getUser(sender);
+
       if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
 
-      if (user.balance < item.price) {
+      if (battleItem && !char.isGod) {
+        if (char.level < battleItem.minLevel) {
+          return text(
+            `${e.cross} *Level Locked!* You must be at least *Level ${battleItem.minLevel}* to purchase the ${battleItem.emoji} *${battleItem.name}*!\nYour current level is *${char.level}*.`,
+          );
+        }
+      }
+
+      if (armourItem && !char.isGod) {
+        if (char.level < armourItem.minLevel) {
+          return text(
+            `${e.cross} *Level Locked!* You must be at least *Level ${armourItem.minLevel}* to purchase ${armourItem.emoji} *${armourItem.name}*!\nYour current level is *${char.level}*.`,
+          );
+        }
+      }
+
+      if (!char.isGod && user.balance < item.price) {
         return text(
-          `${e.cross} Not enough coins! You need ${formatCoins(item.price)} but have ${formatCoins(user.balance)}.`,
+          `${e.cross} Not enough coins! You need *${formatCoins(item.price)}* coins but have *${formatCoins(user.balance)}*.`,
         );
       }
 
-      addCoins(sender, -item.price);
+      if (!char.isGod) {
+        addCoins(sender, -item.price);
+      }
+
       addItem(sender, item.id);
 
+      let equippedNote = '';
+      if (battleItem) {
+        if (!char.equipped_item) {
+          setEquippedItem(sender, battleItem.id);
+          equippedNote = `\n🗡️ *Auto-Equipped:* ${battleItem.emoji} ${battleItem.name} (+${battleItem.attack} ATK)`;
+        } else {
+          equippedNote = `\n💡 Equip it anytime with: *!equip ${battleItem.id}*`;
+        }
+      }
+
+      if (armourItem) {
+        if (!char.equipped_armour) {
+          setEquippedArmour(sender, armourItem.id);
+          equippedNote = `\n🛡️ *Auto-Equipped:* ${armourItem.emoji} ${armourItem.name} (+${armourItem.defense} DEF, +${armourItem.hp} HP)`;
+        } else {
+          equippedNote = `\n💡 Equip it anytime with: *!equip ${armourItem.id}*`;
+        }
+      }
+
       const updatedUser = getUser(sender);
+      const balanceDisplay = char.isGod ? '∞' : formatCoins(updatedUser?.balance ?? 0);
 
       return text(
         `
-╭━━━ 🏪 *PURCHASE* ━━━╮
-┃
-┃ ${item.emoji} Bought: *${item.name}*
-┃ ${e.cross} Paid: ${formatCoins(item.price)}
-┃ ${e.coin} Balance: ${formatCoins(updatedUser?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏪 *PURCHASE SUCCESS*
+
+${item.emoji} Bought: *${item.name}*
+💰 Paid: ${char.isGod ? 'Free (Owner Godmode)' : formatCoins(item.price) + ' coins'}
+${e.coin} Balance: ${balanceDisplay} coins${equippedNote}
+`.trim(),
       );
     }
 
-    return text(`${e.cross} Unknown action. Use !shop or !shop buy <id>`);
+    return text(`${e.cross} Unknown action. Use *!shop* or *!shop buy <id>*`);
   },
 };

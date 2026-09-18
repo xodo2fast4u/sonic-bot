@@ -89,32 +89,32 @@ export default {
 
       return text(
         `
-╭━━━ 🎉 *PROMOTION APPROVED!* ━━━╮
-┃ ${nextTier.emoji} New Rank: *${nextTier.title}* (Tier ${nextTier.rank})
-┃ 📜 Perk: *${nextTier.perk}*
-┃ 🎁 Signing Bonus: *+${formatCoins(bonus)}* coins
-┃
-┃ ${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎉 *PROMOTION APPROVED!*
+${nextTier.emoji} New Rank: *${nextTier.title}* (Tier ${nextTier.rank})
+📜 Perk: *${nextTier.perk}*
+🎁 Signing Bonus: *+${formatCoins(bonus)}* coins
+
+${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
+`.trim(),
       );
     }
 
     const nextInfo = nextTier
-      ? `┃
-┃ ➡️ *Next Promotion:* ${nextTier.emoji} ${nextTier.title}
-┃ • Fee: 🪙 ${formatCoins(nextTier.cost)}
-┃ • Min Earned: 🪙 ${formatCoins(nextTier.minEarned)}
-┃ • Upgrade with: !career promote`
-      : '┃ 👑 MAX RANK REACHED!';
+      ? `
+➡️ *Next Promotion:* ${nextTier.emoji} ${nextTier.title}
+• Fee: 🪙 ${formatCoins(nextTier.cost)}
+• Min Earned: 🪙 ${formatCoins(nextTier.minEarned)}
+• Upgrade with: !career promote`
+      : '👑 MAX RANK REACHED!';
 
     return text(
       `
-╭━━━ 💼 *CAREER PROFILE* ━━━╮
-┃ ${currentTier?.emoji} Current Title: *${currentTier?.title}* (Tier ${currentTier?.rank})
-┃ 🌟 Active Perk: *${currentTier?.perk}*
-┃ 📈 Lifetime Earned: *${formatCoins(user.totalEarned)}*
+💼 *CAREER PROFILE*
+${currentTier?.emoji} Current Title: *${currentTier?.title}* (Tier ${currentTier?.rank})
+🌟 Active Perk: *${currentTier?.perk}*
+📈 Lifetime Earned: *${formatCoins(user.totalEarned)}*
 ${nextInfo}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+`.trim(),
     );
   },
 };

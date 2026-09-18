@@ -40,13 +40,13 @@ export default {
 
     await mention(
       `
-╭━━━ ${e.ring} *PAYMENT* ━━━╮
-┃
-┃ ${e.check} Sent ${formatCoins(amount)}
-┃ ${e.user} To: @${targetNum}
-┃
-┃ ${e.star} Your balance: ${formatCoins(result.fromBalance)}
-╰━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.ring} *PAYMENT*
+
+${e.check} Sent ${formatCoins(amount)}
+${e.user} To: @${targetNum}
+
+${e.star} Your balance: ${formatCoins(result.fromBalance)}
+`.trim(),
       [target],
     );
   },

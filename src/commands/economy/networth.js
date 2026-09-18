@@ -56,16 +56,16 @@ export default {
       : `@${targetNumber}'s FINANCIAL STATEMENT`;
 
     const content = `
-╭━━━ 📊 *${headerTitle}* ━━━╮
-┃ ${e.user} Financial Tier: *${tier}*
-┃
-┃ 💵 Liquid Cash: *${formatCoins(user.balance)}*
-┃ 🏦 Bank Savings: *${formatCoins(user.bank)}*
-┃ 🎒 Inventory Assets: *${formatCoins(inventoryVal)}* (${inventory.length} items)
-┃
-┃ 💎 *TOTAL NET WORTH*: *${formatCoins(totalWealth)}*
-┃ 📈 Lifetime Earned: *${formatCoins(user.totalEarned)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim();
+📊 *${headerTitle}*
+${e.user} Financial Tier: *${tier}*
+
+💵 Liquid Cash: *${formatCoins(user.balance)}*
+🏦 Bank Savings: *${formatCoins(user.bank)}*
+🎒 Inventory Assets: *${formatCoins(inventoryVal)}* (${inventory.length} items)
+
+💎 *TOTAL NET WORTH*: *${formatCoins(totalWealth)}*
+📈 Lifetime Earned: *${formatCoins(user.totalEarned)}*
+`.trim();
 
     if (isSelf) {
       await text(content);

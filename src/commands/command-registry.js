@@ -3,6 +3,7 @@
  * Provides efficient command management with on-demand loading
  */
 import { readdir } from 'fs/promises';
+import { watch } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { container } from '../core/container.js';
@@ -104,22 +105,22 @@ class CommandMetadata {
   }
 }
 
-/**
- * Command Registry
- */
 export class CommandRegistry {
   constructor() {
-    this.metadata = new Map(); // category -> Map<fileName, CommandMetadata>
-    this.commands = new Map(); // commandName -> CommandMetadata
+    this.metadata = new Map();
+    this.commands = new Map();
     this.logger = null;
     this.cache = null;
     this.commandsPath = __dirname;
     this.initialized = false;
+    /** @type {import('fs').FSWatcher[]} */
+    this.watchers = [];
+    /** @type {NodeJS.Timeout|null} */
+    this.reloadTimer = null;
+    this.reloading = false;
+    this.pendingChanges = new Set();
   }
 
-  /**
-   * Initialize command registry
-   */
   async initialize() {
     this.logger = container.resolve('logger');
     this.cache = container.resolve('cache');
@@ -131,13 +132,17 @@ export class CommandRegistry {
       categories: this.metadata.size,
       totalFiles: Array.from(this.metadata.values()).reduce((sum, cat) => sum + cat.size, 0),
     });
+
+    if (container.resolve('configManager').get('enableHotReload')) {
+      this.startHotReload();
+    }
   }
 
-  /**
-   * Discover command files
-   */
-  async discoverCommands() {
+  /** @param {{ cacheBust?: boolean; changedFiles?: string[] }} [options] */
+  async discoverCommands({ cacheBust = false, changedFiles = [] } = {}) {
     const folders = await readdir(this.commandsPath, { withFileTypes: true });
+    const nextMetadata = new Map();
+    const nextCommands = new Map();
 
     for (const folder of folders.filter((f) => f.isDirectory())) {
       const categoryPath = join(this.commandsPath, folder.name);
@@ -148,29 +153,55 @@ export class CommandRegistry {
         const jsFiles = files.filter((file) => file.endsWith('.js') && file !== 'index.js');
 
         for (const file of jsFiles) {
-          const fileName = file.slice(0, -3); // Remove .js extension
-          const modulePath = join(categoryPath, file);
+          const fileName = file.slice(0, -3);
+          const modulePath = cacheBust
+            ? `${join(categoryPath, file)}?hotReload=${Date.now()}-${Math.random()}`
+            : join(categoryPath, file);
           const metadata = new CommandMetadata(folder.name, fileName, modulePath);
 
           categoryMetadata.set(fileName, metadata);
 
-          // Pre-register command aliases for quick lookup
-          await this.preRegisterCommands(metadata);
+          const aliases = await this.preRegisterCommands(metadata);
+          for (const alias of aliases) nextCommands.set(alias, metadata);
         }
 
-        this.metadata.set(folder.name, categoryMetadata);
-        this.logger.debug(`Discovered category: ${folder.name}`, { fileCount: jsFiles.length });
+        nextMetadata.set(folder.name, categoryMetadata);
       } catch (error) {
         this.logger.error(`Failed to discover commands in ${folder.name}:`, error);
       }
+    }
+
+    const added = [...nextCommands.keys()].filter((name) => !this.commands.has(name));
+    const deleted = [...this.commands.keys()].filter((name) => !nextCommands.has(name));
+    const changedNames = new Set(
+      changedFiles.map((file) => file.split(/[\\/]/).pop()?.replace(/\.js$/, '')),
+    );
+    const updated = [...nextCommands.entries()]
+      .filter(([name, metadata]) => this.commands.has(name) && changedNames.has(metadata.fileName))
+      .map(([name]) => name);
+
+    this.metadata = nextMetadata;
+    this.commands = nextCommands;
+
+    if (cacheBust) {
+      this.logger.info('Command registry hot reload complete', {
+        categories: this.metadata.size,
+        totalFiles: Array.from(this.metadata.values()).reduce((sum, cat) => sum + cat.size, 0),
+        added,
+        updated,
+        deleted,
+        changedFiles,
+      });
     }
   }
 
   /**
    * Pre-register command aliases without loading the module
    * @param {CommandMetadata} metadata
+   * @returns {Promise<string[]>}
    */
   async preRegisterCommands(metadata) {
+    const aliases = [];
     try {
       const module = await import(metadata.modulePath);
       const exports = module.default || module;
@@ -180,7 +211,7 @@ export class CommandRegistry {
         if (!cmd?.cmd || !cmd?.run) continue;
 
         for (const alias of cmd.cmd) {
-          this.commands.set(alias.toLowerCase(), metadata);
+          aliases.push(alias.toLowerCase());
         }
       }
     } catch (error) {
@@ -188,6 +219,54 @@ export class CommandRegistry {
         `Pre-registration failed for ${metadata.fileName}:`,
         getErrorMessage(error),
       );
+    }
+    return aliases;
+  }
+
+  startHotReload() {
+    if (this.watchers.length) return;
+
+    /** @param {string} eventType @param {string|Buffer|null} fileName @param {string} source */
+    const reload = (eventType, fileName, source) => {
+      if (fileName && !String(fileName).endsWith('.js')) return;
+      this.pendingChanges.add(fileName ? `${source}/${String(fileName)}` : source);
+      this.logger.info('Command source change detected', {
+        eventType,
+        file: fileName ? String(fileName) : null,
+        source,
+      });
+      clearTimeout(this.reloadTimer ?? undefined);
+      this.reloadTimer = setTimeout(() => this.reloadCommands(), 100);
+    };
+
+    this.watchers.push(
+      watch(this.commandsPath, (eventType, fileName) => reload(eventType, fileName, 'root')),
+    );
+
+    for (const category of this.metadata.keys()) {
+      const categoryPath = join(this.commandsPath, category);
+      this.watchers.push(
+        watch(categoryPath, (eventType, fileName) => reload(eventType, fileName, category)),
+      );
+    }
+
+    this.logger.info('Command hot reload enabled', {
+      environment: container.resolve('configManager').get('environment'),
+      categories: this.metadata.size,
+    });
+  }
+
+  async reloadCommands() {
+    if (this.reloading) return;
+    this.reloading = true;
+    const changedFiles = [...this.pendingChanges];
+    this.pendingChanges.clear();
+    try {
+      await this.discoverCommands({ cacheBust: true, changedFiles });
+    } catch (error) {
+      this.logger.error('Command registry hot reload failed', getErrorMessage(error));
+    } finally {
+      this.reloading = false;
     }
   }
 

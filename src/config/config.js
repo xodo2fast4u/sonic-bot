@@ -2,14 +2,13 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import logger from '../utils/logger.js';
 
-const ENV_PATH = resolve(process.cwd(), '.env');
-
 /** @param {string} key */
 const loadEnvValue = (key) => {
   if (process.env[key]?.trim()) return process.env[key].trim();
-  if (!existsSync(ENV_PATH)) return undefined;
+  const envPath = resolve(process.cwd(), '.env');
+  if (!existsSync(envPath)) return undefined;
 
-  const line = readFileSync(ENV_PATH, 'utf-8')
+  const line = readFileSync(envPath, 'utf-8')
     .split('\n')
     .find((entry) => entry.trim().startsWith(`${key}=`));
 
@@ -21,9 +20,10 @@ const loadEnvValue = (key) => {
  * @param {string} value
  */
 const updateEnvFile = (key, value) => {
-  const env = existsSync(ENV_PATH)
+  const envPath = resolve(process.cwd(), '.env');
+  const env = existsSync(envPath)
     ? Object.fromEntries(
-        readFileSync(ENV_PATH, 'utf-8')
+        readFileSync(envPath, 'utf-8')
           .split('\n')
           .filter((l) => l.includes('='))
           .map((l) => {
@@ -35,7 +35,7 @@ const updateEnvFile = (key, value) => {
 
   env[key] = value;
   writeFileSync(
-    ENV_PATH,
+    envPath,
     Object.entries(env)
       .map(([k, v]) => `${k}=${v}`)
       .join('\n'),
@@ -46,7 +46,7 @@ export const config = Object.freeze({
   prefix: loadEnvValue('SONIC_PREFIX') || '!',
   ownerNumber: loadEnvValue('OWNER_NUMBER') || '',
   botName: 'Sonic',
-  version: '3.0.0',
+  version: '3.5.0',
   authDir: 'sonic_session.db',
 });
 
@@ -71,15 +71,25 @@ export const emoji = Object.freeze({
   maker: '✨',
   coin: '🪙',
   download: '⬇️',
+  rpg: '⚔️',
+  gambling: '🎰',
 });
 
 let ownerNumber = config.ownerNumber;
 
 export const getOwner = () => ownerNumber;
 
-/** @param {string} number */
-export const setOwner = (number) => {
+/**
+ * @param {string} number
+ * @param {{ persist?: boolean }} [options]
+ */
+export const setOwner = (number, options = {}) => {
   ownerNumber = number.replace(/[^0-9]/g, '');
-  updateEnvFile('OWNER_NUMBER', ownerNumber);
+  const isTestRuntime =
+    process.env['NODE_ENV'] === 'test' ||
+    Boolean(process.env['JEST_WORKER_ID']) ||
+    process.argv.some((argument) => argument.includes('jest'));
+  const shouldPersist = options.persist ?? !isTestRuntime;
+  if (shouldPersist) updateEnvFile('OWNER_NUMBER', ownerNumber);
   logger.info(`👑 Owner set to: ${ownerNumber}`);
 };

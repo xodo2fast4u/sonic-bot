@@ -222,13 +222,13 @@ export const bankAction = (dbFunc, sourceKey, title) => {
 
     await text(
       `
-╭━━━ 🏦 *${title}* ━━━╮
-┃
-┃ ${e.check} ${title === 'DEPOSIT' ? 'Deposited' : 'Withdrew'}: ${formatCoins(amount)}
-┃
-┃ ${e.star} Cash: ${formatCoins(result.balance ?? 0)}
-┃ ${e.bolt} Bank: ${formatCoins(result.bank ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏦 *${title}*
+
+${e.check} ${title === 'DEPOSIT' ? 'Deposited' : 'Withdrew'}: ${formatCoins(amount)}
+
+${e.star} Cash: ${formatCoins(result.balance ?? 0)}
+${e.bolt} Bank: ${formatCoins(result.bank ?? 0)}
+`.trim(),
     );
   };
 };

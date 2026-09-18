@@ -51,20 +51,20 @@ export default {
       const rows = Object.entries(TICKERS).map(([key, item]) => {
         const { currentPrice, changePercent } = getTickerPrice(key);
         const arrow = changePercent >= 0 ? '📈 +' : '📉 ';
-        return `┃ ${item.name}\n┃   Price: 🪙 *${formatCoins(currentPrice)}* (${arrow}${changePercent}%)`;
+        return `${item.name}\n  Price: 🪙 *${formatCoins(currentPrice)}* (${arrow}${changePercent}%)`;
       });
 
       return text(
         `
-╭━━━ 📊 *STOCK EXCHANGE* ━━━╮
-┃
-${rows.join('\n┃\n')}
-┃
-┃ Commands:
-┃ • !invest buy <ticker> <shares>
-┃ • !invest sell <ticker> <shares>
-┃ • !invest portfolio
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+📊 *STOCK EXCHANGE*
+
+${rows.join('\n\n')}
+
+Commands:
+• !invest buy <ticker> <shares>
+• !invest sell <ticker> <shares>
+• !invest portfolio
+`.trim(),
       );
     }
 
@@ -75,10 +75,10 @@ ${rows.join('\n┃\n')}
       if (!entries.length) {
         return text(
           `
-╭━━━ 💼 *YOUR PORTFOLIO* ━━━╮
-┃ ${e.info} You don't own any stock shares yet!
-┃ Check available stocks: !invest market
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+💼 *YOUR PORTFOLIO*
+${e.info} You don't own any stock shares yet!
+Check available stocks: !invest market
+`.trim(),
         );
       }
 
@@ -87,17 +87,17 @@ ${rows.join('\n┃\n')}
         const { currentPrice } = getTickerPrice(ticker);
         const value = currentPrice * shares;
         totalVal += value;
-        return `┃ • *${ticker.toUpperCase()}*: ${shares} shares (🪙 ${formatCoins(value)})`;
+        return `• *${ticker.toUpperCase()}*: ${shares} shares (🪙 ${formatCoins(value)})`;
       });
 
       return text(
         `
-╭━━━ 💼 *YOUR PORTFOLIO* ━━━╮
-┃
+💼 *YOUR PORTFOLIO*
+
 ${rows.join('\n')}
-┃
-┃ 💰 Total Portfolio Value: *${formatCoins(totalVal)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+
+💰 Total Portfolio Value: *${formatCoins(totalVal)}*
+`.trim(),
       );
     }
 
@@ -138,13 +138,13 @@ ${rows.join('\n')}
 
       return text(
         `
-╭━━━ 📈 *SHARES PURCHASED* ━━━╮
-┃ Stock: *${stock.name}*
-┃ Bought: *${shares}* shares @ 🪙 ${formatCoins(currentPrice)}/share
-┃ Total Cost: *-${formatCoins(totalCost)}*
-┃
-┃ ${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+📈 *SHARES PURCHASED*
+Stock: *${stock.name}*
+Bought: *${shares}* shares @ 🪙 ${formatCoins(currentPrice)}/share
+Total Cost: *-${formatCoins(totalCost)}*
+
+${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
+`.trim(),
       );
     }
 
@@ -186,13 +186,13 @@ ${rows.join('\n')}
 
       return text(
         `
-╭━━━ 📉 *SHARES SOLD* ━━━╮
-┃ Stock: *${stock.name}*
-┃ Sold: *${shares}* shares @ 🪙 ${formatCoins(currentPrice)}/share
-┃ Proceeds: *+${formatCoins(totalEarnings)}*
-┃
-┃ ${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+📉 *SHARES SOLD*
+Stock: *${stock.name}*
+Sold: *${shares}* shares @ 🪙 ${formatCoins(currentPrice)}/share
+Proceeds: *+${formatCoins(totalEarnings)}*
+
+${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
       );
     }
 

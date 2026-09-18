@@ -42,14 +42,14 @@ export default {
 
     await text(
       `
-╭━━━ ${e.admin} *BALANCE SET* ━━━╮
-┃
-┃ ${e.user} Target: @${targetNum}
-┃ ${e.cross} Old: ${formatCoins(oldBalance)}
-┃ ${e.check} New: ${formatCoins(newBalance)}
-┃
-┃ ${e.ring} Set by: Owner
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.admin} *BALANCE SET*
+
+${e.user} Target: @${targetNum}
+${e.cross} Old: ${formatCoins(oldBalance)}
+${e.check} New: ${formatCoins(newBalance)}
+
+${e.ring} Set by: Owner
+`.trim(),
     );
   },
 };

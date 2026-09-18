@@ -116,7 +116,7 @@ export const getText = (msg) => {
  */
 
 /*
- * Extract the target JID for an interactive message: the mentioned user, or the sender
+ * Extract the target JID for an interactive message: the mentioned user or the sender
  * of the quoted message. For quoted LIDs, we check the alternative participant field
  * to handle cases where the original JID format differs.
  */
@@ -211,8 +211,13 @@ export const send = {
   mention: (sonic, msg, text, mentions) =>
     sonic.sendMessage(msg.key.remoteJid, { text, mentions }, { quoted: msg }),
 
-  /** @param {any} sonic @param {any} msg @param {any} key @param {any} text */
-  edit: (sonic, msg, key, text) => sonic.sendMessage(msg.key.remoteJid, { text, edit: key }),
+  /** @param {any} sonic @param {any} msg @param {any} key @param {any} text @param {any[]} [mentions] */
+  edit: (sonic, msg, key, text, mentions = []) =>
+    sonic.sendMessage(msg.key.remoteJid, {
+      text,
+      edit: key,
+      ...(mentions.length ? { mentions } : {}),
+    }),
 
   /** @param {any} sonic @param {any} msg @param {any} emoji @param {any} key */
   react: (sonic, msg, emoji, key = msg.key) =>
@@ -226,14 +231,16 @@ export const send = {
    * @param {string|Buffer} source
    * @param {string} caption
    * @param {string} [mimetype]
+   * @param {any[]} [mentions]
    */
-  image: (sonic, msg, source, caption = '', mimetype) =>
+  image: (sonic, msg, source, caption = '', mimetype, mentions = []) =>
     sonic.sendMessage(
       msg.key.remoteJid,
       {
         image: typeof source === 'string' ? { url: source } : source,
         caption,
         ...(mimetype ? { mimetype } : {}),
+        ...(mentions.length ? { mentions } : {}),
       },
       { quoted: msg },
     ),

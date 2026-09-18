@@ -3,7 +3,7 @@ import { getErrorMessage } from '../../utils/error-message.js';
 
 /**
  * Safely evaluate a simple arithmetic expression without using eval() or Function().
- * Supports +, -, *, /, parentheses, decimal numbers, and whitespace.
+ * Supports +, -, *, /, parentheses, decimal numbers and whitespace.
  *
  * @param {string} expression
  * @returns {number}

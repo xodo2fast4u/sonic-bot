@@ -4,6 +4,11 @@ export const COOLDOWN = {
   GLOBAL: 5 * 1000,
   WORK: 60 * 1000,
   DAILY: 24 * 60 * 60 * 1000,
+  WEEKLY: 7 * 24 * 60 * 60 * 1000,
+  MONTHLY: 30 * 24 * 60 * 60 * 1000,
+  YEARLY: 365 * 24 * 60 * 60 * 1000,
+  FIGHT: 20 * 1000,
+  TRAIN: 30 * 1000,
   PAY: 10 * 1000,
 };
 

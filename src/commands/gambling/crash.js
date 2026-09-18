@@ -58,18 +58,18 @@ export default {
     const currentBalance = updatedUser?.balance ?? 0;
 
     const rocketLine = won
-      ? `🚀 Rocket soared to *${crashAt}x* — you cashed at *${cashoutMultiplier}x!*`
-      : `💥 Rocket crashed at *${crashAt}x* — you wanted *${cashoutMultiplier}x*`;
+      ? `🚀 Rocket soared to *${crashAt}x* - you cashed at *${cashoutMultiplier}x!*`
+      : `💥 Rocket crashed at *${crashAt}x* - you wanted *${cashoutMultiplier}x*`;
 
     await text(
       `
-╭━━━ 🚀 *CRASH* ━━━╮
-┃
-┃ ${rocketLine}
-┃
-┃ ${won ? `${e.check} Won: ${formatCoins(payout)} (x${cashoutMultiplier})` : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━╯`.trim(),
+🚀 *CRASH*
+
+${rocketLine}
+
+${won ? `${e.check} Won: ${formatCoins(payout)} (x${cashoutMultiplier})` : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

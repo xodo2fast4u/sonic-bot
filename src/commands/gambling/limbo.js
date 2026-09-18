@@ -57,13 +57,13 @@ export default {
 
     await text(
       `
-╭━━━ 🎯 *LIMBO ROLL* ━━━╮
-┃ Target: *${targetMult}x* (Win Chance: ${winChance}%)
-┃ Rolled: *${roll}x*
-┃
-┃ ${won ? `${e.check} Target Met! Won: *+${formatCoins(payout)}* (x${targetMult})` : `${e.cross} Under Target! Lost: *-${formatCoins(bet)}*`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎯 *LIMBO ROLL*
+Target: *${targetMult}x* (Win Chance: ${winChance}%)
+Rolled: *${roll}x*
+
+${won ? `${e.check} Target Met! Won: *+${formatCoins(payout)}* (x${targetMult})` : `${e.cross} Under Target! Lost: *-${formatCoins(bet)}*`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

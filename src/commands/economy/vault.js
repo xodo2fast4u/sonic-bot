@@ -27,16 +27,16 @@ export default {
       if (!lock) {
         return text(
           `
-╭━━━ 🔒 *TIME-LOCK VAULT* ━━━╮
-┃ ${e.info} You have no funds currently locked!
-┃
-┃ Available Terms:
-┃ • 1d : 24h (+5% bonus)
-┃ • 3d : 72h (+15% bonus)
-┃ • 7d : 168h (+35% bonus)
-┃
-┃ Lock funds: !vault lock <amount> <term>
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🔒 *TIME-LOCK VAULT*
+${e.info} You have no funds currently locked!
+
+Available Terms:
+• 1d : 24h (+5% bonus)
+• 3d : 72h (+15% bonus)
+• 7d : 168h (+35% bonus)
+
+Lock funds: !vault lock <amount> <term>
+`.trim(),
         );
       }
 
@@ -48,16 +48,16 @@ export default {
 
       return text(
         `
-╭━━━ 🔒 *VAULT DEPOSIT STATUS* ━━━╮
-┃ Principal: *${formatCoins(lock.amount)}* coins
-┃ Term: *${lock.termName}*
-┃ Guaranteed Bonus: *+${formatCoins(bonusAmount)}*
-┃ Total on Unlock: *${formatCoins(totalPayout)}*
-┃
-┃ ${isMatured ? '🎉 *MATURED! Ready to claim!*' : `⏱️ Unlocks in: *${format.uptime(remainingSeconds)}*`}
-┃
-┃ Claim command: !vault claim
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🔒 *VAULT DEPOSIT STATUS*
+Principal: *${formatCoins(lock.amount)}* coins
+Term: *${lock.termName}*
+Guaranteed Bonus: *+${formatCoins(bonusAmount)}*
+Total on Unlock: *${formatCoins(totalPayout)}*
+
+${isMatured ? '🎉 *MATURED! Ready to claim!*' : `⏱️ Unlocks in: *${format.uptime(remainingSeconds)}*`}
+
+Claim command: !vault claim
+`.trim(),
       );
     }
 
@@ -78,7 +78,7 @@ export default {
       const term = TERMS[termKey ?? ''];
       if (!term) {
         return text(
-          `${e.cross} Choose a valid lock term: 1d, 3d, or 7d!\nExample: !vault lock 500 1d`,
+          `${e.cross} Choose a valid lock term: 1d, 3d or 7d!\nExample: !vault lock 500 1d`,
         );
       }
 
@@ -103,14 +103,14 @@ export default {
 
       return text(
         `
-╭━━━ 🔒 *FUNDS LOCKED SECURELY* ━━━╮
-┃ ${e.check} Locked: *${formatCoins(amount)}* coins
-┃ 📜 Term: *${term.label}*
-┃ 🛡️ Protected from robberies & theft!
-┃
-┃ ${e.coin} Remaining Cash: *${formatCoins(updated?.balance ?? 0)}*
-┃ Check progress with: !vault status
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🔒 *FUNDS LOCKED SECURELY*
+${e.check} Locked: *${formatCoins(amount)}* coins
+📜 Term: *${term.label}*
+🛡️ Protected from robberies & theft!
+
+${e.coin} Remaining Cash: *${formatCoins(updated?.balance ?? 0)}*
+Check progress with: !vault status
+`.trim(),
       );
     }
 
@@ -136,13 +136,13 @@ export default {
 
       return text(
         `
-╭━━━ 🔓 *VAULT MATURED & CLAIMED* ━━━╮
-┃ ${e.check} Principal Returned: *${formatCoins(lock.amount)}*
-┃ 🌟 Maturity Bonus: *+${formatCoins(bonus)}*
-┃
-┃ 💰 Total Credited: *+${formatCoins(totalPayout)}*
-┃ ${e.coin} New Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🔓 *VAULT MATURED & CLAIMED*
+${e.check} Principal Returned: *${formatCoins(lock.amount)}*
+🌟 Maturity Bonus: *+${formatCoins(bonus)}*
+
+💰 Total Credited: *+${formatCoins(totalPayout)}*
+${e.coin} New Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
       );
     }
 

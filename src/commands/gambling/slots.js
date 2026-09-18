@@ -60,14 +60,14 @@ export default {
 
     await text(
       `
-╭━━━ 🎰 *SLOTS* ━━━╮
-┃
-┃ [ ${result.join(' | ')} ]
-┃
-┃ ${status}
-┃ ${winnings > 0 ? `Won: ${formatCoins(winnings)}` : `Lost: ${formatCoins(bet)}`}
-┃ ${e.ring} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎰 *SLOTS*
+
+[ ${result.join(' | ')} ]
+
+${status}
+${winnings > 0 ? `Won: ${formatCoins(winnings)}` : `Lost: ${formatCoins(bet)}`}
+${e.ring} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

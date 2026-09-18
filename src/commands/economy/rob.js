@@ -47,13 +47,13 @@ export default {
       const updatedUser = getUser(sender);
       return text(
         `
-╭━━━ 🚔 *ROBBERY FAILED* ━━━╮
-┃
-┃ ${e.cross} You ${FAIL_MESSAGES[random(0, FAIL_MESSAGES.length - 1)]}!
-┃
-┃ 💸 Fine: ${formatCoins(fine)}
-┃ ${e.coin} Balance: ${formatCoins(updatedUser?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🚔 *ROBBERY FAILED*
+
+${e.cross} You ${FAIL_MESSAGES[random(0, FAIL_MESSAGES.length - 1)]}!
+
+💸 Fine: ${formatCoins(fine)}
+${e.coin} Balance: ${formatCoins(updatedUser?.balance ?? 0)}
+`.trim(),
       );
     }
 
@@ -67,12 +67,12 @@ export default {
 
     await text(
       `
-╭━━━ 🦝 *ROBBERY SUCCESS* ━━━╮
-┃
-┃ ${e.check} You successfully robbed them!
-┃ 💰 Stolen: ${formatCoins(stolen)}
-┃ ${e.coin} Balance: ${formatCoins(updatedSender?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🦝 *ROBBERY SUCCESS*
+
+${e.check} You successfully robbed them!
+💰 Stolen: ${formatCoins(stolen)}
+${e.coin} Balance: ${formatCoins(updatedSender?.balance ?? 0)}
+`.trim(),
     );
   },
 };

@@ -1,136 +1,72 @@
+import { readFileSync } from 'fs';
 import { config, emoji as e } from '../../config/config.js';
 import { format } from '../../utils/utils.js';
+
+const menuImage = readFileSync(new URL('../../assets/sonic-menu.png', import.meta.url));
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['menu'],
   desc: 'Show bot menu',
 
-  run: async ({ text }) => {
+  run: async ({ image }) => {
     const { prefix: p, botName, version } = config;
+    const readMoreMarker = `\n${'\u200e'.repeat(4000)}\n`;
+    /** @param {...string} names */
+    const commands = (...names) => names.map((name) => `⚝ ${p}${name}`).join('\n');
 
-    await text(
-      `
-╭━━━━━━━━━━━━━━━━━━━━━╮
-┃  ${e.sonic} *${botName.toUpperCase()} BOT* ${e.speed}
-┃━━━━━━━━━━━━━━━━━━━━━
-┃ ${e.star} Version: ${version}
-┃ ${e.time} Uptime: ${format.getUptime()}
-┃ ${e.bolt} Prefix: ${p}
-╰━━━━━━━━━━━━━━━━━━━━━╯
+    const caption = `
+${e.sonic} *${botName.toUpperCase()} BOT*
+${e.star} Version: *${version}*
+${e.time} Uptime: *${format.getUptime()}*
+${e.bolt} Prefix: *${p}*${readMoreMarker}
 
-╭━━━ ${e.info} *GENERAL* ━━━╮
-┃ ${p}menu - This menu
-┃ ${p}ping - Bot latency
-┃ ${p}speed - Speed test
-┃ ${p}info - Bot info
-┃ ${p}runtime - Uptime
-┃ ${p}server - Server stats
-┃ ${p}profile - User info
-┃ ${p}owner - Bot owner
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.info} *GENERAL*
+${commands('menu', 'ping', 'speed', 'info', 'runtime')}
+${commands('server', 'profile', 'owner', 'modestatus')}
 
-╭━━━ ${e.coin} *ECONOMY* ━━━╮
-┃ ${p}balance - Check coins
-┃ ${p}daily - Daily reward
-┃ ${p}work - Work for coins
-┃ ${p}mine - Go mining
-┃ ${p}fish - Go fishing
-┃ ${p}hunt - Go hunting
-┃ ${p}beg - Beg for coins
-┃ ${p}rob - Rob someone
-┃ ${p}pay - Pay someone
-┃ ${p}shop - Buy items
-┃ ${p}deposit - To bank
-┃ ${p}withdraw - From bank
-┃ ${p}inventory - Your items
-┃ ${p}transactions - Coin history
-┃ ${p}leaderboard - Top rich
-┃ ${p}sell - Sell items
-┃ ${p}use - Activate item
-┃ ${p}interest - Bank interest
-┃ ${p}gift - Gift items
-┃ ${p}heist - Bank vault heist
-┃ ${p}bounty - Bounty board
-┃ ${p}invest - Stock exchange
-┃ ${p}networth - Wealth appraisal
-┃ ${p}vault - Time-lock CD
-┃ ${p}career - Job promotion
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.rpg} *RPG & COMBAT*
+${commands('fight', 'train', 'equip', 'unequip', 'togglelevelup', 'profile')}
 
-╭━━━ 🎰 *GAMBLING* ━━━╮
-┃ ${p}slots - Slot machine
-┃ ${p}coinflip - Heads or tails
-┃ ${p}dice - Roll a dice
-┃ ${p}roulette - Spin the wheel
-┃ ${p}blackjack - Beat the dealer
-┃ ${p}crash - Ride the rocket
-┃ ${p}higherlower - Guess the next card
-┃ ${p}poker - Video poker
-┃ ${p}baccarat - Punto banco
-┃ ${p}mines - Minesweeper grid
-┃ ${p}plinko - Pegboard drop
-┃ ${p}derby - Horse race betting
-┃ ${p}keno - Number lottery
-┃ ${p}wheel - Prize wheel
-┃ ${p}limbo - Target multiplier
-┃ ${p}war - Casino card war
-┃ ${p}cups - Shell cup game
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.coin} *ECONOMY*
+${commands('balance', 'daily', 'weekly', 'monthly', 'yearly')}
+${commands('work', 'mine', 'fish', 'hunt', 'beg', 'rob', 'pay')}
+${commands('shop', 'deposit', 'withdraw', 'inventory', 'transactions')}
+${commands('leaderboard', 'sell', 'use', 'interest', 'gift', 'heist')}
+${commands('bounty', 'invest', 'networth', 'vault', 'career')}
 
-╭━━━ ${e.tool} *TOOLS* ━━━╮
-┃ ${p}calculate - Do maths
-┃ ${p}weather - Check the weather
-┃ ${p}search - Search the web
-┃ ${p}bible - Bible verse
-┃ ${p}decode - Decode text
-┃ ${p}define - Define word
-┃ ${p}directions - Get directions
-┃ ${p}encode - Encode text
-┃ ${p}image - Get image
-┃ ${p}name - Name info
-┃ ${p}songrecommendation - Music suggestion
-┃ ${p}wiki - Wikipedia search
-┃ ${p}wallpaper - Gets a wallpaper
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.gambling} *GAMES*
+${commands('slots', 'coinflip', 'dice', 'roulette', 'blackjack', 'crash')}
+${commands('higherlower', 'poker', 'baccarat', 'mines', 'plinko', 'derby')}
+${commands('keno', 'wheel', 'limbo', 'war', 'cups')}
 
-╭━━━ ${e.download} *DOWNLOADER* ━━━╮
-┃ ${p}play - Play YouTube song
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.tool} *TOOLS*
+${commands('calculate', 'weather', 'search', 'bible', 'decode', 'define')}
+${commands('directions', 'encode', 'image', 'name', 'songrecommendation')}
+${commands('wiki', 'wallpaper')}
 
-╭━━━ ${e.maker} *MAKER* ━━━╮
-┃ ${p}sticker - Convert image to sticker
-┃ ${p}brat - Create Brat sticker
-┃ ${p}hd - Enhance image quality
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.download} *DOWNLOADER*
+${commands('play')}
 
-╭━━━ ${e.ring} *NEWSLETTER* ━━━╮
-┃ ${p}newsletteractions - Newsletter actions
-┃ ${p}newslettermanage - Manage newsletter
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.maker} *MAKER*
+${commands('sticker', 'brat', 'hd')}
 
-╭━━━ ${e.group} *GROUP* ━━━╮
-┃ ${p}kick / ${p}add
-┃ ${p}promote / ${p}demote
-┃ ${p}mute / ${p}unmute
-┃ ${p}ginfo / ${p}admins
-┃ ${p}link / ${p}revoke
-┃ ${p}tagall / ${p}leave
-┃ ${p}lock / ${p}unlock
-┃ ${p}setname / ${p}setdesc
-┃ ${p}ephemeral / ${p}join
-┃ ${p}groupcreate / ${p}grouplist
-┃ ${p}groupmode / ${p}groupv4
-┃ ${p}groupinviteinfo / ${p}grouprequest
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.ring} *NEWSLETTER*
+${commands('newsletteractions', 'newslettermanage')}
 
-╭━━━ ${e.admin} *OWNER* ━━━╮
-┃ ${p}welcomegoodbyeoff / ${p}welcomegoodbyeon
-┃ ${p}promoterdemoteoff / ${p}promoterdemoteon
-┃ ${p}participantsoff / ${p}participantson
-╰━━━━━━━━━━━━━━━━━━━━━╯
+${e.group} *GROUP*
+${commands('kick', 'add', 'promote', 'demote', 'mute', 'unmute')}
+${commands('ginfo', 'admins', 'link', 'revoke', 'tagall', 'leave')}
+${commands('lock', 'unlock', 'setname', 'setdesc', 'ephemeral', 'join')}
+${commands('groupcreate', 'grouplist', 'groupmode', 'groupv4')}
+${commands('groupinviteinfo', 'grouprequest')}
 
-${e.rocket} *Gotta go fast!* ${e.sonic}`.trim(),
-    );
+${e.admin} *OWNER*
+${commands('mode', 'welcomegoodbyeoff', 'welcomegoodbyeon')}
+${commands('promoterdemoteoff', 'promoterdemoteon', 'participantsoff', 'participantson')}
+
+${e.rocket} *Gotta go fast!* ${e.sonic}`.trim();
+
+    await image(menuImage, caption);
   },
 };

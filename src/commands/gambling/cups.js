@@ -18,7 +18,7 @@ export default {
 
     const cupChoice = parseInt(args[0] ?? '0', 10);
     if (![1, 2, 3].includes(cupChoice)) {
-      return text(`${e.cross} Pick cup 1, 2, or 3!\nExample: !cups 2 100`);
+      return text(`${e.cross} Pick cup 1, 2 or 3!\nExample: !cups 2 100`);
     }
 
     const bet = args[1]?.toLowerCase() === 'all' ? user.balance : parseInt(args[1] ?? '', 10);
@@ -47,16 +47,16 @@ export default {
 
     await text(
       `
-╭━━━ 🥤 *SHELL GAME* ━━━╮
-┃ ${visualCups}
-┃ ${labelCups}
-┃
-┃ Coin was under: Cup *${winningCup}*
-┃ Your pick: Cup *${cupChoice}*
-┃
-┃ ${won ? `${e.check} Spot on! Won: *+${formatCoins(payout)}* (x3)` : `${e.cross} Empty cup! Lost: *-${formatCoins(bet)}*`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🥤 *SHELL GAME*
+${visualCups}
+${labelCups}
+
+Coin was under: Cup *${winningCup}*
+Your pick: Cup *${cupChoice}*
+
+${won ? `${e.check} Spot on! Won: *+${formatCoins(payout)}* (x3)` : `${e.cross} Empty cup! Lost: *-${formatCoins(bet)}*`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

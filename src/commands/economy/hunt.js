@@ -34,11 +34,11 @@ export default {
     if (random(1, 100) <= 20) {
       return text(
         `
-╭━━━ 🏹 *HUNT* ━━━╮
-┃
-┃ ${e.cross} You came home empty-handed!
-┃ The animals escaped your traps.
-╰━━━━━━━━━━━━━━━━╯`.trim(),
+🏹 *HUNT*
+
+${e.cross} You came home empty-handed!
+The animals escaped your traps.
+`.trim(),
       );
     }
 
@@ -71,14 +71,14 @@ export default {
 
     await text(
       `
-╭━━━ 🏹 *HUNT* ━━━╮
-┃
-┃ ${flavorLine}
-┃ ${animal.emoji}
-┃
-┃ ${e.check} Earned: ${formatCoins(earned)}
-┃ ${e.coin} Balance: ${formatCoins(newBalance ?? 0)}
-╰━━━━━━━━━━━━━━━━╯`.trim(),
+🏹 *HUNT*
+
+${flavorLine}
+${animal.emoji}
+
+${e.check} Earned: ${formatCoins(earned)}
+${e.coin} Balance: ${formatCoins(newBalance ?? 0)}
+`.trim(),
     );
   },
 };

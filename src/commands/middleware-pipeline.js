@@ -1,8 +1,16 @@
+import { readFileSync } from 'fs';
 import { areJidsSameUser } from 'baileys';
 import { container } from '../core/container.js';
 import { PermissionError, CooldownError } from '../core/errors.js';
 import { getErrorMessage } from '../utils/error-message.js';
 import { jid, resolveSender } from '../utils/utils.js';
+import { awardCommandXp } from '../database/database.js';
+import { getMode, isGroupAdminOnly, shouldProcessCommand } from '../services/mode-service.js';
+
+const levelUpImage = readFileSync(new URL('../assets/sonic-leveled-up.png', import.meta.url));
+
+/** Commands that must remain reachable for owners to change/view mode in any operating mode. */
+const MODE_COMMAND_ALIASES = new Set(['mode', 'botmode', 'modestatus', 'botmodestatus']);
 
 export class MiddlewareContext {
   /**
@@ -109,6 +117,28 @@ export class MiddlewarePipeline {
             duration: Date.now() - context.startTime,
             correlationId: context.correlationId,
           });
+
+          try {
+            const randomXp = Math.floor(Math.random() * 16) + 10;
+            const pushName = context.message?.pushName || '';
+            const xpResult = awardCommandXp(context.user, randomXp, pushName);
+
+            if (xpResult?.leveledUp && xpResult?.shouldNotify) {
+              const char = xpResult.character;
+              const userDigits = jid.fromUser(context.user);
+              const levelUpMsg = `
+🎉 *LEVEL UP!*
+👤 @${userDigits} reached *Level ${xpResult.newLevel}*!
+
+❤️ Max HP: *${char.displayMaxHp || char.max_hp}* (+20)
+⚔️ Attack: *${char.displayAttack || char.attack}*
+🛡️ Defense: *${char.displayDefense || char.defense}*
+✨ Magic: *${char.displayMagicalPower || char.magical_power}* (${char.magical_power_name})`.trim();
+              await context.helpers.image(levelUpImage, levelUpMsg, undefined, [context.user]);
+            }
+          } catch (xpErr) {
+            this.logger.debug('Failed to award command XP:', getErrorMessage(xpErr));
+          }
         } catch (error) {
           commandTimer.end(false, { user: context.user, error: getErrorMessage(error) });
           throw error;
@@ -153,6 +183,8 @@ export class MiddlewarePipeline {
   async registerDefaults() {
     this.use(this.createAuthenticationMiddleware());
 
+    this.use(this.createOperatingModeMiddleware());
+
     this.use(this.createPermissionMiddleware());
 
     this.use(this.createCooldownMiddleware());
@@ -162,6 +194,68 @@ export class MiddlewarePipeline {
     this.use(this.createLoggingMiddleware());
 
     this.use(this.createMetricsMiddleware());
+  }
+
+  createOperatingModeMiddleware() {
+    return /** @type {(context: MiddlewareContext) => Promise<void>} */ (
+      async (context) => {
+        const aliases = context.command?.cmd || [];
+        const isModeCommand = aliases.some((alias) => MODE_COMMAND_ALIASES.has(alias));
+        const isStatusCommand = aliases.some((alias) =>
+          ['modestatus', 'botmodestatus'].includes(alias),
+        );
+        const firstArg = (context.args?.[0] || '').toLowerCase();
+        const isModeStatusOnly =
+          isModeCommand &&
+          (!firstArg || ['status', 'show', 'current', 'help', '?'].includes(firstArg));
+
+        if (
+          isStatusCommand ||
+          isModeStatusOnly ||
+          (isModeCommand && this.utils.isOwner(context.user))
+        ) {
+          context.set('modeChecked', true);
+          return;
+        }
+
+        const chatJid = context.message?.key?.remoteJid;
+        const inGroup = Boolean(chatJid && jid.isGroup(chatJid));
+        const mode = getMode();
+        const needsAdminCheck =
+          inGroup && (mode === 'admin' || isGroupAdminOnly(/** @type {string} */ (chatJid)));
+
+        let isGroupAdmin = false;
+        if (needsAdminCheck) {
+          isGroupAdmin = await this.checkAdminPermissions(
+            context.user,
+            context.message,
+            context.helpers.sonic,
+          );
+        }
+
+        const decision = shouldProcessCommand({
+          user: context.user,
+          chatJid,
+          isGroupAdmin,
+        });
+
+        if (!decision.allowed) {
+          // Silent ignore - avoids spam in restricted chats.
+          this.logger?.debug('Command blocked by operating mode', {
+            mode,
+            reason: decision.reason,
+            user: context.user,
+            chatJid,
+            command: context.command.cmd[0],
+          });
+          context.stop();
+          return;
+        }
+
+        context.set('modeChecked', true);
+        context.set('operatingMode', mode);
+      }
+    );
   }
 
   createAuthenticationMiddleware() {

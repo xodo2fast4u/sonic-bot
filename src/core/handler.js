@@ -15,6 +15,9 @@ export const ensureRuntimeInitialized = async () => {
   const configManager = container.resolve('configManager');
   await configManager.initialize();
 
+  const { loadModeState } = await import('../services/mode-service.js');
+  loadModeState();
+
   const cache = container.resolve('cache');
   await cache.initialize?.();
 

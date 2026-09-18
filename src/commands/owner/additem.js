@@ -44,15 +44,15 @@ export default {
 
     await text(
       `
-╭━━━ ${e.admin} *ITEM ADDED* ━━━╮
-┃
-┃ ${e.user} Target: @${targetNum}
-┃ ${e.star} Item: ${itemName}
-┃ ${e.check} Quantity: +${quantity}
-┃ ${e.menu} Inventory total: ${totalItems} item(s)
-┃
-┃ ${e.ring} Added by: Owner
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.admin} *ITEM ADDED*
+
+${e.user} Target: @${targetNum}
+${e.star} Item: ${itemName}
+${e.check} Quantity: +${quantity}
+${e.menu} Inventory total: ${totalItems} item(s)
+
+${e.ring} Added by: Owner
+`.trim(),
     );
   },
 };

@@ -40,7 +40,7 @@ export default {
     await sonic.sendMessage(
       msg.key.remoteJid,
       {
-        text: `╭━━━ ${e.admin} *ADMINS* ━━━╮\n${text}\n╰━━━━━━━━━━━━━━━━━━━╯`,
+        text: `${e.admin} *ADMINS*\n${text}\n`,
         mentions: adminList.map((/** @type {any} */ a) => a.id),
       },
       { quoted: msg },

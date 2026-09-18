@@ -7,7 +7,7 @@ export default {
   desc: 'Generate a random name with gender and country',
   run: async ({ text }, args) => {
     if (args.length) {
-      await text(`${e.info} Usage: !name — generates a random name (no arguments needed).`);
+      await text(`${e.info} Usage: !name - generates a random name.`);
       return;
     }
 

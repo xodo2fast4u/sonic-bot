@@ -5,17 +5,16 @@ const require = createRequire(import.meta.url);
 
 const fileStream = pino.destination({ dest: './sonic-logs.txt', sync: true });
 const streams = [{ level: 'trace', stream: fileStream }];
-let prettyStream;
 
 try {
-  prettyStream = require('pino-pretty')({
+  const prettyStream = require('pino-pretty')({
     colorize: true,
     translateTime: 'SYS:standard',
     ignore: 'pid,hostname',
   });
   streams.unshift({ level: 'info', stream: prettyStream });
-} catch {
-  prettyStream = null;
+} catch (error) {
+  void error;
 }
 
 const fileLogger = pino({ level: 'trace' }, pino.multistream(streams));

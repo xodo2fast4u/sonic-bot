@@ -55,15 +55,15 @@ export default {
 
     await text(
       `
-╭━━━ 🎡 *PRIZE WHEEL* ━━━╮
-┃ 🎡 The wheel slows down...
-┃ ⬇️ Pointer stops at:
-┃
-┃ ${result.emoji} *${result.label}*
-┃
-┃ ${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${result.mult})` : `${e.cross} Payout: *${formatCoins(payout)}* (Lost: -${formatCoins(bet - payout)})`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎡 *PRIZE WHEEL*
+🎡 The wheel slows down...
+⬇️ Pointer stops at:
+
+${result.emoji} *${result.label}*
+
+${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${result.mult})` : `${e.cross} Payout: *${formatCoins(payout)}* (Lost: -${formatCoins(bet - payout)})`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

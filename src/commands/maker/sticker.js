@@ -67,7 +67,7 @@ export default {
 
     if (!mediaSource) {
       await text(
-        `${e.cross} Reply to an image, sticker, or short video with *!sticker* (or *!sticker <pack> | <author>*).`,
+        `${e.cross} Reply to an image, sticker or short video with *!sticker* (or *!sticker <pack> | <author>*).`,
       );
       return;
     }

@@ -35,13 +35,13 @@ export default {
 
     await text(
       `
-╭━━━ ${e.admin} *COOLDOWN RESET* ━━━╮
-┃
-┃ ${e.user} Target: @${targetNum}
-┃ ${e.check} Cooldowns reset${commandText}
-┃
-┃ ${e.ring} Reset by: Owner
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.admin} *COOLDOWN RESET*
+
+${e.user} Target: @${targetNum}
+${e.check} Cooldowns reset${commandText}
+
+${e.ring} Reset by: Owner
+`.trim(),
     );
   },
 };

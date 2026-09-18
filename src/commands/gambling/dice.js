@@ -6,7 +6,7 @@ import { resolveSender } from '../../utils/utils.js';
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['dice', 'roll'],
-  desc: 'Roll dice — pick a number 1-6',
+  desc: 'Roll dice pick a number 1-6',
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
@@ -47,14 +47,14 @@ export default {
 
     await text(
       `
-╭━━━ 🎲 *DICE ROLL* ━━━╮
-┃
-┃ ${diceEmoji} Rolled: *${rolled}*
-┃ Your pick: *${pick}*
-┃
-┃ ${won ? `${e.check} Won: ${formatCoins(bet * 5)} (x5!)` : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎲 *DICE ROLL*
+
+${diceEmoji} Rolled: *${rolled}*
+Your pick: *${pick}*
+
+${won ? `${e.check} Won: ${formatCoins(bet * 5)} (x5!)` : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

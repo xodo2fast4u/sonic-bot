@@ -12,7 +12,7 @@ test('setOwner preserves values containing equals signs in the env file', async 
 
   const previousDir = process.cwd();
   process.chdir(tempDir);
-  setOwner('12345');
+  setOwner('12345', { persist: true });
 
   const contents = readFileSync(envPath, 'utf-8');
   expect(contents).toMatch(/OWNER_NUMBER=12345/);

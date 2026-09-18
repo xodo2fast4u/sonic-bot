@@ -34,7 +34,7 @@ const scoreHand = (cards) => {
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['baccarat'],
-  desc: 'Classic Punto Banco casino baccarat (bet on player, banker, or tie)',
+  desc: 'Classic Punto Banco casino baccarat (bet on player, banker or tie)',
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
@@ -51,7 +51,7 @@ export default {
 
     if (!isPlayer && !isBanker && !isTie) {
       return text(
-        `${e.cross} Choose your bet: *player*, *banker*, or *tie*!\nExample: !baccarat banker 100`,
+        `${e.cross} Choose your bet: *player*, *banker* or *tie*!\nExample: !baccarat banker 100`,
       );
     }
 
@@ -116,16 +116,16 @@ export default {
 
     await text(
       `
-╭━━━ 🎴 *BACCARAT* ━━━╮
-┃ 👤 Player: [${pCardsStr}] -> *${playerScore}*
-┃ 🏦 Banker: [${bCardsStr}] -> *${bankerScore}*
-┃
-┃ Result: *${winner.toUpperCase()} WINS*
-┃ Your Pick: *${choice.toUpperCase()}*
-┃
-┃ ${won ? `${e.check} Won: +${formatCoins(payout)} coins` : `${e.cross} Lost: -${formatCoins(bet)} coins`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎴 *BACCARAT*
+👤 Player: [${pCardsStr}] -> *${playerScore}*
+🏦 Banker: [${bCardsStr}] -> *${bankerScore}*
+
+Result: *${winner.toUpperCase()} WINS*
+Your Pick: *${choice.toUpperCase()}*
+
+${won ? `${e.check} Won: +${formatCoins(payout)} coins` : `${e.cross} Lost: -${formatCoins(bet)} coins`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

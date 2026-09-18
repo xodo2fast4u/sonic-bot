@@ -19,11 +19,11 @@ export default {
       if (activeBounties.size === 0) {
         return text(
           `
-╭━━━ 📜 *BOUNTY BOARD* ━━━╮
-┃ ${e.info} No active bounties right now!
-┃
-┃ Place one: !bounty place @user <amount>
-╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+📜 *BOUNTY BOARD*
+${e.info} No active bounties right now!
+
+Place one: !bounty place @user <amount>
+`.trim(),
         );
       }
 
@@ -31,7 +31,7 @@ export default {
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5)
         .map(
-          (b, idx) => `┃ ${idx + 1}. @${jid.fromUser(b.targetId)} — 🪙 *${formatCoins(b.amount)}*`,
+          (b, idx) => `${idx + 1}. @${jid.fromUser(b.targetId)} - 🪙 *${formatCoins(b.amount)}*`,
         )
         .join('\n');
 
@@ -39,12 +39,12 @@ export default {
 
       return mention(
         `
-╭━━━ 📜 *WANTED: BOUNTY BOARD* ━━━╮
-┃
+📜 *WANTED: BOUNTY BOARD*
+
 ${rows}
-┃
-┃ Claim with: !bounty claim @user
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+
+Claim with: !bounty claim @user
+`.trim(),
         mentions,
       );
     }
@@ -87,13 +87,13 @@ ${rows}
 
       return mention(
         `
-╭━━━ 🎯 *BOUNTY PLACED* ━━━╮
-┃ ${e.warn} Target: @${targetId}
-┃ 🪙 Added: *${formatCoins(amount)}*
-┃ 💰 Total Pool: *${formatCoins(totalBounty)}*
-┃
-┃ Hunters, claim with: !bounty claim @${targetId}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎯 *BOUNTY PLACED*
+${e.warn} Target: @${targetId}
+🪙 Added: *${formatCoins(amount)}*
+💰 Total Pool: *${formatCoins(totalBounty)}*
+
+Hunters, claim with: !bounty claim @${targetId}
+`.trim(),
         [target],
       );
     }
@@ -131,13 +131,13 @@ ${rows}
 
         return mention(
           `
-╭━━━ 🎯 *BOUNTY CLAIMED!* ━━━╮
-┃ ${e.check} Hunter: @${jid.fromUser(sender)}
-┃ 🎯 Captured: @${targetId}
-┃
-┃ 💰 Prize Won: *+${formatCoins(prize)}* coins
-┃ ${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎯 *BOUNTY CLAIMED!*
+${e.check} Hunter: @${jid.fromUser(sender)}
+🎯 Captured: @${targetId}
+
+💰 Prize Won: *+${formatCoins(prize)}* coins
+${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
           [sender, target],
         );
       } else {
@@ -147,11 +147,11 @@ ${rows}
 
         return mention(
           `
-╭━━━ 💨 *TARGET ESCAPED!* ━━━╮
-┃ @${targetId} fought back and escaped into the alley!
-┃
-┃ ${e.cross} Hospital Fee: *-${formatCoins(penalty)}* paid to target
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+💨 *TARGET ESCAPED!*
+@${targetId} fought back and escaped into the alley!
+
+${e.cross} Hospital Fee: *-${formatCoins(penalty)}* paid to target
+`.trim(),
           [target],
         );
       }

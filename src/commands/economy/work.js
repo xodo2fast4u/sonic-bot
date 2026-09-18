@@ -27,14 +27,14 @@ export default {
 
     await text(
       `
-╭━━━ ${job.emoji} *WORK* ━━━╮
-┃ 
-┃ You worked as a *${job.name}*
-┃ and ${action}!
-┃
-┃ ${e.check} Earned: ${formatCoins(earned)}
-┃ ${e.ring} Balance: ${formatCoins(newBalance)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${job.emoji} *WORK*
+
+You worked as a *${job.name}*
+and ${action}!
+
+${e.check} Earned: ${formatCoins(earned)}
+${e.ring} Balance: ${formatCoins(newBalance)}
+`.trim(),
     );
   },
 };

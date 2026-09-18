@@ -1,6 +1,15 @@
+import { readFileSync } from 'fs';
 import logger from '../utils/logger.js';
 import { getErrorMessage } from '../utils/error-message.js';
 import { getGroupParticipantMessageState } from './state.js';
+import { shouldSendGroupParticipantMessages } from '../services/mode-service.js';
+
+const participantImages = {
+  add: readFileSync(new URL('../assets/sonic-welcome.png', import.meta.url)),
+  remove: readFileSync(new URL('../assets/sonic-left.png', import.meta.url)),
+  promote: readFileSync(new URL('../assets/sonic-promoted.png', import.meta.url)),
+  demote: readFileSync(new URL('../assets/sonic-demoted.png', import.meta.url)),
+};
 
 /**
  * Handle group participant updates (add, remove, promote, demote)
@@ -18,6 +27,10 @@ export const handleGroupParticipantsUpdate = async (sonic, update) => {
         : null;
 
     if (!actionKey) {
+      return;
+    }
+
+    if (!shouldSendGroupParticipantMessages(id)) {
       return;
     }
 
@@ -62,7 +75,8 @@ export const handleGroupParticipantsUpdate = async (sonic, update) => {
       }
 
       await sonic.sendMessage(id, {
-        text: messageText,
+        image: participantImages[actionKey],
+        caption: messageText,
         mentions: [participantJid],
       });
     }

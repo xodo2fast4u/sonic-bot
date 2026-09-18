@@ -107,15 +107,15 @@ export default {
 
     await text(
       `
-╭━━━ 🃏 *BLACKJACK* ━━━╮
-┃
-┃ 👤 You:    ${handStr(playerHand)} = *${playerTotal}*
-┃ 🏠 Dealer: ${handStr(dealerHand)} = *${dealerTotal}*
-┃
-┃ ${result}
-┃ ${won && payout > 0 ? `${e.check} Won: ${formatCoins(payout)}` : won ? '↩️ Bet returned' : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🃏 *BLACKJACK*
+
+👤 You:    ${handStr(playerHand)} = *${playerTotal}*
+🏠 Dealer: ${handStr(dealerHand)} = *${dealerTotal}*
+
+${result}
+${won && payout > 0 ? `${e.check} Won: ${formatCoins(payout)}` : won ? '↩️ Bet returned' : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

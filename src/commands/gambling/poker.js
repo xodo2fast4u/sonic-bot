@@ -144,14 +144,14 @@ export default {
 
     await text(
       `
-╭━━━ 🃏 *VIDEO POKER* ━━━╮
-┃
-┃ Cards: ${handDisplay}
-┃ Hand: *${name}*
-┃
-┃ ${won ? `${e.check} Won: ${formatCoins(payout)} (x${multiplier})` : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🃏 *VIDEO POKER*
+
+Cards: ${handDisplay}
+Hand: *${name}*
+
+${won ? `${e.check} Won: ${formatCoins(payout)} (x${multiplier})` : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

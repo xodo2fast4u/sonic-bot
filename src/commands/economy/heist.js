@@ -58,14 +58,14 @@ export default {
     if (!approach) {
       return text(
         `
-╭━━━ 🏦 *CHOOSE HEIST APPROACH* ━━━╮
-┃
-┃ 🥷 *stealth* — 55% Win | 400-1.2k coins | 200 fine
-┃ 💻 *hack*    — 45% Win | 800-2k coins   | 350 fine
-┃ 💥 *loud*    — 32% Win | 1.5k-4.5k coins| 600 fine
-┃
-┃ Usage: !heist <stealth|hack|loud>
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏦 *CHOOSE HEIST APPROACH*
+
+🥷 *stealth* - 55% Win | 400-1.2k coins | 200 fine
+💻 *hack*    - 45% Win | 800-2k coins   | 350 fine
+💥 *loud*    - 32% Win | 1.5k-4.5k coins| 600 fine
+
+Usage: !heist <stealth|hack|loud>
+`.trim(),
       );
     }
 
@@ -89,14 +89,14 @@ export default {
 
       await text(
         `
-╭━━━ 🏦 *HEIST SUCCESSFUL!* ━━━╮
-┃ ${approach.emoji} Approach: *${approach.name}*
-┃
-┃ 📜 ${approach.successDesc}
-┃
-┃ ${e.check} Loot Taken: *+${formatCoins(loot)}* coins
-┃ ${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏦 *HEIST SUCCESSFUL!*
+${approach.emoji} Approach: *${approach.name}*
+
+📜 ${approach.successDesc}
+
+${e.check} Loot Taken: *+${formatCoins(loot)}* coins
+${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
       );
     } else {
       removeCoins(sender, approach.fine);
@@ -104,14 +104,14 @@ export default {
 
       await text(
         `
-╭━━━ 🚨 *HEIST BUSTED!* ━━━╮
-┃ ${approach.emoji} Approach: *${approach.name}*
-┃
-┃ ⚠️ ${approach.failDesc}
-┃
-┃ ${e.cross} Fine Paid: *-${formatCoins(approach.fine)}* coins
-┃ ${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🚨 *HEIST BUSTED!*
+${approach.emoji} Approach: *${approach.name}*
+
+⚠️ ${approach.failDesc}
+
+${e.cross} Fine Paid: *-${formatCoins(approach.fine)}* coins
+${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
+`.trim(),
       );
     }
   },

@@ -65,14 +65,14 @@ export default {
 
     await text(
       `
-╭━━━ 🎣 *FISHING* ━━━╮
-┃
-┃ You ${action}...
-┃
-┃ ${fish.emoji} Caught: *${fish.name}*
-┃ ${earningsLine}
-${newBalance !== null ? `┃ ${e.coin} Balance: ${formatCoins(newBalance)}` : ''}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎣 *FISHING*
+
+You ${action}...
+
+${fish.emoji} Caught: *${fish.name}*
+${earningsLine}
+${newBalance !== null ? `${e.coin} Balance: ${formatCoins(newBalance)}` : ''}
+`.trim(),
     );
   },
 };

@@ -14,7 +14,7 @@ const LABELS = {
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['transactions', 'history'],
+  cmd: ['transactions'],
   desc: 'View your recent coin transactions',
 
   run: async ({ text, msg }, args) => {
@@ -32,14 +32,14 @@ export default {
         transaction.type === 'deposit' ? '' : transaction.to_id === sender ? '+' : '-';
       const label =
         LABELS[/** @type {keyof typeof LABELS} */ (transaction.type)] ?? transaction.type;
-      return `┃ ${direction}${formatCoins(transaction.amount)} — ${label}`;
+      return `${direction}${formatCoins(transaction.amount)} - ${label}`;
     });
 
     await text(
       `
-╭━━━ ${e.coin} *TRANSACTION HISTORY* ━━━╮
+${e.coin} *TRANSACTION HISTORY*
 ${lines.join('\n')}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+`.trim(),
     );
   },
 };

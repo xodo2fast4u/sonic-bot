@@ -155,8 +155,13 @@ export interface CommandHelpers {
   text: (message: string) => Promise<void>;
   mention: (text: string, mentions: string[]) => Promise<void>;
   react: (emoji: string, key?: any) => Promise<void>;
-  edit: (key: any, text: string) => Promise<void>;
-  image: (source: string | Buffer, caption?: string, mimetype?: string) => Promise<void>;
+  edit: (key: any, text: string, mentions?: string[]) => Promise<void>;
+  image: (
+    source: string | Buffer,
+    caption?: string,
+    mimetype?: string,
+    mentions?: string[],
+  ) => Promise<void>;
   sticker: (sticker: Buffer) => Promise<void>;
   voice: (audio: Buffer, waveform: Uint8Array, seconds: number) => Promise<void>;
   sonic: any;

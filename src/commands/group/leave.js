@@ -1,5 +1,6 @@
 import { emoji as e } from '../../config/config.js';
 import { jid, send } from '../../utils/utils.js';
+import { checkPerms } from './_utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
@@ -12,6 +13,9 @@ export default {
     if (!jid.isGroup(groupJid)) {
       return send.text(sonic, msg, `${e.cross} Group only!`);
     }
+
+    const metadata = await checkPerms(sonic, msg, { admin: true });
+    if (!metadata) return;
 
     await send.text(sonic, msg, `${e.sonic} Goodbye! ${e.speed}`);
     await sonic.groupLeave(groupJid);

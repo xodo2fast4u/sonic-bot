@@ -40,13 +40,13 @@ export default {
 
     await text(
       `
-╭━━━ 🏦 *BANK INTEREST* ━━━╮
-┃ ${e.star} Rate: *${ratePercent}%* ${ownsSafe ? '(🔒 Safe 2x Bonus!)' : '(Base)'}
-┃ ${e.check} Interest Earned: *+${formatCoins(interestEarned)}*
-┃
-┃ ${e.bolt} Bank Total: *${formatCoins(finalBank ?? 0)}*
-┃ ⏱️ Next payout in: 12h
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏦 *BANK INTEREST*
+${e.star} Rate: *${ratePercent}%* ${ownsSafe ? '(🔒 Safe 2x Bonus!)' : '(Base)'}
+${e.check} Interest Earned: *+${formatCoins(interestEarned)}*
+
+${e.bolt} Bank Total: *${formatCoins(finalBank ?? 0)}*
+⏱️ Next payout in: 12h
+`.trim(),
     );
   },
 };

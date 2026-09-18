@@ -162,6 +162,13 @@ Sonic reads configuration from `.env` and a built-in config module.
 | `SONIC_PREFIX` | Command prefix for bot commands           | `!`                                          |
 | `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing) |
 | `FFMPEG_PATH`  | Path or command used to run FFmpeg        | `ffmpeg`                                     |
+| `NODE_ENV`     | Runtime environment                       | `production`                                |
+
+`NODE_ENV` accepts `development`, `production` or `test`:
+
+- `development`: enables debug commands and command hot reload, uses debug logging and stores the database in `./data/sonic_dev.db`.
+- `production`: disables debug commands and hot reload, uses info logging and stores the database in `./data/sonic.db`.
+- `test`: disables hot reload, uses error logging and uses an in-memory database.
 
 ## Project structure
 
@@ -186,8 +193,9 @@ The main code lives under [src](src) and the folders are organized like this:
 
 The command registry automatically loads command modules from the category folders in [src/commands](src/commands). The currently implemented command families are:
 
-- General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`
-- Economy: `!balance`, `!daily`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
+- General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`, `!modestatus`
+- RPG & Combat: `!fight`, `!train`, `!equip`, `!unequip`, `!togglelevelup`, `!profile`
+- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
 - Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`, `!poker`, `!baccarat`, `!mines`, `!plinko`, `!derby`, `!keno`, `!wheel`, `!limbo`, `!war`, `!cups`
 - Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
@@ -195,7 +203,21 @@ The command registry automatically loads command modules from the category folde
 - Downloader: `!play`
 - Maker: `!sticker`, `!brat`, `!hd`
 - Newsletter: `!newslettermanage`, `!newsletteractions`
-- Owner: `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
+- Owner: `!mode`, `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetcooldown`
+
+### Operating modes
+
+Sonic starts in **public** mode and persists the chosen mode in SQLite across restarts. Only numbers in `OWNER_NUMBER` can change the mode. Anyone can check it with `!modestatus` or `!mode`.
+
+| Mode                 | Behaviour                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `public`             | Responds to commands everywhere (groups + DMs). Default.                                |
+| `private`            | Responds only in DMs / private chats; ignores group commands.                           |
+| `self`               | Responds everywhere, but only to `OWNER_NUMBER`.                                        |
+| `admin` (one group)  | `!mode admin` in a group that group becomes admin-only; everywhere else stays normal. |
+| `admin` (all groups) | `!mode admin all` every group is admin-only; DMs still work for everyone.             |
+
+Owners always bypass mode restrictions so they can manage the bot. Restricted users are ignored silently (no reply spam). Welcome/promote participant messages are suppressed in `private` and `self` modes.
 
 ## Development
 
@@ -217,8 +239,8 @@ npm run test:coverage
 ### Adding a new command
 
 1. Create a new file in the appropriate folder inside [src/commands](src/commands), such as [src/commands/general](src/commands/general) or [src/commands/economy](src/commands/economy).
-2. Export a command object with `cmd`, `desc`, and `run`.
-3. Keep the logic focused and use the shared helpers for text replies, mentions, reactions, edits, and images.
+2. Export a command object with `cmd`, `desc` and `run`.
+3. Keep the logic focused and use the shared helpers for text replies, mentions, reactions, edits and images.
 
 Example:
 
@@ -245,13 +267,19 @@ The command loader scans each folder and picks up new files automatically, so ad
 - `image(source, caption, mimetype)` sends an image message from a URL or buffer. The MIME type is optional.
 - `sticker(buffer)` sends a sticker buffer as a quoted sticker message.
 - `voice(audio, waveform, seconds)` sends a WhatsApp voice note using an Opus payload with `ptt: true` and waveform metadata for voice commands.
-- `getTarget(msg)` returns the first mentioned user or the sender of a quoted message, or `null` when no target is present.
+- `getTarget(msg)` returns the first mentioned user or the sender of a quoted message or `null` when no target is present.
 - `resolveSender(msg)` returns the message sender and handles group participants and LID fallbacks.
+
+In development, command files are watched and reloaded automatically. Edit,
+add or delete a JavaScript file under `src/commands` and use the command again
+without restarting Sonic. The registry logs `Command source change detected`
+and `Command registry hot reload complete`, including added, updated and
+deleted command aliases. Set `NODE_ENV=production` to disable this watcher.
 
 ### Voice changer requirements
 
 Voice commands process a sent or quoted audio message with the system `ffmpeg`
-executable, or the executable configured with `FFMPEG_PATH`. FFmpeg must include
+executable or the executable configured with `FFMPEG_PATH`. FFmpeg must include
 the `libopus` encoder. On Linux, install the distribution's FFmpeg package and
 verify it with:
 

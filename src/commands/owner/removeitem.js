@@ -48,15 +48,15 @@ export default {
 
     await text(
       `
-╭━━━ ${e.admin} *ITEM REMOVED* ━━━╮
-┃
-┃ ${e.user} Target: @${targetNum}
-┃ ${e.cross} Item: ${itemName}
-┃ ${e.check} Quantity: -${quantity}
-┃ ${e.menu} Inventory total: ${totalItems} item(s)
-┃
-┃ ${e.ring} Removed by: Owner
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.admin} *ITEM REMOVED*
+
+${e.user} Target: @${targetNum}
+${e.cross} Item: ${itemName}
+${e.check} Quantity: -${quantity}
+${e.menu} Inventory total: ${totalItems} item(s)
+
+${e.ring} Removed by: Owner
+`.trim(),
     );
   },
 };

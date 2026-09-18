@@ -61,11 +61,11 @@ export default {
 
       return text(
         `
-╭━━━ 🏷️ *SOLD ALL ITEMS* ━━━╮
-┃ ${e.check} Sold: *${totalItems}* items
-┃ ${e.coin} Earned: *${formatCoins(totalEarned)}* coins
-┃ ${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏷️ *SOLD ALL ITEMS*
+${e.check} Sold: *${totalItems}* items
+${e.coin} Earned: *${formatCoins(totalEarned)}* coins
+${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
       );
     }
 
@@ -98,11 +98,11 @@ export default {
 
     await text(
       `
-╭━━━ 🏷️ *ITEM SOLD* ━━━╮
-┃ ${e.check} Sold: *${matchedItem.item_name}* x${qty}
-┃ ${e.coin} Earned: *${formatCoins(totalEarnings)}* coins
-┃ ${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🏷️ *ITEM SOLD*
+${e.check} Sold: *${matchedItem.item_name}* x${qty}
+${e.coin} Earned: *${formatCoins(totalEarnings)}* coins
+${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
     );
   },
 };

@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { URLSearchParams } from 'url';
 
 const HOME = 'https://ytmp3.gl/';
 const DOMAIN = 'ytmp3.gl';
@@ -37,7 +38,9 @@ function sleep(ms) {
     return bunRuntime.sleep(ms);
   }
 
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 /**
@@ -723,18 +726,18 @@ async function main() {
   const input = process.argv.slice(2).join(' ').trim();
 
   if (!input) {
-    console.error(`Usage: node ${process.argv[1]} <youtube url or video id or song name>`);
+    process.stderr.write(`Usage: node ${process.argv[1]} <youtube url or video id or song name>\n`);
     process.exit(1);
   }
 
   const videoId = await resolveVideoId(input);
 
-  console.log(`Video ID: ${videoId}`);
-  console.log('Fetching current API key');
+  process.stdout.write(`Video ID: ${videoId}\n`);
+  process.stdout.write('Fetching current API key\n');
 
   const apiKey = await fetchCurrentApiKey();
-  console.log(`Using API key: ${apiKey}`);
-  console.log('Authorizing');
+  process.stdout.write(`Using API key: ${apiKey}\n`);
+  process.stdout.write('Authorizing\n');
 
   const auth = await authorize(apiKey);
 
@@ -742,7 +745,7 @@ async function main() {
     throw new Error(`Authorization response did not contain a key: ${JSON.stringify(auth)}`);
   }
 
-  console.log('Initializing');
+  process.stdout.write('Initializing\n');
 
   const init = await initialize(auth.key);
 
@@ -750,7 +753,7 @@ async function main() {
     throw new Error(`Initialization response did not contain convertURL: ${JSON.stringify(init)}`);
   }
 
-  console.log('Converting');
+  process.stdout.write('Converting\n');
 
   let result = await convert(init.convertURL, videoId);
   result = await finishConversion(result, auth.geo);
@@ -763,17 +766,17 @@ async function main() {
     throw new Error(`Conversion completed without a title: ${JSON.stringify(result)}`);
   }
 
-  console.log(`Title: ${result.title}`);
-  console.log('Downloading');
+  process.stdout.write(`Title: ${result.title}\n`);
+  process.stdout.write('Downloading\n');
 
   const downloaded = await download(result.downloadURL, videoId, result.title);
 
-  console.log(`Saved: ${downloaded.filename}`);
+  process.stdout.write(`Saved: ${downloaded.filename}\n`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('youtube-to-mp3-converter.js')) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(1);
   });
 }

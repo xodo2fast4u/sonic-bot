@@ -57,16 +57,16 @@ Example: !higherlower higher 100`);
 
     await text(
       `
-╭━━━ 🃏 *HIGHER OR LOWER* ━━━╮
-┃
-┃ First card: *${RANKS[firstCard - 1]}*
-┃ Next card: *${RANKS[nextCard - 1]}*
-┃ Guess: *${normalizedGuess.toUpperCase()}*
-┃ ${outcome}
-┃
-┃ ${won ? `${e.check} Won: ${formatCoins(bet)}` : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🃏 *HIGHER OR LOWER*
+
+First card: *${RANKS[firstCard - 1]}*
+Next card: *${RANKS[nextCard - 1]}*
+Guess: *${normalizedGuess.toUpperCase()}*
+${outcome}
+
+${won ? `${e.check} Won: ${formatCoins(bet)}` : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

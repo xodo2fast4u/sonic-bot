@@ -3,7 +3,6 @@ import { getUser, addCoins, removeCoins } from '../../database/database.js';
 import { formatCoins, checkEconCooldown, random } from '../economy/_utils.js';
 import { resolveSender } from '../../utils/utils.js';
 
-// Multipliers for 8-row plinko board (indices 0 to 8)
 const MULTIPLIERS = [10.0, 3.5, 1.5, 0.6, 0.3, 0.6, 1.5, 3.5, 10.0];
 
 /** @type {import('../../../types/index.js').Command} */
@@ -55,16 +54,16 @@ export default {
 
     await text(
       `
-╭━━━ 🔴 *PLINKO DROP* ━━━╮
-┃ 🔘 Drop Path: ${path.slice(0, 4).join('')}
-┃               ${path.slice(4).join('')}
-┃
-┃ 🎯 Landed in Slot: *${mult}x*
-┃ [${bucketsStr}]
-┃
-┃ ${won ? `${e.check} Won: +${formatCoins(payout)}` : `${e.cross} Payout: ${formatCoins(payout)} (Lost: -${formatCoins(bet - payout)})`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🔴 *PLINKO DROP*
+🔘 Drop Path: ${path.slice(0, 4).join('')}
+              ${path.slice(4).join('')}
+
+🎯 Landed in Slot: *${mult}x*
+[${bucketsStr}]
+
+${won ? `${e.check} Won: +${formatCoins(payout)}` : `${e.cross} Payout: ${formatCoins(payout)} (Lost: -${formatCoins(bet - payout)})`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

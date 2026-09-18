@@ -206,7 +206,7 @@ class UserService {
 
 ### JSDoc Guidelines
 
-All public functions, classes, and modules should have JSDoc comments:
+All public functions, classes and modules should have JSDoc comments:
 
 ```javascript
 /**

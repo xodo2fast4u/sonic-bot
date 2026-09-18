@@ -9,12 +9,12 @@ export default {
   run: async ({ text }) => {
     await text(
       `
-╭━━━ ${e.sonic} *${config.botName.toUpperCase()}* ━━━╮
-┃ ${e.star} Version: ${config.version}
-┃ ${e.time} Uptime: ${format.getUptime()}
-┃ ${e.bolt} Prefix: ${config.prefix}
-┃ ${e.info} The fastest bot!
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.sonic} *${config.botName.toUpperCase()}*
+${e.star} Version: ${config.version}
+${e.time} Uptime: ${format.getUptime()}
+${e.bolt} Prefix: ${config.prefix}
+${e.info} The fastest bot!
+`.trim(),
     );
   },
 };

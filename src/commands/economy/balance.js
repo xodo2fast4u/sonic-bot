@@ -20,22 +20,22 @@ export default {
     const num = jid.fromUser(target);
 
     const selfContent = `
-╭━━━ ${e.ring} *WALLET* ━━━╮
-┃ ${e.user} Your Balance
-┃
-┃ ${e.star} Cash: ${formatCoins(user.balance)}
-┃ ${e.bolt} Bank: ${formatCoins(user.bank)}
-┃ ${e.rocket} Total: ${formatCoins(user.balance + user.bank)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim();
+${e.ring} *WALLET*
+${e.user} Your Balance
+
+${e.star} Cash: ${formatCoins(user.balance)}
+${e.bolt} Bank: ${formatCoins(user.bank)}
+${e.rocket} Total: ${formatCoins(user.balance + user.bank)}
+`.trim();
 
     const otherContent = `
-╭━━━ ${e.ring} *WALLET* ━━━╮
-┃ ${e.user} @${num}'s Balance
-┃
-┃ ${e.star} Cash: ${formatCoins(user.balance)}
-┃ ${e.bolt} Bank: ${formatCoins(user.bank)}
-┃ ${e.rocket} Total: ${formatCoins(user.balance + user.bank)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim();
+${e.ring} *WALLET*
+${e.user} @${num}'s Balance
+
+${e.star} Cash: ${formatCoins(user.balance)}
+${e.bolt} Bank: ${formatCoins(user.bank)}
+${e.rocket} Total: ${formatCoins(user.balance + user.bank)}
+`.trim();
 
     await sendProfileDisplay(helpers, target, selfContent, otherContent);
   },

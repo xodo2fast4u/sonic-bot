@@ -14,7 +14,7 @@ const parseTarget = (args, msg) => {
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['newsletteractions'],
-  desc: 'Follow, mute, react, and manage newsletter permissions',
+  desc: 'Follow, mute, react and manage newsletter permissions',
 
   run: async ({ text, sonic, msg }, args) => {
     const action = args[0]?.toLowerCase();

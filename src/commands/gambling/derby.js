@@ -28,17 +28,17 @@ export default {
     const chosenHorse = HORSES.find((h) => h.id === horsePick);
 
     if (!chosenHorse) {
-      const roster = HORSES.map((h) => `┃ ${h.id}. ${h.emoji} *${h.name}* (Odds: ${h.odds}x)`).join(
+      const roster = HORSES.map((h) => `${h.id}. ${h.emoji} *${h.name}* (Odds: ${h.odds}x)`).join(
         '\n',
       );
       return text(
         `
-╭━━━ 🏇 *CHAMPIONSHIP DERBY* ━━━╮
-┃ Choose your racer (1-5):
+🏇 *CHAMPIONSHIP DERBY*
+Choose your racer (1-5):
 ${roster}
-┃
-┃ Usage: !derby <1-5> <bet>
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+
+Usage: !derby <1-5> <bet>
+`.trim(),
       );
     }
 
@@ -79,20 +79,20 @@ ${roster}
       // @ts-ignore
       const isWinner = h.id === winner.id;
       const progress = isWinner ? '━━━━🏁' : '━━━🐎';
-      return `┃ ${h.emoji} ${progress} ${h.name}`;
+      return `${h.emoji} ${progress} ${h.name}`;
     }).join('\n');
 
     await text(
       `
-╭━━━ 🏇 *DERBY FINISH LINE* ━━━╮
+🏇 *DERBY FINISH LINE*
 ${track}
-┃
-┃ 🏆 Winner: *${winner?.name}!* (${winner?.odds}x)
-┃ Your Bet: *${chosenHorse.name}*
-┃
-┃ ${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${chosenHorse.odds})` : `${e.cross} Lost: *-${formatCoins(bet)}*`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+
+🏆 Winner: *${winner?.name}!* (${winner?.odds}x)
+Your Bet: *${chosenHorse.name}*
+
+${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${chosenHorse.odds})` : `${e.cross} Lost: *-${formatCoins(bet)}*`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

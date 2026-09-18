@@ -66,12 +66,12 @@ export default {
 
     await mention(
       `
-╭━━━ 🎁 *GIFT SENT* ━━━╮
-┃ ${e.check} Item: *${matched.item_name}* x${qty}
-┃ ${e.user} To: @${targetNumber}
-┃
-┃ ${e.star} Generosity makes the world go round!
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎁 *GIFT SENT*
+${e.check} Item: *${matched.item_name}* x${qty}
+${e.user} To: @${targetNumber}
+
+${e.star} Generosity makes the world go round!
+`.trim(),
       [target],
     );
   },

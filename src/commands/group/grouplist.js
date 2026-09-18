@@ -14,7 +14,7 @@ export default {
 
       const summary = entries
         .slice(0, 15)
-        .map((group) => `${group.subject || 'Unknown'} — ${group.id}`)
+        .map((group) => `${group.subject || 'Unknown'} - ${group.id}`)
         .join('\n');
 
       await text(

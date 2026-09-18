@@ -100,14 +100,14 @@ export default {
 
     await text(
       `
-╭━━━ ✨ *ITEM ACTIVATED* ━━━╮
-┃ ${effect.emoji} Item: *${matchedItem.item_name}*
-┃
-┃ 📜 ${effect.effect}
-┃
-┃ ${e.check} Reward: *+${formatCoins(coinsGained)}* coins
-┃ ${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+✨ *ITEM ACTIVATED*
+${effect.emoji} Item: *${matchedItem.item_name}*
+
+📜 ${effect.effect}
+
+${e.check} Reward: *+${formatCoins(coinsGained)}* coins
+${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
+`.trim(),
     );
   },
 };

@@ -72,7 +72,7 @@ export const requireTarget = async (sonic, msg) => {
 
 /*
  * Factory function creates similar command handlers with different actions,
- * reducing code duplication across kick, promote, demote, and add commands.
+ * reducing code duplication across kick, promote, demote and add commands.
  */
 /**
  * @param {string} action
@@ -130,7 +130,7 @@ export const participantAction =
 
 /*
  * Factory function creates similar setting toggle handlers with different settings,
- * reducing code duplication across lock, unlock, and other group setting commands.
+ * reducing code duplication across lock, unlock and other group setting commands.
  */
 /**
  * @param {string} setting

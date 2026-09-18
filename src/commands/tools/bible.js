@@ -7,7 +7,7 @@ export default {
   desc: 'Get a random Bible verse',
   run: async ({ text }, args) => {
     if (args.length) {
-      await text(`${e.info} Usage: !bible — fetches a random verse (no arguments needed).`);
+      await text(`${e.info} Usage: !bible - fetches a random verse.`);
       return;
     }
 

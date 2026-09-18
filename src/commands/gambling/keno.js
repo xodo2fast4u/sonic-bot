@@ -73,15 +73,15 @@ export default {
 
     await text(
       `
-╭━━━ 🎱 *CASINO KENO* ━━━╮
-┃ 🎯 Your Picks: [${picks.join(', ')}]
-┃ 🎱 House Drawn: ${drawnStr}
-┃
-┃ Matches: *${matches.length} / 3* (${matches.length ? matches.join(', ') : 'None'})
-┃
-┃ ${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${multiplier})` : `${e.cross} Lost: *-${formatCoins(bet)}*`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🎱 *CASINO KENO*
+🎯 Your Picks: [${picks.join(', ')}]
+🎱 House Drawn: ${drawnStr}
+
+Matches: *${matches.length} / 3* (${matches.length ? matches.join(', ') : 'None'})
+
+${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${multiplier})` : `${e.cross} Lost: *-${formatCoins(bet)}*`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

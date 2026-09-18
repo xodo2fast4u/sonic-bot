@@ -69,11 +69,11 @@ export default {
         won = true;
         payout = bet * 2;
         addCoins(sender, payout);
-        warText = `\n┃ ⚔️ *IT'S A TIE! GOING TO WAR!*\n┃ Player War Card: [${playerWarCard.rank}]\n┃ Dealer War Card: [${dealerWarCard.rank}]\n┃ 🏆 *You won the WAR showdown!*`;
+        warText = `\n⚔️ *IT'S A TIE! GOING TO WAR!*\nPlayer War Card: [${playerWarCard.rank}]\nDealer War Card: [${dealerWarCard.rank}]\n🏆 *You won the WAR showdown!*`;
       } else {
         won = false;
         removeCoins(sender, bet);
-        warText = `\n┃ ⚔️ *IT'S A TIE! GOING TO WAR!*\n┃ Player War Card: [${playerWarCard.rank}]\n┃ Dealer War Card: [${dealerWarCard.rank}]\n┃ 💀 *Dealer won the WAR showdown!*`;
+        warText = `\n⚔️ *IT'S A TIE! GOING TO WAR!*\nPlayer War Card: [${playerWarCard.rank}]\nDealer War Card: [${dealerWarCard.rank}]\n💀 *Dealer won the WAR showdown!*`;
       }
     }
 
@@ -81,13 +81,13 @@ export default {
 
     await text(
       `
-╭━━━ ⚔️ *CASINO WAR* ━━━╮
-┃ 👤 Your Card:   [${playerCard.rank}]
-┃ 🤖 Dealer Card: [${dealerCard.rank}]${warText}
-┃
-┃ ${won ? `${e.check} Victory! Won: *+${formatCoins(payout)}* coins` : `${e.cross} Defeat! Lost: *-${formatCoins(bet)}* coins`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+⚔️ *CASINO WAR*
+👤 Your Card:   [${playerCard.rank}]
+🤖 Dealer Card: [${dealerCard.rank}]${warText}
+
+${won ? `${e.check} Victory! Won: *+${formatCoins(payout)}* coins` : `${e.cross} Defeat! Lost: *-${formatCoins(bet)}* coins`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };

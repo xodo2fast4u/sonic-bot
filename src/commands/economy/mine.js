@@ -58,14 +58,14 @@ export default {
 
     await text(
       `
-╭━━━ ⛏️ *MINE* ━━━╮
-┃
-┃ You ${action} and found *${ore.name}!*
-┃ ${ore.emoji}
-┃
-┃ ${e.check} Earned: ${formatCoins(earned)}
-┃ ${e.coin} Balance: ${formatCoins(newBalance)}
-╰━━━━━━━━━━━━━━━━━╯`.trim(),
+⛏️ *MINE*
+
+You ${action} and found *${ore.name}!*
+${ore.emoji}
+
+${e.check} Earned: ${formatCoins(earned)}
+${e.coin} Balance: ${formatCoins(newBalance)}
+`.trim(),
     );
   },
 };

@@ -29,18 +29,18 @@ export default {
 
     await text(
       `
-╭━━━ ${e.rocket} *SERVER* ━━━╮
-┃ ${e.bolt} OS: ${osName} (${os.platform()} ${os.arch()})
-┃ ${e.tool} Release: ${os.release()}
-┃ ${e.info} Node: ${process.version}
-┃ ${e.user} CPU: ${cpuModel}
-┃ ${e.bolt} Cores: ${cores}${speed}
-┃ ${e.speed} Load Avg: ${loadAvg}
-┃ ${e.speed} RAM: ${format.bytes(used)} / ${format.bytes(total)} (${ramPercent}%)
-┃ ${e.star} Bot RAM: ${format.bytes(mem.rss)} (Heap: ${format.bytes(mem.heapUsed)})
-┃ ${e.time} OS Up: ${format.uptime(os.uptime())}
-┃ ${e.time} Bot Up: ${format.getUptime()}
-╰━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.rocket} *SERVER*
+${e.bolt} OS: ${osName} (${os.platform()} ${os.arch()})
+${e.tool} Release: ${os.release()}
+${e.info} Node: ${process.version}
+${e.user} CPU: ${cpuModel}
+${e.bolt} Cores: ${cores}${speed}
+${e.speed} Load Avg: ${loadAvg}
+${e.speed} RAM: ${format.bytes(used)} / ${format.bytes(total)} (${ramPercent}%)
+${e.star} Bot RAM: ${format.bytes(mem.rss)} (Heap: ${format.bytes(mem.heapUsed)})
+${e.time} OS Up: ${format.uptime(os.uptime())}
+${e.time} Bot Up: ${format.getUptime()}
+`.trim(),
     );
   },
 };

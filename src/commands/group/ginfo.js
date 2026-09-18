@@ -20,20 +20,20 @@ export default {
         ? jid.fromUser(meta.owner)
         : 'Unknown';
 
-    const note = args.length ? `\n┃ ${e.info} Note: ${args.join(' ')}` : '';
+    const note = args.length ? `\n${e.info} Note: ${args.join(' ')}` : '';
 
     await send.text(
       sonic,
       msg,
       `
-╭━━━ ${e.group} *GROUP INFO* ━━━╮
-┃ ${e.star} Name: ${meta.subject}
-┃ ${e.user} Members: ${meta.participants.length}
-┃ ${e.admin} Admins: ${admins}
-┃ ${e.admin} Owner: +${ownerDisplay}
-┃ ${e.time} Created: ${created}
-┃ ${e.info} Desc: ${meta.desc || 'None'}${note}
-╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+${e.group} *GROUP INFO*
+${e.star} Name: ${meta.subject}
+${e.user} Members: ${meta.participants.length}
+${e.admin} Admins: ${admins}
+${e.admin} Owner: +${ownerDisplay}
+${e.time} Created: ${created}
+${e.info} Desc: ${meta.desc || 'None'}${note}
+`.trim(),
     );
   },
 };

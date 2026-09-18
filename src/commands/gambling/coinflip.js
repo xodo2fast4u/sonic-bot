@@ -6,7 +6,7 @@ import { resolveSender } from '../../utils/utils.js';
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['coinflip', 'cf', 'flip'],
-  desc: 'Flip a coin — heads or tails',
+  desc: 'Flip a coin heads or tails',
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
@@ -50,14 +50,14 @@ export default {
 
     await text(
       `
-╭━━━ 🪙 *COIN FLIP* ━━━╮
-┃
-┃ ${coinEmoji} Landed: *${landed.toUpperCase()}*
-┃ Your pick: *${normalizedChoice.toUpperCase()}*
-┃
-┃ ${won ? `${e.check} Won: ${formatCoins(bet)}` : `${e.cross} Lost: ${formatCoins(bet)}`}
-┃ ${e.coin} Balance: ${formatCoins(currentBalance)}
-╰━━━━━━━━━━━━━━━━━━━╯`.trim(),
+🪙 *COIN FLIP*
+
+${coinEmoji} Landed: *${landed.toUpperCase()}*
+Your pick: *${normalizedChoice.toUpperCase()}*
+
+${won ? `${e.check} Won: ${formatCoins(bet)}` : `${e.cross} Lost: ${formatCoins(bet)}`}
+${e.coin} Balance: ${formatCoins(currentBalance)}
+`.trim(),
     );
   },
 };

@@ -86,18 +86,18 @@ export default {
           row += '⬛ ';
         }
       }
-      board.push(`┃ ${row.trim()}`);
+      board.push(`${row.trim()}`);
     }
 
     await text(
       `
-╭━━━ 💎 *MINES GRID* ━━━╮
-┃ Tiles Target: *${tilesCount}* (x${mult})
+💎 *MINES GRID*
+Tiles Target: *${tilesCount}* (x${mult})
 ${board.join('\n')}
-┃
-┃ ${won ? `${e.check} All gems cleared! Won: *+${formatCoins(payout)}* (x${mult})` : `💥 BOOM! You triggered a hidden mine! Lost: *-${formatCoins(bet)}*`}
-┃ ${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
-╰━━━━━━━━━━━━━━━━━━━━━━━╯`.trim(),
+
+${won ? `${e.check} All gems cleared! Won: *+${formatCoins(payout)}* (x${mult})` : `💥 BOOM! You triggered a hidden mine! Lost: *-${formatCoins(bet)}*`}
+${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
+`.trim(),
     );
   },
 };
