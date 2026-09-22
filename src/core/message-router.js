@@ -1,4 +1,4 @@
-import { isJidStatusBroadcast, extractMessageContent } from 'baileys';
+import { extractMessageContent } from 'baileys';
 import { EventEmitter } from 'events';
 import { container } from './container.js';
 import { config as botConfig } from '../config/config.js';
@@ -75,7 +75,7 @@ export class MessageRouter extends EventEmitter {
   async processCommand(context) {
     const { sonic, msg, correlationId } = context;
 
-    if (!msg.message || !msg.key.remoteJid || isJidStatusBroadcast(msg.key.remoteJid)) {
+    if (!msg.message || !msg.key.remoteJid || jid.isStatus(msg.key.remoteJid)) {
       return;
     }
 
@@ -168,6 +168,8 @@ export class MessageRouter extends EventEmitter {
       text: (message) => send.text(sonic, msg, message),
       /** @param {string} text @param {string[]} mentions */
       mention: (text, mentions) => send.mention(sonic, msg, text, mentions),
+      /** @param {string} displayName @param {string[]} phoneNumbers */
+      contact: (displayName, phoneNumbers) => send.contact(sonic, msg, displayName, phoneNumbers),
       /** @param {string} emoji @param {any} [key] */
       react: (emoji, key) => send.react(sonic, msg, emoji, key),
       /** @param {any} key @param {string} text */

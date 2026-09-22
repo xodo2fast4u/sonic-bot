@@ -154,6 +154,7 @@ export interface Command {
 export interface CommandHelpers {
   text: (message: string) => Promise<void>;
   mention: (text: string, mentions: string[]) => Promise<void>;
+  contact: (displayName: string, phoneNumbers: string[]) => Promise<void>;
   react: (emoji: string, key?: any) => Promise<void>;
   edit: (key: any, text: string, mentions?: string[]) => Promise<void>;
   image: (

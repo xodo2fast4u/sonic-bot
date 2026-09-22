@@ -37,25 +37,25 @@ export const jid = {
   fromUser: userDigitsFromJid,
 
   /** @param {any} jidStr */
-  isGroup: (jidStr) => isJidGroup(jidStr),
+  isGroup: (jidStr) => typeof jidStr === 'string' && isJidGroup(jidStr),
 
   /** @param {any} jidStr */
-  isPN: (jidStr) => isPnUser(jidStr),
+  isPN: (jidStr) => typeof jidStr === 'string' && isPnUser(jidStr),
 
   /** @param {any} jidStr */
-  isLID: (jidStr) => isLidUser(jidStr),
+  isLID: (jidStr) => typeof jidStr === 'string' && isLidUser(jidStr),
 
   /** @param {any} jidStr */
-  isNewsletter: (jidStr) => isJidNewsletter(jidStr),
+  isNewsletter: (jidStr) => typeof jidStr === 'string' && isJidNewsletter(jidStr),
 
   /** @param {any} jidStr */
-  isStatus: (jidStr) => isJidStatusBroadcast(jidStr),
+  isStatus: (jidStr) => typeof jidStr === 'string' && isJidStatusBroadcast(jidStr),
 
   /** @param {any} jidStr */
-  isBot: (jidStr) => isJidBot(jidStr),
+  isBot: (jidStr) => typeof jidStr === 'string' && isJidBot(jidStr),
 
   /** @param {any} jidStr */
-  isMetaAI: (jidStr) => isJidMetaAI(jidStr),
+  isMetaAI: (jidStr) => typeof jidStr === 'string' && isJidMetaAI(jidStr),
 
   /**
    * Determine the sender of a message. In groups, the participant field holds the sender.
@@ -68,16 +68,20 @@ export const jid = {
     const key = /** @type {any} */ (msg.key || {});
 
     let candidate = key.remoteJid;
-    if (isJidGroup(key.remoteJid)) {
+    if (typeof key.remoteJid === 'string' && isJidGroup(key.remoteJid)) {
       candidate = key.participantAlt || key.participant || key.remoteJid;
-      if (isLidUser(key.participant) && key.participantAlt) {
+      if (typeof key.participant === 'string' && isLidUser(key.participant) && key.participantAlt) {
         candidate = key.participantAlt;
       }
-    } else if (key.remoteJid && isLidUser(key.remoteJid) && key.remoteJidAlt) {
+    } else if (typeof key.remoteJid === 'string' && isLidUser(key.remoteJid) && key.remoteJidAlt) {
       candidate = key.remoteJidAlt;
     }
 
-    if (isLidUser(candidate) && sonic?.signalRepository?.lidMapping?.getPNForLID) {
+    if (
+      typeof candidate === 'string' &&
+      isLidUser(candidate) &&
+      sonic?.signalRepository?.lidMapping?.getPNForLID
+    ) {
       try {
         const cachedPn = sonic.signalRepository.lidMapping.getPNForLID(candidate);
         if (cachedPn) return cachedPn;
@@ -86,7 +90,7 @@ export const jid = {
       }
     }
 
-    return candidate;
+    return typeof candidate === 'string' ? candidate : '';
   },
 
   /** @param {any} participant */
@@ -215,7 +219,8 @@ export const isOwner = (userJid, sonic, msg) => {
  * @param {any} [sonic]
  */
 export const resolveSender = (msg, sonic) => {
-  return jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
+  const sender = jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
+  return typeof sender === 'string' ? sender : '';
 };
 
 export const format = {
@@ -262,6 +267,34 @@ export const send = {
   /** @param {any} sonic @param {any} msg @param {any} text @param {any[]} mentions */
   mention: (sonic, msg, text, mentions) =>
     sonic.sendMessage(msg.key.remoteJid, { text, mentions }, { quoted: msg }),
+
+  /** @param {any} sonic @param {any} msg @param {string} displayName @param {string[]} phoneNumbers */
+  contact: (sonic, msg, displayName, phoneNumbers) => {
+    const contacts = phoneNumbers
+      .map((phoneNumber) => String(phoneNumber).replace(/[^0-9]/g, ''))
+      .filter(Boolean)
+      .map((phoneNumber) => ({
+        displayName,
+        vcard: [
+          'BEGIN:VCARD',
+          'VERSION:3.0',
+          `FN:${displayName}`,
+          `TEL;type=CELL;type=VOICE;waid=${phoneNumber}:${phoneNumber}`,
+          'END:VCARD',
+        ].join('\n'),
+      }));
+
+    return sonic.sendMessage(
+      msg.key.remoteJid,
+      {
+        contacts: {
+          displayName,
+          contacts,
+        },
+      },
+      { quoted: msg },
+    );
+  },
 
   /** @param {any} sonic @param {any} msg @param {any} key @param {any} text @param {any[]} [mentions] */
   edit: (sonic, msg, key, text, mentions = []) =>
