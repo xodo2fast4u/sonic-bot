@@ -1,4 +1,4 @@
-import { isJidStatusBroadcast } from 'baileys';
+import { isJidStatusBroadcast, extractMessageContent } from 'baileys';
 import { EventEmitter } from 'events';
 import { container } from './container.js';
 import { config as botConfig } from '../config/config.js';
@@ -94,7 +94,7 @@ export class MessageRouter extends EventEmitter {
       return;
     }
 
-    const sender = this.resolveSender(msg);
+    const sender = this.resolveSender(msg, sonic);
     const helpers = this.createHelpers(sonic, msg);
     const middlewareContext = new MiddlewareContext(helpers, args, command, sender, msg);
     middlewareContext.correlationId = correlationId;
@@ -132,7 +132,6 @@ export class MessageRouter extends EventEmitter {
 
     if (rawText) return rawText;
 
-    const { extractMessageContent } = await import('baileys');
     const m = extractMessageContent(msg.message);
     return (
       m?.conversation ||
@@ -157,9 +156,9 @@ export class MessageRouter extends EventEmitter {
     return botConfig.prefix;
   }
 
-  /** @param {import('../../types/index.js').WhatsAppMessage} msg */
-  resolveSender(msg) {
-    return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid;
+  /** @param {import('../../types/index.js').WhatsAppMessage} msg @param {any} [sonic] */
+  resolveSender(msg, sonic) {
+    return jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
   }
 
   /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */

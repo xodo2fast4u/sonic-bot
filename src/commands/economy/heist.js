@@ -70,7 +70,7 @@ Usage: !heist <stealth|hack|loud>
     }
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     if (user.balance < approach.fine) {
       return text(
@@ -85,7 +85,7 @@ Usage: !heist <stealth|hack|loud>
 
     if (isSuccess) {
       const loot = random(approach.min, approach.max);
-      const newBalance = addCoins(sender, loot);
+      addCoins(sender, loot);
 
       await text(
         `
@@ -95,12 +95,10 @@ ${approach.emoji} Approach: *${approach.name}*
 📜 ${approach.successDesc}
 
 ${e.check} Loot Taken: *+${formatCoins(loot)}* coins
-${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
       );
     } else {
       removeCoins(sender, approach.fine);
-      const updated = getUser(sender);
 
       await text(
         `
@@ -110,7 +108,6 @@ ${approach.emoji} Approach: *${approach.name}*
 ⚠️ ${approach.failDesc}
 
 ${e.cross} Fine Paid: *-${formatCoins(approach.fine)}* coins
-${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
 `.trim(),
       );
     }

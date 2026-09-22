@@ -350,7 +350,7 @@ export class HealthChecker {
       'dependencies',
       async () => {
         const dependencies = [
-          { name: 'better-sqlite3', module: 'better-sqlite3' },
+          { name: 'node:sqlite', module: 'node:sqlite' },
           { name: 'baileys', module: 'baileys' },
           { name: 'uuid', module: 'uuid' },
           { name: '@cacheable/node-cache', module: '@cacheable/node-cache' },

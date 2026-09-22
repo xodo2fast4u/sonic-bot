@@ -62,7 +62,7 @@ Sonic combines several capabilities into one bot experience:
 
 - **Group management**: add, kick, promote, demote, mute, unmute, invite links, tag-all, group info and admin tools
 - **Newsletter management**: follow, unfollow, mute and unmute newsletter, react, admincount and change owner
-- **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, fish, hunt, mine, shop, rob, stats and leaderboards
+- **Economy system**: balance, work, beg, daily rewards, deposit, withdraw, pay, inventory, fish, hunt, mine, shop, rob, robbank, stats and leaderboards
 - **Gambling and risk games**: coinflip, dice, roulette, slots, crash and blackjack for fast mini-game action
 - **Tools and maker features**: sticker generation, weather, wiki, search, calculator, image tools, encoding/decoding and utility commands
 - **Downloader**: Play youtube songs
@@ -162,7 +162,7 @@ Sonic reads configuration from `.env` and a built-in config module.
 | `SONIC_PREFIX` | Command prefix for bot commands           | `!`                                          |
 | `OWNER_NUMBER` | Owner number used for owner-only features | (empty, auto-filled upon successful pairing) |
 | `FFMPEG_PATH`  | Path or command used to run FFmpeg        | `ffmpeg`                                     |
-| `NODE_ENV`     | Runtime environment                       | `production`                                |
+| `NODE_ENV`     | Runtime environment                       | `production`                                 |
 
 `NODE_ENV` accepts `development`, `production` or `test`:
 
@@ -195,7 +195,7 @@ The command registry automatically loads command modules from the category folde
 
 - General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`, `!modestatus`
 - RPG & Combat: `!fight`, `!train`, `!equip`, `!unequip`, `!togglelevelup`, `!profile`
-- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
+- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!robbank`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
 - Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`, `!poker`, `!baccarat`, `!mines`, `!plinko`, `!derby`, `!keno`, `!wheel`, `!limbo`, `!war`, `!cups`
 - Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
@@ -209,11 +209,11 @@ The command registry automatically loads command modules from the category folde
 
 Sonic starts in **public** mode and persists the chosen mode in SQLite across restarts. Only numbers in `OWNER_NUMBER` can change the mode. Anyone can check it with `!modestatus` or `!mode`.
 
-| Mode                 | Behaviour                                                                               |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| `public`             | Responds to commands everywhere (groups + DMs). Default.                                |
-| `private`            | Responds only in DMs / private chats; ignores group commands.                           |
-| `self`               | Responds everywhere, but only to `OWNER_NUMBER`.                                        |
+| Mode                 | Behaviour                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `public`             | Responds to commands everywhere (groups + DMs). Default.                              |
+| `private`            | Responds only in DMs / private chats; ignores group commands.                         |
+| `self`               | Responds everywhere but only to `OWNER_NUMBER`.                                       |
 | `admin` (one group)  | `!mode admin` in a group that group becomes admin-only; everywhere else stays normal. |
 | `admin` (all groups) | `!mode admin all` every group is admin-only; DMs still work for everyone.             |
 
@@ -312,10 +312,16 @@ Run Sonic on your Android device using Termux:
 
 1. **Install Termux** from F-Droid or Google Play Store
 2. **Update and install dependencies**
+
+   Sonic requires **Node.js 22.17+**. SQLite is provided by Node’s built-in `node:sqlite` module (no native addon or compiler toolchain required).
+
    ```bash
    pkg update && pkg upgrade
-   pkg install nodejs-lts git clang make python pkg-config ffmpeg
+   pkg install nodejs-lts git ffmpeg
    ```
+
+   Confirm your Node version is at least 22.17 (`node -v`). If Termux’s LTS package is older, install a newer Node build that meets the requirement.
+
 3. **Clone and setup Sonic**
 
    ```bash
@@ -326,39 +332,20 @@ Run Sonic on your Android device using Termux:
    npm i
    ```
 
-4. **Build the native SQLite module for Android ARM64**
-   `better-sqlite3` uses a native Node addon and must be compiled for Android ARM64 inside Termux:
-
-   ```bash
-   cd node_modules/better-sqlite3
-   npm run build-release
-   cd ../..
-   ```
-
-   You can verify the native module was created with:
-
-   ```bash
-   ls node_modules/better-sqlite3/build/Release
-   ```
-
-   You should see:
-
-   `better_sqlite3.node`
-
-5. **Create and setup .env file**
+4. **Create and setup .env file**
 
    ```bash
    touch .env
-   printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\nFFMPEG_PATH=ffmpeg\n' > .env
+   printf 'SONIC_PREFIX=.\nOWNER_NUMBER=\nFFMPEG_PATH=ffmpeg\n' > .env
    ```
 
    If FFmpeg is installed in a non-default location on Termux, set the absolute path instead:
 
    ```bash
-   printf 'SONIC_PREFIX=!\nOWNER_NUMBER=\nFFMPEG_PATH=/data/data/com.termux/files/usr/bin/ffmpeg\n' > .env
+   printf 'SONIC_PREFIX=.\nOWNER_NUMBER=\nFFMPEG_PATH=/data/data/com.termux/files/usr/bin/ffmpeg\n' > .env
    ```
 
-6. **Keep Termux active**
+5. **Keep Termux active**
 
    Before starting Sonic, acquire a wake lock so Android is less likely to suspend the Termux process while you switch to other apps or turn the screen off:
 
@@ -368,13 +355,15 @@ Run Sonic on your Android device using Termux:
 
    This helps keep Sonic active while it is running.
 
-7. **Run Sonic**
+6. **Run Sonic**
 
    ```bash
    npm start
    ```
 
-8. **Pair WhatsApp** as usual
+   Node may print an `ExperimentalWarning` for `node:sqlite` until the API is marked stable. That warning is informational and does not change Sonic’s behavior.
+
+7. **Pair WhatsApp** as usual
 
    When you no longer need Sonic running, release the wake lock:
 
@@ -456,9 +445,3 @@ For issues, questions or contributions:
 ## License
 
 This project is under the [MIT License](./LICENSE)
-
----
-
-**Made with ❤️ by Xodobyte**
-
-_Gotta go fast!_ 🦔💨

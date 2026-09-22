@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { getUser, addCoins, removeCoins } from '../../database/database.js';
+import { getUser, addCoins, removeCoins, hasItem } from '../../database/database.js';
 import { formatCoins } from './_utils.js';
 import { resolveSender, jid, format } from '../../utils/utils.js';
 
@@ -99,8 +99,6 @@ Claim command: !vault claim
         termName: term.label,
       });
 
-      const updated = getUser(sender);
-
       return text(
         `
 🔒 *FUNDS LOCKED SECURELY*
@@ -108,7 +106,6 @@ ${e.check} Locked: *${formatCoins(amount)}* coins
 📜 Term: *${term.label}*
 🛡️ Protected from robberies & theft!
 
-${e.coin} Remaining Cash: *${formatCoins(updated?.balance ?? 0)}*
 Check progress with: !vault status
 `.trim(),
       );
@@ -128,11 +125,12 @@ Check progress with: !vault status
         );
       }
 
-      const bonus = Math.floor(lock.amount * lock.bonusRate);
+      const bonusMultiplier = hasItem(sender, 'vault') ? 2 : 1;
+      const bonus = Math.floor(lock.amount * lock.bonusRate * bonusMultiplier);
       const totalPayout = lock.amount + bonus;
 
       lockedVaults.delete(userId);
-      const newBalance = addCoins(sender, totalPayout);
+      addCoins(sender, totalPayout);
 
       return text(
         `
@@ -141,7 +139,6 @@ ${e.check} Principal Returned: *${formatCoins(lock.amount)}*
 🌟 Maturity Bonus: *+${formatCoins(bonus)}*
 
 💰 Total Credited: *+${formatCoins(totalPayout)}*
-${e.coin} New Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
       );
     }

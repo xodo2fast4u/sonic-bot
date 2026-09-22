@@ -30,9 +30,7 @@ Place one: !bounty place @user <amount>
       const rows = Array.from(activeBounties.values())
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5)
-        .map(
-          (b, idx) => `${idx + 1}. @${jid.fromUser(b.targetId)} - 🪙 *${formatCoins(b.amount)}*`,
-        )
+        .map((b, idx) => `${idx + 1}. @${jid.fromUser(b.targetId)} - 🪙 *${formatCoins(b.amount)}*`)
         .join('\n');
 
       const mentions = Array.from(activeBounties.values()).map((b) => b.targetId);
@@ -127,7 +125,7 @@ Hunters, claim with: !bounty claim @${targetId}
       if (won) {
         const prize = bounty.amount;
         activeBounties.delete(targetId);
-        const newBalance = addCoins(sender, prize);
+        addCoins(sender, prize);
 
         return mention(
           `
@@ -136,7 +134,6 @@ ${e.check} Hunter: @${jid.fromUser(sender)}
 🎯 Captured: @${targetId}
 
 💰 Prize Won: *+${formatCoins(prize)}* coins
-${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
           [sender, target],
         );

@@ -55,7 +55,7 @@ export default {
     if (!(await checkEconCooldown(sonic, msg, 'use', 5000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const inventory = getInventory(sender);
     if (!inventory.length) {
@@ -96,7 +96,7 @@ export default {
     const coinsGained = random(effect.min, effect.max);
 
     removeItem(sender, matchedItem.item_name, 1);
-    const newBalance = addCoins(sender, coinsGained);
+    addCoins(sender, coinsGained);
 
     await text(
       `
@@ -106,7 +106,6 @@ ${effect.emoji} Item: *${matchedItem.item_name}*
 📜 ${effect.effect}
 
 ${e.check} Reward: *+${formatCoins(coinsGained)}* coins
-${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
     );
   },

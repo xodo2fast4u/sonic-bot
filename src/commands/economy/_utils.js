@@ -1,7 +1,7 @@
 import { emoji as e } from '../../config/config.js';
 import { send, resolveSender } from '../../utils/utils.js';
 import { checkCommandCooldown, formatCooldown } from '../../utils/cooldown.js';
-import { getUser } from '../../database/database.js';
+import { getUser, hasItem } from '../../database/database.js';
 
 export const JOBS = [
   {
@@ -150,8 +150,11 @@ export const formatCoins = (amount) => `${amount.toLocaleString()}`;
 
 /** @param {import('../../../types/index.js').WhatsAppSocket} sonic @param {import('../../../types/index.js').WhatsAppMessage} msg @param {string} command @param {number} duration */
 export const checkEconCooldown = async (sonic, msg, command, duration) => {
-  const sender = resolveSender(msg);
-  const cd = checkCommandCooldown(sender, command, duration);
+  const sender = resolveSender(msg, sonic);
+
+  const effectiveDuration = hasItem(sender, 'speedrun') ? Math.floor(duration * 0.8) : duration;
+
+  const cd = checkCommandCooldown(sender, command, effectiveDuration);
 
   if (!cd.allowed) {
     await send.text(
@@ -170,7 +173,7 @@ export const checkEconCooldown = async (sonic, msg, command, duration) => {
  * @param {Pick<import('../../../types/index.js').CommandHelpers, 'text' | 'mention' | 'msg'>} helpers
  * @param {string} target
  * @param {string} selfContent
- * @param {string} otherContent
+ * @param {string} [otherContent]
  */
 export const sendProfileDisplay = async (
   { text, mention, msg },
@@ -183,9 +186,13 @@ export const sendProfileDisplay = async (
 
   if (isSelf) {
     return text(selfContent);
-  } else {
+  }
+
+  if (otherContent) {
     return mention(otherContent, [target]);
   }
+
+  return null;
 };
 
 /**
@@ -201,7 +208,7 @@ export const bankAction = (dbFunc, sourceKey, title) => {
     const user = getUser(sender);
 
     if (!user) {
-      return text(`${e.cross} Could not load your wallet. Try again later.`);
+      return text(`${e.cross} Could not load your balance.`);
     }
 
     const available = sourceKey === 'balance' ? user.balance : user.bank;

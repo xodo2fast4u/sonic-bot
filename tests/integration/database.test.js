@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';

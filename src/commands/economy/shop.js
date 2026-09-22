@@ -95,7 +95,7 @@ ${armourListing}
       const char = getCharacter(sender, msg.pushName);
       const user = getUser(sender);
 
-      if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+      if (!user) return text(`${e.cross} Could not load your balance.`);
 
       if (battleItem && !char.isGod) {
         if (char.level < battleItem.minLevel) {
@@ -144,16 +144,12 @@ ${armourListing}
         }
       }
 
-      const updatedUser = getUser(sender);
-      const balanceDisplay = char.isGod ? '∞' : formatCoins(updatedUser?.balance ?? 0);
-
       return text(
         `
 🏪 *PURCHASE SUCCESS*
 
 ${item.emoji} Bought: *${item.name}*
-💰 Paid: ${char.isGod ? 'Free (Owner Godmode)' : formatCoins(item.price) + ' coins'}
-${e.coin} Balance: ${balanceDisplay} coins${equippedNote}
+💰 Paid: ${char.isGod ? 'Free (Owner Godmode)' : formatCoins(item.price) + ' coins'}${equippedNote}
 `.trim(),
       );
     }

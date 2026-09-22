@@ -7,6 +7,6 @@ export default {
   desc: 'Bot uptime',
 
   run: async ({ text }) => {
-    await text(`${e.time} *Uptime:* ${format.getUptime()}`);
+    await text(`${e.time} *Sonic has been speeding for:* ${format.getUptime()}`);
   },
 };

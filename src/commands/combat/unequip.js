@@ -28,12 +28,8 @@ export default {
     if (!slot) {
       const weapon = getBattleItem(char.equipped_item);
       const armour = getArmourItem(char.equipped_armour);
-      const weaponLine = weapon
-        ? `⚔️ Weapon: ${weapon.emoji} *${weapon.name}*`
-        : `⚔️ Weapon: None`;
-      const armourLine = armour
-        ? `🛡️ Armour: ${armour.emoji} *${armour.name}*`
-        : `🛡️ Armour: None`;
+      const weaponLine = weapon ? `⚔️ Weapon: ${weapon.emoji} *${weapon.name}*` : `⚔️ Weapon: None`;
+      const armourLine = armour ? `🛡️ Armour: ${armour.emoji} *${armour.name}*` : `🛡️ Armour: None`;
 
       return text(
         `
@@ -62,7 +58,7 @@ Unequip options:
 
     if (unequipWeapon) {
       if (!hasWeapon) {
-        lines.push(`⚔️ No weapon equipped (already bare-handed 👊)`);
+        lines.push(`⚔️ No weapon equipped.`);
       } else {
         const previousWeapon = getBattleItem(char.equipped_item);
         const weaponName = previousWeapon
@@ -75,7 +71,7 @@ Unequip options:
 
     if (unequipArmour) {
       if (!hasArmour) {
-        lines.push(`🛡️ No armour equipped (already unprotected 💨)`);
+        lines.push(`🛡️ No armour equipped.`);
       } else {
         const previousArmour = getArmourItem(char.equipped_armour);
         const armourName = previousArmour

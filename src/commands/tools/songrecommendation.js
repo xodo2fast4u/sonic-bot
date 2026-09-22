@@ -32,7 +32,7 @@ const formatTrack = (track, index) => {
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['songrecommendation', 'songreccomendation', 'recommend'],
+  cmd: ['songrecommendation'],
   desc: 'Get song recommendations based on an artist or genre',
   run: async ({ text }, args) => {
     if (!args.length) {

@@ -11,10 +11,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'cups', 6000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'cups', 2 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const cupChoice = parseInt(args[0] ?? '0', 10);
     if (![1, 2, 3].includes(cupChoice)) {
@@ -40,14 +40,11 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updated = getUser(sender);
-
     const visualCups = [1, 2, 3].map((c) => (c === winningCup ? '🪙' : '🥤')).join('   ');
     const labelCups = '  [1]   [2]   [3]';
 
     await text(
       `
-🥤 *SHELL GAME*
 ${visualCups}
 ${labelCups}
 
@@ -55,7 +52,6 @@ Coin was under: Cup *${winningCup}*
 Your pick: Cup *${cupChoice}*
 
 ${won ? `${e.check} Spot on! Won: *+${formatCoins(payout)}* (x3)` : `${e.cross} Empty cup! Lost: *-${formatCoins(bet)}*`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

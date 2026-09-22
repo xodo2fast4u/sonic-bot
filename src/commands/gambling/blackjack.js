@@ -45,10 +45,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'blackjack', 15000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'blackjack', 10 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0] ?? '', 10);
 
@@ -102,9 +102,6 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updatedUser = getUser(sender);
-    const currentBalance = updatedUser?.balance ?? 0;
-
     await text(
       `
 🃏 *BLACKJACK*
@@ -114,7 +111,6 @@ export default {
 
 ${result}
 ${won && payout > 0 ? `${e.check} Won: ${formatCoins(payout)}` : won ? '↩️ Bet returned' : `${e.cross} Lost: ${formatCoins(bet)}`}
-${e.coin} Balance: ${formatCoins(currentBalance)}
 `.trim(),
     );
   },

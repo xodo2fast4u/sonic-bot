@@ -1,8 +1,7 @@
 import { emoji as e } from '../../config/config.js';
-import { addCoins } from '../../database/database.js';
+import { addCoins, hasItem } from '../../database/database.js';
 import { random, randomFrom, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
-import { COOLDOWN } from '../../utils/cooldown.js';
 
 const ORES = [
   { name: 'Coal', emoji: '🪨', min: 10, max: 30 },
@@ -28,7 +27,7 @@ export default {
   run: async ({ text, sonic, msg }) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'mine', COOLDOWN.WORK))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'mine', 5 * 60 * 1000))) return;
 
     const weights = [50, 30, 12, 6, 2];
     const roll = random(1, 100);
@@ -48,7 +47,11 @@ export default {
       return text(`${e.cross} No ore was found. Try again later.`);
     }
 
-    const earned = random(ore.min, ore.max);
+    let earned = random(ore.min, ore.max);
+    if (hasItem(sender, 'pickaxe')) {
+      earned = Math.floor(earned * 1.25);
+    }
+
     const action = randomFrom(MINE_MESSAGES);
     const newBalance = addCoins(sender, earned);
 
@@ -60,11 +63,9 @@ export default {
       `
 ⛏️ *MINE*
 
-You ${action} and found *${ore.name}!*
-${ore.emoji}
+You ${action} and found *${ore.name}!* ${ore.emoji}
 
 ${e.check} Earned: ${formatCoins(earned)}
-${e.coin} Balance: ${formatCoins(newBalance)}
 `.trim(),
     );
   },

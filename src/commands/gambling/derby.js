@@ -19,10 +19,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'derby', 8000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'derby', 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const horsePick = parseInt(args[0] ?? '0', 10);
     const chosenHorse = HORSES.find((h) => h.id === horsePick);
@@ -73,8 +73,6 @@ Usage: !derby <1-5> <bet>
       removeCoins(sender, bet);
     }
 
-    const updated = getUser(sender);
-
     const track = HORSES.map((h) => {
       // @ts-ignore
       const isWinner = h.id === winner.id;
@@ -91,7 +89,6 @@ ${track}
 Your Bet: *${chosenHorse.name}*
 
 ${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${chosenHorse.odds})` : `${e.cross} Lost: *-${formatCoins(bet)}*`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

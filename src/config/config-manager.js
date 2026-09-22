@@ -30,7 +30,7 @@ const CONFIG_SCHEMA = {
     type: 'string',
     required: true,
     pattern: /^\d+\.\d+\.\d+$/,
-    default: '3.5.0',
+    default: '3.6.0',
   },
   authDir: {
     type: 'string',

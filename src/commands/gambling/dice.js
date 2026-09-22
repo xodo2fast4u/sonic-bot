@@ -5,16 +5,16 @@ import { resolveSender } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['dice', 'roll'],
+  cmd: ['dice'],
   desc: 'Roll dice pick a number 1-6',
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'dice', 8000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'dice', 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const pick = parseInt(args[0] ?? '', 10);
     if (!pick || pick < 1 || pick > 6) {
@@ -42,18 +42,12 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updatedUser = getUser(sender);
-    const currentBalance = updatedUser?.balance ?? 0;
-
     await text(
       `
-🎲 *DICE ROLL*
-
 ${diceEmoji} Rolled: *${rolled}*
 Your pick: *${pick}*
 
 ${won ? `${e.check} Won: ${formatCoins(bet * 5)} (x5!)` : `${e.cross} Lost: ${formatCoins(bet)}`}
-${e.coin} Balance: ${formatCoins(currentBalance)}
 `.trim(),
     );
   },

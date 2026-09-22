@@ -33,10 +33,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'war', 6000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'war', 2 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0] ?? '', 10);
     if (!bet || bet <= 0) {
@@ -77,8 +77,6 @@ export default {
       }
     }
 
-    const updated = getUser(sender);
-
     await text(
       `
 ⚔️ *CASINO WAR*
@@ -86,7 +84,6 @@ export default {
 🤖 Dealer Card: [${dealerCard.rank}]${warText}
 
 ${won ? `${e.check} Victory! Won: *+${formatCoins(payout)}* coins` : `${e.cross} Defeat! Lost: *-${formatCoins(bet)}* coins`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

@@ -11,10 +11,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'keno', 6000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'keno', 2 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     if (args.length < 4) {
       return text(
@@ -68,19 +68,16 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updated = getUser(sender);
     const drawnStr = drawn.map((n) => (picks.includes(n) ? `*${n}*🎯` : `${n}`)).join(' ');
 
     await text(
       `
-🎱 *CASINO KENO*
 🎯 Your Picks: [${picks.join(', ')}]
 🎱 House Drawn: ${drawnStr}
 
 Matches: *${matches.length} / 3* (${matches.length ? matches.join(', ') : 'None'})
 
 ${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${multiplier})` : `${e.cross} Lost: *-${formatCoins(bet)}*`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

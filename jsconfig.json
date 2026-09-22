@@ -32,8 +32,7 @@
       "@/database/*": ["./src/database/*"],
       "@/commands/*": ["./src/commands/*"],
       "@/utils/*": ["./src/utils/*"],
-      "@/cache/*": ["./src/cache/*"],
-      "better-sqlite3": ["./types/better-sqlite3.d.ts"]
+      "@/cache/*": ["./src/cache/*"]
     }
   },
   "include": ["src/**/*", "types/**/*"],

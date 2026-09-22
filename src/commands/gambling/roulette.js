@@ -19,10 +19,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'roulette', 12000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'roulette', 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const betOn = args[0]?.toLowerCase();
     const validColors = ['red', 'black', 'green', 'r', 'b', 'g'];
@@ -68,18 +68,12 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updatedUser = getUser(sender);
-    const currentBalance = updatedUser?.balance ?? 0;
-
     await text(
       `
-🎡 *ROULETTE*
-
 ${colorEmoji} Landed: *${landed}* (${landedColor})
 Your bet: *${betOn.toUpperCase()}*
 
 ${won ? `${e.check} Won: ${formatCoins(bet * multiplier)} (x${multiplier + 1})` : `${e.cross} Lost: ${formatCoins(bet)}`}
-${e.coin} Balance: ${formatCoins(currentBalance)}
 `.trim(),
     );
   },

@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3';
 import { EventEmitter } from 'events';
 import { container } from '../core/container.js';
 import { DatabaseError, ConnectionError } from '../core/errors.js';
+import { openDatabase } from './open-database.js';
 
 /** @param {string} dbPath @param {any} [options] */
 class Connection {
@@ -24,9 +24,7 @@ class Connection {
     if (this.db) return this.db;
 
     try {
-      this.db = new Database(this.dbPath, {
-        ...this.options,
-      });
+      this.db = openDatabase(this.dbPath);
 
       this.db.pragma('journal_mode = WAL');
       this.db.pragma('synchronous = NORMAL');

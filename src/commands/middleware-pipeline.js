@@ -201,9 +201,7 @@ export class MiddlewarePipeline {
       async (context) => {
         const aliases = context.command?.cmd || [];
         const isModeCommand = aliases.some((alias) => MODE_COMMAND_ALIASES.has(alias));
-        const isStatusCommand = aliases.some((alias) =>
-          ['modestatus', 'botmodestatus'].includes(alias),
-        );
+        const isStatusCommand = aliases.some((alias) => ['modestatus'].includes(alias));
         const firstArg = (context.args?.[0] || '').toLowerCase();
         const isModeStatusOnly =
           isModeCommand &&
@@ -212,7 +210,8 @@ export class MiddlewarePipeline {
         if (
           isStatusCommand ||
           isModeStatusOnly ||
-          (isModeCommand && this.utils.isOwner(context.user))
+          (isModeCommand &&
+            this.utils.isOwner(context.user, context.helpers?.sonic, context.message))
         ) {
           context.set('modeChecked', true);
           return;
@@ -277,7 +276,10 @@ export class MiddlewarePipeline {
       async (context) => {
         const command = context.command;
 
-        if (command.ownerOnly && !this.utils.isOwner(context.user)) {
+        if (
+          command.ownerOnly &&
+          !this.utils.isOwner(context.user, context.helpers?.sonic, context.message)
+        ) {
           context.stop(
             new PermissionError(
               'This command is restricted to the bot owner',
@@ -457,7 +459,7 @@ export class MiddlewarePipeline {
    * @param {any} [sonic]
    */
   async checkAdminPermissions(user, message, sonic) {
-    if (this.utils.isOwner(user)) {
+    if (this.utils.isOwner(user, sonic, message)) {
       return true;
     }
 

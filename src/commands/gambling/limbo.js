@@ -21,10 +21,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'limbo', 6000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'limbo', 2 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const targetMult = parseFloat(args[0] ?? '');
     if (isNaN(targetMult) || targetMult < 1.1 || targetMult > 100) {
@@ -52,17 +52,14 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updated = getUser(sender);
     const winChance = ((0.96 / targetMult) * 100).toFixed(1);
 
     await text(
       `
-🎯 *LIMBO ROLL*
 Target: *${targetMult}x* (Win Chance: ${winChance}%)
 Rolled: *${roll}x*
 
 ${won ? `${e.check} Target Met! Won: *+${formatCoins(payout)}* (x${targetMult})` : `${e.cross} Under Target! Lost: *-${formatCoins(bet)}*`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

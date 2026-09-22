@@ -3,8 +3,8 @@
  * Handles credentials, encryption keys and session data across app restarts
  */
 
-import Database from 'better-sqlite3';
 import { proto, initAuthCreds, BufferJSON } from 'baileys';
+import { openDatabase } from './open-database.js';
 
 const KNOWN_KEY_TYPES = [
   'app-state-sync-key',
@@ -212,7 +212,7 @@ export function useSqliteAuthState(
   const { accountId = 'default', accountLabel = null } =
     /** @type {{accountId?:string,accountLabel?:string|null}} */ (opts);
 
-  const db = new Database(dbPath);
+  const db = openDatabase(dbPath, { enableForeignKeyConstraints: true });
   applyMigrations(db);
   const st = prepareStatements(db);
 

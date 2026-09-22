@@ -2,7 +2,6 @@ import { emoji as e } from '../../config/config.js';
 import { addCoins } from '../../database/database.js';
 import { random, randomFrom, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
-import { COOLDOWN } from '../../utils/cooldown.js';
 
 const ANIMALS = [
   { name: 'Rabbit', emoji: '🐇', min: 15, max: 45, rarity: 30 },
@@ -23,21 +22,18 @@ const HUNT_MESSAGES = [
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['hunt', 'hunting'],
+  cmd: ['hunt'],
   desc: 'Go hunting for animals to sell',
 
   run: async ({ text, sonic, msg }) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'hunt', COOLDOWN.WORK + 15000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'hunt', 10 * 60 * 1000))) return;
 
     if (random(1, 100) <= 20) {
       return text(
         `
-🏹 *HUNT*
-
-${e.cross} You came home empty-handed!
-The animals escaped your traps.
+${e.cross} You came home empty-handed! The animals escaped your traps.
 `.trim(),
       );
     }
@@ -62,7 +58,7 @@ The animals escaped your traps.
 
     const earned = random(animal.min, animal.max);
     const action = randomFrom(HUNT_MESSAGES);
-    const newBalance = addCoins(sender, earned);
+    addCoins(sender, earned);
 
     const isSonic = animal.name === 'Sonic';
     const flavorLine = isSonic
@@ -71,13 +67,9 @@ The animals escaped your traps.
 
     await text(
       `
-🏹 *HUNT*
-
-${flavorLine}
-${animal.emoji}
+${flavorLine} ${animal.emoji}
 
 ${e.check} Earned: ${formatCoins(earned)}
-${e.coin} Balance: ${formatCoins(newBalance ?? 0)}
 `.trim(),
     );
   },

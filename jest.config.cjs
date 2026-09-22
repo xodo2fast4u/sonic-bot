@@ -35,7 +35,7 @@ module.exports = {
     '^@cache/(.*)$': '<rootDir>/src/cache/$1',
   },
   transform: {},
-  transformIgnorePatterns: ['node_modules/(?!(baileys|better-sqlite3)/)'],
+  transformIgnorePatterns: ['node_modules/(?!(baileys)/)'],
   verbose: true,
   clearMocks: true,
   restoreMocks: true,

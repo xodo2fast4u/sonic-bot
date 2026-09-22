@@ -13,10 +13,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'mines', 6000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'mines', 2 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const tilesCount = parseInt(args[0] ?? '0', 10);
     if (isNaN(tilesCount) || tilesCount < 1 || tilesCount > 8) {
@@ -69,8 +69,6 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updated = getUser(sender);
-
     const board = [];
     for (let r = 0; r < 5; r++) {
       let row = '';
@@ -91,12 +89,10 @@ export default {
 
     await text(
       `
-💎 *MINES GRID*
 Tiles Target: *${tilesCount}* (x${mult})
 ${board.join('\n')}
 
 ${won ? `${e.check} All gems cleared! Won: *+${formatCoins(payout)}* (x${mult})` : `💥 BOOM! You triggered a hidden mine! Lost: *-${formatCoins(bet)}*`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

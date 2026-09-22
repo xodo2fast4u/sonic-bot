@@ -21,10 +21,10 @@ export default {
       return text(`${e.cross} You cannot gift items to yourself!`);
     }
 
-    if (!(await checkEconCooldown(sonic, msg, 'gift', 5000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'gift', 5 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const targetUser = getUser(target);
     if (!targetUser) return text(`${e.cross} Recipient profile could not be loaded.`);

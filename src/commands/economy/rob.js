@@ -1,11 +1,11 @@
 import { emoji as e } from '../../config/config.js';
-import { getUser, addCoins, removeCoins } from '../../database/database.js';
+import { getUser, addCoins, removeCoins, hasItem } from '../../database/database.js';
 import { random, formatCoins, checkEconCooldown } from './_utils.js';
 import { getTarget, resolveSender } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['rob', 'steal'],
+  cmd: ['rob'],
   desc: 'Attempt to rob another user',
 
   run: async ({ text, sonic, msg }) => {
@@ -28,7 +28,7 @@ export default {
     }
 
     const robberUser = getUser(sender);
-    if (!robberUser) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!robberUser) return text(`${e.cross} Could not load your balance.`);
 
     const successChance = random(1, 100);
     const success = successChance > 45;
@@ -58,7 +58,11 @@ ${e.coin} Balance: ${formatCoins(updatedUser?.balance ?? 0)}
     }
 
     const maxSteal = Math.floor(targetUser.balance * 0.3);
-    const stolen = random(Math.floor(maxSteal * 0.3), maxSteal);
+    let stolen = random(Math.floor(maxSteal * 0.3), maxSteal);
+
+    if (hasItem(target, 'shield')) {
+      stolen = Math.floor(stolen * 0.5);
+    }
 
     removeCoins(target, stolen);
     addCoins(sender, stolen);

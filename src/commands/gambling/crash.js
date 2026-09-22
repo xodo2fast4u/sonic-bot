@@ -1,75 +1,151 @@
 import { emoji as e } from '../../config/config.js';
-import { getUser, addCoins, removeCoins } from '../../database/database.js';
+import { getUser, removeCoins } from '../../database/database.js';
 import { formatCoins, checkEconCooldown } from '../economy/_utils.js';
-import { resolveSender } from '../../utils/utils.js';
+import { resolveSender, jid, send } from '../../utils/utils.js';
 
 /**
- * Generate a crash multiplier exponential distribution weighted to crash early
- * @returns {number}
+ * Active crash games per chat.
+ * @type {Map<string, {
+ *   chatJid: string,
+ *   userId: string,
+ *   bet: number,
+ *   crashPoint: number,
+ *   currentMultiplier: number,
+ *   status: 'running' | 'cashed_out' | 'crashed',
+ *   cashedOutAt?: number,
+ *   winnings?: number,
+ *   messageKey?: any
+ * }>}
  */
-const generateCrash = () => {
-  const r = Math.random();
-  if (r < 0.35) return parseFloat((1 + Math.random() * 0.49).toFixed(2));
-  if (r < 0.65) return parseFloat((1.5 + Math.random() * 1.49).toFixed(2));
-  if (r < 0.85) return parseFloat((3 + Math.random() * 4.99).toFixed(2));
-  if (r < 0.95) return parseFloat((8 + Math.random() * 11.99).toFixed(2));
-  return parseFloat((20 + Math.random() * 80).toFixed(2));
-};
+export const activeCrashGames = new Map();
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['crash'],
-  desc: 'Bet before the rocket crashes pick your cash-out multiplier',
+  desc: 'Bet on an escalating multiplier and cash out before it crashes!',
 
   run: async ({ text, sonic, msg }, args) => {
-    const sender = resolveSender(msg);
+    const chatJid = msg.key.remoteJid;
+    const sender = resolveSender(msg, sonic);
+    const userId = jid.fromUser(sender);
 
-    if (!(await checkEconCooldown(sonic, msg, 'crash', 10000))) return;
-
-    const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
-
-    const cashoutMultiplier = parseFloat(args[0] ?? '');
-    if (isNaN(cashoutMultiplier) || cashoutMultiplier < 1.01) {
-      return text(`${e.cross} Set your cash-out multiplier (min 1.01x)!\nExample: !crash 2.0 100`);
+    if (activeCrashGames.has(chatJid)) {
+      return text(
+        `${e.cross} A crash game is already running in this chat! Wait for it to end or use !cashout.`,
+      );
     }
 
-    const bet = args[1]?.toLowerCase() === 'all' ? user.balance : parseInt(args[1] ?? '', 10);
+    if (!(await checkEconCooldown(sonic, msg, 'crash', 10 * 60 * 1000))) return;
+
+    const user = getUser(sender);
+    if (!user) {
+      return text(`${e.cross} Could not load your balance.`);
+    }
+
+    const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0] ?? '', 10);
 
     if (!bet || bet <= 0) {
-      return text(`${e.cross} Provide a valid bet!\nExample: !crash 2.0 100`);
+      return text(`${e.cross} Provide a valid bet! Example: !crash 500 or !crash all`);
     }
 
     if (bet > user.balance) {
-      return text(`${e.cross} You only have ${formatCoins(user.balance)}!`);
+      return text(`${e.cross} You only have ${formatCoins(user.balance)} coins!`);
     }
 
-    const crashAt = generateCrash();
-    const won = cashoutMultiplier <= crashAt;
-    const payout = won ? Math.floor(bet * cashoutMultiplier) : 0;
+    removeCoins(sender, bet);
 
-    if (won) {
-      addCoins(sender, payout - bet);
-    } else {
-      removeCoins(sender, bet);
+    const rand = Math.random();
+    let crashPoint = 1.0;
+    if (rand > 0.08) {
+      crashPoint = parseFloat((1.0 + Math.pow(Math.random() * 3, 2.2)).toFixed(2));
     }
 
-    const updatedUser = getUser(sender);
-    const currentBalance = updatedUser?.balance ?? 0;
+    const gameSession = {
+      chatJid,
+      userId: sender,
+      bet,
+      crashPoint,
+      currentMultiplier: 1.0,
+      status: /** @type {'running' | 'cashed_out' | 'crashed'} */ ('running'),
+      messageKey: null,
+    };
 
-    const rocketLine = won
-      ? `🚀 Rocket soared to *${crashAt}x* - you cashed at *${cashoutMultiplier}x!*`
-      : `💥 Rocket crashed at *${crashAt}x* - you wanted *${cashoutMultiplier}x*`;
+    activeCrashGames.set(chatJid, gameSession);
 
-    await text(
-      `
-🚀 *CRASH*
+    const initialMsg = await send.mention(
+      sonic,
+      msg,
+      `🚀 *CRASH GAME STARTED!*
+👤 Player: @${userId}
+💰 Bet: *${formatCoins(bet)}* coins
 
-${rocketLine}
-
-${won ? `${e.check} Won: ${formatCoins(payout)} (x${cashoutMultiplier})` : `${e.cross} Lost: ${formatCoins(bet)}`}
-${e.coin} Balance: ${formatCoins(currentBalance)}
-`.trim(),
+📈 Multiplier: *1.00x*
+💡 Quick! Type *!cashout* to claim earnings before the rocket crashes!`,
+      [jid.toUser(userId)],
     );
+
+    gameSession.messageKey = initialMsg.key;
+
+    const interval = setInterval(async () => {
+      const session = activeCrashGames.get(chatJid);
+      if (!session) {
+        clearInterval(interval);
+        return;
+      }
+
+      if (session.status === 'cashed_out') {
+        clearInterval(interval);
+        activeCrashGames.delete(chatJid);
+        const winAmount = session.winnings ?? 0;
+
+        await send.edit(
+          sonic,
+          msg,
+          session.messageKey,
+          `💸 *CASHOUT SUCCESSFUL!*
+👤 Player: @${userId}
+📈 Cashed Out At: *${session.cashedOutAt?.toFixed(2)}x*
+🎉 Winnings: *+${formatCoins(winAmount)}* coins`,
+          [jid.toUser(userId)],
+        );
+        return;
+      }
+
+      const step =
+        session.currentMultiplier < 2.0 ? 0.2 : session.currentMultiplier < 5.0 ? 0.4 : 0.8;
+      const nextMultiplier = parseFloat((session.currentMultiplier + step).toFixed(2));
+
+      if (nextMultiplier >= session.crashPoint) {
+        session.status = 'crashed';
+        clearInterval(interval);
+        activeCrashGames.delete(chatJid);
+
+        await send.edit(
+          sonic,
+          msg,
+          session.messageKey,
+          `💥 *ROCKET CRASHED AT ${session.crashPoint.toFixed(2)}x!*
+👤 Player: @${userId}
+💸 Lost: *-${formatCoins(bet)}* coins`,
+          [jid.toUser(userId)],
+        );
+        return;
+      }
+
+      session.currentMultiplier = nextMultiplier;
+
+      await send.edit(
+        sonic,
+        msg,
+        session.messageKey,
+        `🚀 *CRASH GAME IN PROGRESS...*
+👤 Player: @${userId}
+💰 Bet: *${formatCoins(bet)}* coins
+
+📈 Multiplier: *${session.currentMultiplier.toFixed(2)}x*
+💡 Quick! Type *!cashout* to claim earnings before the rocket crashes!`,
+        [jid.toUser(userId)],
+      );
+    }, 1800);
   },
 };

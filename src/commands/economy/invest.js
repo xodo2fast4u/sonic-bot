@@ -116,7 +116,7 @@ ${rows.join('\n')}
         );
       }
 
-      if (!(await checkEconCooldown(sonic, msg, 'invest_trade', 3000))) return;
+      if (!(await checkEconCooldown(sonic, msg, 'invest_trade', 10 * 60 * 1000))) return;
 
       const { currentPrice } = getTickerPrice(ticker ?? '');
       const totalCost = currentPrice * shares;
@@ -134,16 +134,12 @@ ${rows.join('\n')}
       portfolio[ticker ?? ''] = (portfolio[ticker ?? ''] || 0) + shares;
       userPortfolios.set(userId, portfolio);
 
-      const updated = getUser(sender);
-
       return text(
         `
 📈 *SHARES PURCHASED*
 Stock: *${stock.name}*
 Bought: *${shares}* shares @ 🪙 ${formatCoins(currentPrice)}/share
 Total Cost: *-${formatCoins(totalCost)}*
-
-${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
 `.trim(),
       );
     }
@@ -174,7 +170,7 @@ ${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
         return text(`${e.cross} You only own ${ownedShares} shares of ${ticker?.toUpperCase()}!`);
       }
 
-      if (!(await checkEconCooldown(sonic, msg, 'invest_trade', 3000))) return;
+      if (!(await checkEconCooldown(sonic, msg, 'invest_trade', 10 * 60 * 1000))) return;
 
       const { currentPrice } = getTickerPrice(ticker ?? '');
       const totalEarnings = currentPrice * shares;
@@ -182,7 +178,7 @@ ${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
       portfolio[ticker ?? ''] = ownedShares - shares;
       userPortfolios.set(userId, portfolio);
 
-      const newBalance = addCoins(sender, totalEarnings);
+      addCoins(sender, totalEarnings);
 
       return text(
         `
@@ -190,8 +186,6 @@ ${e.coin} Balance: *${formatCoins(updated?.balance ?? 0)}*
 Stock: *${stock.name}*
 Sold: *${shares}* shares @ 🪙 ${formatCoins(currentPrice)}/share
 Proceeds: *+${formatCoins(totalEarnings)}*
-
-${e.coin} Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
       );
     }

@@ -30,7 +30,7 @@ ${commands('fight', 'train', 'equip', 'unequip', 'togglelevelup', 'profile')}
 
 ${e.coin} *ECONOMY*
 ${commands('balance', 'daily', 'weekly', 'monthly', 'yearly')}
-${commands('work', 'mine', 'fish', 'hunt', 'beg', 'rob', 'pay')}
+${commands('work', 'mine', 'fish', 'hunt', 'beg', 'rob', 'robbank', 'pay')}
 ${commands('shop', 'deposit', 'withdraw', 'inventory', 'transactions')}
 ${commands('leaderboard', 'sell', 'use', 'interest', 'gift', 'heist')}
 ${commands('bounty', 'invest', 'networth', 'vault', 'career')}
@@ -38,7 +38,7 @@ ${commands('bounty', 'invest', 'networth', 'vault', 'career')}
 ${e.gambling} *GAMES*
 ${commands('slots', 'coinflip', 'dice', 'roulette', 'blackjack', 'crash')}
 ${commands('higherlower', 'poker', 'baccarat', 'mines', 'plinko', 'derby')}
-${commands('keno', 'wheel', 'limbo', 'war', 'cups')}
+${commands('keno', 'wheel', 'limbo', 'war', 'cups', 'cashout')}
 
 ${e.tool} *TOOLS*
 ${commands('calculate', 'weather', 'search', 'bible', 'decode', 'define')}

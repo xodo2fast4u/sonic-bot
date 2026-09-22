@@ -57,27 +57,36 @@ export const jid = {
   /** @param {any} jidStr */
   isMetaAI: (jidStr) => isJidMetaAI(jidStr),
 
-  /*
+  /**
    * Determine the sender of a message. In groups, the participant field holds the sender.
-   * LIDs sometimes provide an alternative JID (participantAlt/remoteJidAlt) which we use
-   * as a fallback to maintain consistency across different message sources.
+   * LIDs provide an alternative JID (participantAlt/remoteJidAlt) which we use
+   * to maintain consistency across different message sources.
+   * @param {any} msg
+   * @param {any} [sonic]
    */
-
-  /** @param {any} msg */
-  getSender: (msg) => {
+  getSender: (msg, sonic) => {
     const key = /** @type {any} */ (msg.key || {});
 
+    let candidate = key.remoteJid;
     if (isJidGroup(key.remoteJid)) {
-      if (key.participant && isLidUser(key.participant) && key.participantAlt) {
-        return key.participantAlt;
+      candidate = key.participantAlt || key.participant || key.remoteJid;
+      if (isLidUser(key.participant) && key.participantAlt) {
+        candidate = key.participantAlt;
       }
-      return key.participant || key.participantAlt;
+    } else if (key.remoteJid && isLidUser(key.remoteJid) && key.remoteJidAlt) {
+      candidate = key.remoteJidAlt;
     }
 
-    if (key.remoteJid && isLidUser(key.remoteJid) && key.remoteJidAlt) {
-      return key.remoteJidAlt;
+    if (isLidUser(candidate) && sonic?.signalRepository?.lidMapping?.getPNForLID) {
+      try {
+        const cachedPn = sonic.signalRepository.lidMapping.getPNForLID(candidate);
+        if (cachedPn) return cachedPn;
+      } catch (e) {
+        void e;
+      }
     }
-    return key.remoteJid;
+
+    return candidate;
   },
 
   /** @param {any} participant */
@@ -115,55 +124,98 @@ export const getText = (msg) => {
  * @property {string} [quotedParticipantAlt]
  */
 
-/*
+/**
  * Extract the target JID for an interactive message: the mentioned user or the sender
- * of the quoted message. For quoted LIDs, we check the alternative participant field
- * to handle cases where the original JID format differs.
+ * of the quoted message.
+ * @param {any} msg
+ * @param {any} [sonic]
  */
-
-/** @param {any} msg */
-export const getTarget = (msg) => {
+export const getTarget = (msg, sonic) => {
   const m = extractMessageContent(msg.message);
   const ctx = /** @type {IContextInfo|any} */ (m?.extendedTextMessage?.contextInfo);
 
+  let target = null;
+
   if (ctx?.mentionedJid?.length) {
-    return ctx.mentionedJid[0];
-  }
-
-  if (ctx?.participant) {
+    target = ctx.mentionedJid[0];
+  } else if (ctx?.participant) {
     if (isLidUser(ctx.participant) && ctx.quotedParticipantAlt) {
-      return ctx.quotedParticipantAlt;
+      target = ctx.quotedParticipantAlt;
+    } else {
+      target = ctx.participant;
     }
-    return ctx.participant;
   }
 
-  return null;
+  if (target && isLidUser(target)) {
+    if (ctx?.quotedParticipantAlt) {
+      target = ctx.quotedParticipantAlt;
+    } else if (sonic?.signalRepository?.lidMapping?.getPNForLID) {
+      try {
+        const cachedPn = sonic.signalRepository.lidMapping.getPNForLID(target);
+        if (cachedPn) target = cachedPn;
+      } catch (e) {
+        void e;
+      }
+    }
+  }
+
+  return target;
 };
 
-/** @param {any} userJid */
-export const isOwner = (userJid) => {
+/**
+ * Check if a given user JID is registered as the bot owner.
+ * @param {any} userJid
+ * @param {any} [sonic]
+ * @param {any} [msg]
+ */
+export const isOwner = (userJid, sonic, msg) => {
   const owner = process.env['OWNER_NUMBER']?.trim() || getOwner();
   if (!owner) return false;
-
-  const userNum = jid.fromUser(userJid);
-  if (!userNum) return false;
 
   const ownerNumbers = owner
     .split(',')
     .map((num) => num.replace(/[^0-9]/g, ''))
     .filter(Boolean);
 
+  if (!userJid) return false;
+
+  let userNum = userDigitsFromJid(userJid);
+
+  if (msg?.key) {
+    if (msg.key.participantAlt) {
+      const altNum = userDigitsFromJid(msg.key.participantAlt);
+      if (ownerNumbers.includes(altNum)) return true;
+    }
+    if (msg.key.remoteJidAlt) {
+      const altNum = userDigitsFromJid(msg.key.remoteJidAlt);
+      if (ownerNumbers.includes(altNum)) return true;
+    }
+  }
+
+  if (isLidUser(userJid) && sonic?.signalRepository?.lidMapping?.getPNForLID) {
+    try {
+      const pnJid = sonic.signalRepository.lidMapping.getPNForLID(userJid);
+      if (pnJid) {
+        const pnNum = userDigitsFromJid(pnJid);
+        if (ownerNumbers.includes(pnNum)) return true;
+      }
+    } catch (e) {
+      void e;
+    }
+  }
+
   return ownerNumbers.includes(userNum);
 };
 
-/*
+/**
  * Resolve the sender of a message with fallback chain.
- * jid.getSender handles LID/group logic internally, but this adds
+ * jid.getSender handles LID/group logic internally but this adds
  * an additional fallback for edge cases where the primary method fails.
+ * @param {any} msg
+ * @param {any} [sonic]
  */
-/** @param {any} msg */
-export const resolveSender = (msg) => {
-  return jid.getSender(msg) || msg.key.participant || msg.key.remoteJid;
+export const resolveSender = (msg, sonic) => {
+  return jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
 };
 
 export const format = {

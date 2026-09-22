@@ -1,21 +1,21 @@
 import { emoji as e } from '../../config/config.js';
 import { getUser, addCoins, removeCoins } from '../../database/database.js';
 import { random, formatCoins, checkEconCooldown } from '../economy/_utils.js';
-import { resolveSender } from '../../utils/utils.js';
+import { resolveSender, send } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['slots'],
   desc: 'Gamble your coins (50/50)',
 
-  run: async ({ text, sonic, msg }, args) => {
+  run: async ({ text, edit, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'slots', 10000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'slots', 10 * 60 * 1000))) return;
 
     const user = getUser(sender);
     if (!user) {
-      return text(`${e.cross} Could not load your wallet. Try again later.`);
+      return text(`${e.cross} Could not load your balance.`);
     }
 
     const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0] ?? '', 10);
@@ -30,6 +30,11 @@ export default {
 
     removeCoins(sender, bet);
 
+    const spinningMessage = await send.text(
+      sonic,
+      msg,
+      `🎰 *SONIC SLOTS*\n\n~~[ ❔ | ❔ | ❔ ]~~\n\n🎰 The reels are spinning...`,
+    );
     const slots = ['🍎', '🍊', '🍋', '🍇', '🍒', '💎', '7️⃣'];
     const result = [
       slots[random(0, slots.length - 1)],
@@ -55,18 +60,20 @@ export default {
       status = `${e.cross} Lost!`;
     }
 
-    const updatedUser = getUser(sender);
-    const currentBalance = updatedUser?.balance ?? 0;
-
-    await text(
+    await new Promise((resolve) => {
+      setTimeout(resolve, random(3000, 4000));
+    });
+    await edit(
+      spinningMessage.key,
       `
-🎰 *SLOTS*
+🎰 *SONIC SLOTS*
 
+~~[ ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} ]~~
+~~[ ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} ]~~
 [ ${result.join(' | ')} ]
 
 ${status}
 ${winnings > 0 ? `Won: ${formatCoins(winnings)}` : `Lost: ${formatCoins(bet)}`}
-${e.ring} Balance: ${formatCoins(currentBalance)}
 `.trim(),
     );
   },

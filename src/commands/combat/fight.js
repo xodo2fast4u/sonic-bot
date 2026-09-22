@@ -17,8 +17,8 @@ export default {
   desc: 'Challenge another player to an RPG combat battle',
 
   run: async ({ text, sonic, msg }) => {
-    const sender = resolveSender(msg);
-    const target = getTarget(msg);
+    const sender = resolveSender(msg, sonic);
+    const target = getTarget(msg, sonic);
 
     if (!target) {
       return text(
@@ -29,12 +29,16 @@ export default {
     const senderNum = jid.fromUser(sender);
     const targetNum = jid.fromUser(target);
 
+    if (!senderNum || !targetNum) {
+      return text(`${e.cross} Could not resolve fighter user accounts.`);
+    }
+
     if (senderNum === targetNum) {
       return text(`${e.cross} You cannot fight yourself! Challenge someone else.`);
     }
 
-    const attacker = getCharacter(sender, msg.pushName);
-    const defender = getCharacter(target);
+    const attacker = getCharacter(senderNum, msg.pushName);
+    const defender = getCharacter(targetNum);
 
     if (!attacker || !defender) {
       return text(`${e.cross} Could not load fighter profiles.`);

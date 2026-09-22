@@ -12,7 +12,7 @@ const parseParticipants = (text) =>
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['groupcreate', 'groupnew'],
+  cmd: ['groupcreate'],
   desc: 'Create a group with a subject and members',
 
   run: async ({ text, sonic }, args) => {

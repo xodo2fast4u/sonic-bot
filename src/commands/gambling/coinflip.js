@@ -5,16 +5,16 @@ import { resolveSender } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['coinflip', 'cf', 'flip'],
+  cmd: ['coinflip', 'cf'],
   desc: 'Flip a coin heads or tails',
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'coinflip', 8000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'coinflip', 30 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const choice = args[0]?.toLowerCase();
     const isChoiceWord = ['heads', 'tails', 'h', 't'].includes(choice ?? '');
@@ -45,18 +45,12 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updatedUser = getUser(sender);
-    const currentBalance = updatedUser?.balance ?? 0;
-
     await text(
       `
-🪙 *COIN FLIP*
-
 ${coinEmoji} Landed: *${landed.toUpperCase()}*
 Your pick: *${normalizedChoice.toUpperCase()}*
 
 ${won ? `${e.check} Won: ${formatCoins(bet)}` : `${e.cross} Lost: ${formatCoins(bet)}`}
-${e.coin} Balance: ${formatCoins(currentBalance)}
 `.trim(),
     );
   },

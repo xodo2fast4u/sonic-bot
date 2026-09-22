@@ -7,7 +7,7 @@ import {
   trainCharacterStat,
   awardCommandXp,
 } from '../../database/database.js';
-import { calculateTraining } from '../../services/rpg-service.js';
+import { calculateTraining, MIN_TRAINING_COST } from '../../services/rpg-service.js';
 import { COOLDOWN } from '../../utils/cooldown.js';
 import { checkEconCooldown, formatCoins } from '../economy/_utils.js';
 
@@ -47,48 +47,49 @@ export default {
     const targetStat = statChoice ? validStats[statChoice] : null;
 
     if (!targetStat) {
-      const atkCalc = calculateTraining(char.attack, char.isGod);
-      const defCalc = calculateTraining(char.defense, char.isGod);
-      const magCalc = calculateTraining(char.magical_power, char.isGod);
-
       return text(
         `
 🏋️ *TRAINING DOJO*
 Choose a stat to train:
 
 ⚔️ *Attack* (Current: ${char.displayAttack})
-   Cost: ${char.isGod ? 'Free' : formatCoins(atkCalc.cost) + ' coins'}
-   Command: *!train attack*
+   Minimum: ${formatCoins(MIN_TRAINING_COST)} coins
+   Command: *!train attack <coins>*
 
 🛡️ *Defense* (Current: ${char.displayDefense})
-   Cost: ${char.isGod ? 'Free' : formatCoins(defCalc.cost) + ' coins'}
-   Command: *!train defense*
+   Minimum: ${formatCoins(MIN_TRAINING_COST)} coins
+   Command: *!train defense <coins>*
 
 ✨ *Magic* (Current: ${char.displayMagicalPower})
-   Cost: ${char.isGod ? 'Free' : formatCoins(magCalc.cost) + ' coins'}
-   Command: *!train magic*
+   Minimum: ${formatCoins(MIN_TRAINING_COST)} coins
+   Command: *!train magic <coins>*
 
-ℹ️ *Note:* HP increases only on Level Up.
+ℹ️ *Note:* Every ${formatCoins(MIN_TRAINING_COST)} coins trains +1 stat point. HP increases only on Level Up.
 `.trim(),
       );
     }
 
-    if (!char.isGod && !(await checkEconCooldown(sonic, msg, 'train', COOLDOWN.TRAIN))) {
+    const trainingAmount = Number(args[1]);
+    if (!Number.isInteger(trainingAmount) || trainingAmount < MIN_TRAINING_COST) {
+      return text(
+        `${e.cross} Training requires at least *${formatCoins(MIN_TRAINING_COST)}* coins. Example: *!train ${statChoice} 1000*`,
+      );
+    }
+
+    if (!(await checkEconCooldown(sonic, msg, 'train', COOLDOWN.TRAIN))) {
       return;
     }
 
     const currentStatVal = char[targetStat];
-    const { cost, gain } = calculateTraining(currentStatVal, char.isGod);
+    const { cost, gain } = calculateTraining(currentStatVal, trainingAmount);
 
-    if (!char.isGod && user.balance < cost) {
+    if (user.balance < cost) {
       return text(
         `${e.cross} Not enough coins! You need *${formatCoins(cost)}* coins to train but have *${formatCoins(user.balance)}*.`,
       );
     }
 
-    if (!char.isGod) {
-      addCoins(sender, -cost);
-    }
+    addCoins(sender, -cost);
 
     const updated = trainCharacterStat(sender, targetStat, gain);
     const xpBonus = 25;
@@ -102,18 +103,16 @@ Choose a stat to train:
           : '✨ Magical Power';
 
     const newStatVal = updated ? updated[targetStat] : currentStatVal + gain;
-    const balanceDisplay = char.isGod ? '∞' : formatCoins(getUser(sender)?.balance ?? 0);
 
     await text(
       `
 🏋️ *TRAINING COMPLETED*
 
 ${statName} increased by *+${gain}*!
-📊 New ${statName}: *${char.isGod ? '∞' : newStatVal}*
+📊 New ${statName}: *${newStatVal}*
 
-💰 Cost: ${char.isGod ? 'Free (Owner)' : formatCoins(cost) + ' coins'}
+💰 Cost: ${formatCoins(cost)} coins
 ✨ XP Earned: *+${xpBonus}* XP
-${e.coin} Balance: ${balanceDisplay} coins
 `.trim(),
     );
   },

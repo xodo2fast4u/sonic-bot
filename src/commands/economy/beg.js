@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { addCoins } from '../../database/database.js';
+import { addCoins, hasItem } from '../../database/database.js';
 import { random, randomFrom, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
 
@@ -39,21 +39,22 @@ export default {
   run: async ({ text, sonic, msg }) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'beg', 30000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'beg', 60 * 1000))) return;
 
-    const success = random(1, 100) <= 60;
+    const successRate = hasItem(sender, 'ring') ? 85 : 60;
+    const success = random(1, 100) <= successRate;
 
     if (success) {
       const earned = random(1, 50);
       const response = randomFrom(RESPONSES.success);
-      const newBalance = addCoins(sender, earned);
+      addCoins(sender, earned);
 
       await text(
         `
 ${response.emoji} *${response.giver}* ${response.message}!
 
 ${e.check} Received: ${formatCoins(earned)}
-${e.ring} Balance: ${formatCoins(newBalance)}`.trim(),
+`.trim(),
       );
     } else {
       await text(`${e.cross} ${randomFrom(RESPONSES.fail)}`);

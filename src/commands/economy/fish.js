@@ -2,7 +2,6 @@ import { emoji as e } from '../../config/config.js';
 import { addCoins } from '../../database/database.js';
 import { random, randomFrom, formatCoins, checkEconCooldown } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
-import { COOLDOWN } from '../../utils/cooldown.js';
 
 const CATCHES = [
   { name: 'Old Boot', emoji: '👟', value: 0, min: 0, max: 0, rarity: 20 },
@@ -24,13 +23,13 @@ const FISH_MESSAGES = [
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
-  cmd: ['fish', 'fishing'],
+  cmd: ['fish'],
   desc: 'Go fishing for coins',
 
   run: async ({ text, sonic, msg }) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'fish', COOLDOWN.WORK + 30000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'fish', 5 * 60 * 1000))) return;
 
     const totalRarity = CATCHES.reduce((sum, c) => sum + c.rarity, 0);
     const roll = random(1, totalRarity);
@@ -53,9 +52,8 @@ export default {
     const earned = fish.name === 'Old Boot' ? 0 : random(fish.min, fish.max);
     const action = randomFrom(FISH_MESSAGES);
 
-    let newBalance = null;
     if (earned > 0) {
-      newBalance = addCoins(sender, earned);
+      addCoins(sender, earned);
     }
 
     const earningsLine =
@@ -65,13 +63,9 @@ export default {
 
     await text(
       `
-🎣 *FISHING*
+You ${action}... ${fish.emoji} Caught: *${fish.name}*
 
-You ${action}...
-
-${fish.emoji} Caught: *${fish.name}*
 ${earningsLine}
-${newBalance !== null ? `${e.coin} Balance: ${formatCoins(newBalance)}` : ''}
 `.trim(),
     );
   },

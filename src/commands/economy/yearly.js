@@ -34,7 +34,7 @@ export default {
     const total = base + bonus;
     const xpBonus = 5000;
 
-    const newBalance = addCoins(sender, total);
+    addCoins(sender, total);
     awardCommandXp(sender, xpBonus, msg.pushName);
     claimPeriodicReward(sender, 'yearly');
 
@@ -47,8 +47,6 @@ ${e.check} Base: ${formatCoins(base)} coins
 ${e.bolt} Bonus: ${formatCoins(bonus)} coins
 ✨ XP Earned: +${xpBonus} XP
 ${e.rocket} Total Coins: *+${formatCoins(total)}*
-
-${e.ring} Balance: ${char.isGod ? '∞' : formatCoins(newBalance ?? 0)}
 
 Come back next year, legend! ${e.sonic}
 `.trim(),

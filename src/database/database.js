@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -9,6 +8,7 @@ import {
   getXpRequiredForNextLevel,
   resolveCharacterWithGodmode,
 } from '../services/rpg-service.js';
+import { openDatabase } from './open-database.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data');
@@ -16,7 +16,7 @@ const DB_PATH = join(DATA_DIR, 'sonic_database.db');
 
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 
-const db = new Database(DB_PATH);
+const db = openDatabase(DB_PATH);
 db.pragma('journal_mode = WAL');
 
 /**
@@ -653,13 +653,21 @@ export const clearAdminOnlyGroups = () => {
  * Database connections must be explicitly closed on process termination to flush
  * WAL checkpoints and prevent potential corruption from abrupt shutdowns.
  */
+let databaseClosed = false;
+
+const closeDatabase = () => {
+  if (databaseClosed) return;
+  databaseClosed = true;
+  db.close();
+};
+
 const shutdown = () => {
   logger.info('💾 Closing database...');
-  db.close();
+  closeDatabase();
   process.exit();
 };
 
-process.on('exit', () => db.close());
+process.on('exit', closeDatabase);
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 

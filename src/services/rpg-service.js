@@ -558,19 +558,26 @@ export const simulateCombat = (attacker, defender) => {
   };
 };
 
+export const MIN_TRAINING_COST = 250;
+
 /**
- * Calculates training cost and stat gain.
+ * Calculates stat gain from a user's training spend.
  * @param {number} currentStat
- * @param {boolean} isOwnerUser
+ * @param {number|boolean} trainingAmount
  */
-export const calculateTraining = (currentStat, isOwnerUser = false) => {
-  if (isOwnerUser) {
-    return { cost: 0, gain: 5 };
+export const calculateTraining = (currentStat, trainingAmount = MIN_TRAINING_COST) => {
+  if (typeof trainingAmount === 'boolean') {
+    if (trainingAmount) return { cost: 0, gain: 5, currentStat };
+
+    return {
+      cost: Math.round(MIN_TRAINING_COST + currentStat * 3),
+      gain: Math.floor(Math.random() * 4) + 2,
+      currentStat,
+    };
   }
 
-  const baseCost = 250;
-  const cost = Math.round(baseCost + currentStat * 3);
-  const gain = Math.floor(Math.random() * 4) + 2;
+  const cost = Math.max(MIN_TRAINING_COST, Math.floor(trainingAmount));
+  const gain = Math.max(1, Math.floor(cost / MIN_TRAINING_COST));
 
-  return { cost, gain };
+  return { cost, gain, currentStat };
 };

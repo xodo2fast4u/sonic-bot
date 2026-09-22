@@ -32,6 +32,7 @@ ${prefix}mode admin clear - clear group overrides
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['mode'],
+  ownerOnly: true,
   desc: 'View or change Sonic operating mode',
   run: async ({ text, msg }, args) => {
     const prefix = config.prefix;

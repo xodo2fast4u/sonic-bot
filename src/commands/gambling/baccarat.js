@@ -42,7 +42,7 @@ export default {
     if (!(await checkEconCooldown(sonic, msg, 'baccarat', 6000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const rawChoice = args[0]?.toLowerCase();
     const isPlayer = ['player', 'p'].includes(rawChoice ?? '');
@@ -110,13 +110,11 @@ export default {
       removeCoins(sender, bet);
     }
 
-    const updated = getUser(sender);
     const pCardsStr = playerHand.map((c) => c?.rank ?? '').join(' ');
     const bCardsStr = bankerHand.map((c) => c?.rank ?? '').join(' ');
 
     await text(
       `
-🎴 *BACCARAT*
 👤 Player: [${pCardsStr}] -> *${playerScore}*
 🏦 Banker: [${bCardsStr}] -> *${bankerScore}*
 
@@ -124,7 +122,6 @@ Result: *${winner.toUpperCase()} WINS*
 Your Pick: *${choice.toUpperCase()}*
 
 ${won ? `${e.check} Won: +${formatCoins(payout)} coins` : `${e.cross} Lost: -${formatCoins(bet)} coins`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

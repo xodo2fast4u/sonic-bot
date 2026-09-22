@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { getTarget, jid, resolveSender } from '../../utils/utils.js';
+import { getTarget, resolveSender } from '../../utils/utils.js';
 import { getUser } from '../../database/database.js';
 import { formatCoins, sendProfileDisplay } from './_utils.js';
 
@@ -14,13 +14,10 @@ export default {
     const user = getUser(target);
 
     if (!user) {
-      return text(`${e.cross} Could not load wallet data for that user.`);
+      return text(`${e.cross} Could not load your balance.`);
     }
 
-    const num = jid.fromUser(target);
-
     const selfContent = `
-${e.ring} *WALLET*
 ${e.user} Your Balance
 
 ${e.star} Cash: ${formatCoins(user.balance)}
@@ -28,15 +25,6 @@ ${e.bolt} Bank: ${formatCoins(user.bank)}
 ${e.rocket} Total: ${formatCoins(user.balance + user.bank)}
 `.trim();
 
-    const otherContent = `
-${e.ring} *WALLET*
-${e.user} @${num}'s Balance
-
-${e.star} Cash: ${formatCoins(user.balance)}
-${e.bolt} Bank: ${formatCoins(user.bank)}
-${e.rocket} Total: ${formatCoins(user.balance + user.bank)}
-`.trim();
-
-    await sendProfileDisplay(helpers, target, selfContent, otherContent);
+    await sendProfileDisplay(helpers, target, selfContent);
   },
 };

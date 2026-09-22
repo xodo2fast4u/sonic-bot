@@ -22,10 +22,10 @@ export default {
 Status: *${isEnabled ? 'ENABLED ✅' : 'DISABLED ❌'}*
 
 ${
-        isEnabled
-          ? 'You will now receive a celebration message whenever you level up!'
-          : 'Level up messages are now silenced. You will level up in the background!'
-      }
+  isEnabled
+    ? 'You will now receive a celebration message whenever you level up!'
+    : 'Level up messages are now silenced. You will level up in the background!'
+}
 `.trim(),
     );
   },

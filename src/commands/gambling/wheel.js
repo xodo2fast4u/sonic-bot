@@ -26,10 +26,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'wheel', 6000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'wheel', 2 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const bet = args[0]?.toLowerCase() === 'all' ? user.balance : parseInt(args[0] ?? '', 10);
     if (!bet || bet <= 0) {
@@ -51,8 +51,6 @@ export default {
       removeCoins(sender, bet - payout);
     }
 
-    const updated = getUser(sender);
-
     await text(
       `
 🎡 *PRIZE WHEEL*
@@ -62,7 +60,6 @@ export default {
 ${result.emoji} *${result.label}*
 
 ${won ? `${e.check} Won: *+${formatCoins(payout)}* (x${result.mult})` : `${e.cross} Payout: *${formatCoins(payout)}* (Lost: -${formatCoins(bet - payout)})`}
-${e.coin} Balance: ${formatCoins(updated?.balance ?? 0)}
 `.trim(),
     );
   },

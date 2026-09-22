@@ -46,7 +46,7 @@ export const config = Object.freeze({
   prefix: loadEnvValue('SONIC_PREFIX') || '!',
   ownerNumber: loadEnvValue('OWNER_NUMBER') || '',
   botName: 'Sonic',
-  version: '3.5.0',
+  version: '3.6.0',
   authDir: 'sonic_session.db',
 });
 

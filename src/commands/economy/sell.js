@@ -28,10 +28,10 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'sell', 3000))) return;
+    if (!(await checkEconCooldown(sonic, msg, 'sell', 15 * 60 * 1000))) return;
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     const inventory = getInventory(sender);
     if (!inventory.length) {
@@ -57,14 +57,13 @@ export default {
         removeItem(sender, item.item_name, item.quantity);
       }
 
-      const newBalance = addCoins(sender, totalEarned);
+      addCoins(sender, totalEarned);
 
       return text(
         `
 🏷️ *SOLD ALL ITEMS*
 ${e.check} Sold: *${totalItems}* items
 ${e.coin} Earned: *${formatCoins(totalEarned)}* coins
-${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
       );
     }
@@ -94,14 +93,13 @@ ${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
     const totalEarnings = unitValue * qty;
 
     removeItem(sender, matchedItem.item_name, qty);
-    const newBalance = addCoins(sender, totalEarnings);
+    addCoins(sender, totalEarnings);
 
     await text(
       `
 🏷️ *ITEM SOLD*
 ${e.check} Sold: *${matchedItem.item_name}* x${qty}
 ${e.coin} Earned: *${formatCoins(totalEarnings)}* coins
-${e.star} Balance: *${formatCoins(newBalance ?? 0)}*
 `.trim(),
     );
   },

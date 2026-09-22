@@ -18,7 +18,7 @@ export default {
     const sender = resolveSender(msg);
 
     const user = getUser(sender);
-    if (!user) return text(`${e.cross} Could not load your wallet. Try again later.`);
+    if (!user) return text(`${e.cross} Could not load your balance.`);
 
     if (user.bank < MIN_BANK_REQUIRED) {
       return text(
