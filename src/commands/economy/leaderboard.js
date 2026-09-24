@@ -1,14 +1,13 @@
 import { emoji as e } from '../../config/config.js';
 import { getLeaderboard, getCombatLeaderboard } from '../../database/database.js';
 import { formatCoins } from './_utils.js';
-import { jid } from '../../utils/utils.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['leaderboard', 'lb'],
   desc: 'View top fighters or richest players',
 
-  run: async ({ text, mention }, args) => {
+  run: async ({ text }, args) => {
     const type = args[0]?.toLowerCase();
     const readMoreMarker = `\n${'\u200e'.repeat(4000)}\n`;
 
@@ -24,10 +23,10 @@ export default {
         .map((user, i) => {
           const medal = medals[i] || `${i + 1}.`;
           const total = user.balance + user.bank;
-          const num = jid.fromUser(user.id) || user.id;
+          const displayName = user.displayName?.trim() || user.id;
           const cash = formatCoins(user.balance);
           const bank = formatCoins(user.bank);
-          return `${medal} *${i + 1}. @${num}*
+          return `${medal} *${i + 1}. ${displayName}*
    💰 Total wealth: *${formatCoins(total)}*
    💵 Cash: ${cash}  •  🏦 Bank: ${bank}`;
         })
@@ -37,18 +36,15 @@ export default {
         ? `${firstEntry}${readMoreMarker}${remainingEntries.join('\n\n')}`
         : list;
 
-      const mentions = top.map((user) => jid.toUser(user.id));
-
-      return mention(
+      return text(
         `
       🪙 *WEALTH LEADERBOARD*
-      │ Highest total balance
-      │
+        Highest total balance
+       
 ${listWithReadMore}
-      │
-      │ 💡 Combat board: *!leaderboard*
+       
+        💡 Combat board: *!leaderboard*
       `.trim(),
-        mentions,
       );
     }
 
@@ -62,10 +58,10 @@ ${listWithReadMore}
     const list = topCombat
       .map((char, i) => {
         const medal = medals[i] || `${i + 1}.`;
-        const num = jid.fromUser(char.user_id) || char.user_id;
+        const displayName = char.name?.trim() || char.user_id;
         const levelText = char.isGod ? '👑 GOD' : `Lvl ${char.level}`;
         const winLoss = `${char.battles_won}W / ${char.battles_lost}L`;
-        return `${medal} *${i + 1}. @${num}*
+        return `${medal} *${i + 1}. ${displayName}*
    🌟 Level: *${levelText}*  •  XP: ${char.xp}
    ⚔️ Attack: *${char.displayAttack}*  •  🛡️ Defense: *${char.displayDefense}*
    🏆 Record: ${winLoss}`;
@@ -76,18 +72,15 @@ ${listWithReadMore}
       ? `${firstEntry}${readMoreMarker}${remainingEntries.join('\n\n')}`
       : list;
 
-    const mentions = topCombat.map((char) => jid.toUser(char.user_id));
-
-    return mention(
+    return text(
       `
     ⚔️ *RPG LEVEL LEADERBOARD*
-    │ Strongest adventurers
-    │
+      Strongest adventurers
+     
 ${listWithReadMore}
-    │
-    │ 💡 Wealth board: *!leaderboard coins*
+     
+      💡 Wealth board: *!leaderboard coins*
     `.trim(),
-      mentions,
     );
   },
 };

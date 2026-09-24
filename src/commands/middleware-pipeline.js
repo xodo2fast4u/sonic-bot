@@ -4,7 +4,7 @@ import { container } from '../core/container.js';
 import { PermissionError, CooldownError } from '../core/errors.js';
 import { getErrorMessage } from '../utils/error-message.js';
 import { jid, resolveSender } from '../utils/utils.js';
-import { awardCommandXp } from '../database/database.js';
+import { awardCommandXp, updateDisplayName } from '../database/database.js';
 import { getMode, isGroupAdminOnly, shouldProcessCommand } from '../services/mode-service.js';
 
 const levelUpImage = readFileSync(new URL('../assets/sonic-leveled-up.png', import.meta.url));
@@ -110,6 +110,8 @@ export class MiddlewarePipeline {
           const commandRunner = context.get('commandRunner') || context.command.run;
           await commandRunner(context.helpers, context.args);
           commandTimer.end(true, { user: context.user });
+
+          updateDisplayName(context.user, context.message?.pushName || '');
 
           this.logger.info('Command executed successfully', {
             command: context.command.cmd[0],

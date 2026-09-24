@@ -30,6 +30,7 @@ db.exec(`
     balance INTEGER DEFAULT 0,
     bank INTEGER DEFAULT 0,
     total_earned INTEGER DEFAULT 0,
+    display_name TEXT,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
   
@@ -99,6 +100,12 @@ try {
   void e;
 }
 
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN display_name TEXT`);
+} catch (e) {
+  void e;
+}
+
 db.exec(`
   INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('operating_mode', 'public');
 `);
@@ -112,10 +119,12 @@ const statements = {
     `UPDATE users SET balance = balance + ?, total_earned = total_earned + MAX(0, ?) WHERE id = ?`,
   ),
 
+  updateDisplayName: db.prepare(`UPDATE users SET display_name = ? WHERE id = ?`),
+
   setBalance: db.prepare(`UPDATE users SET balance = ? WHERE id = ?`),
 
   getLeaderboard: db.prepare(
-    `SELECT id, balance, bank, total_earned FROM users ORDER BY (balance + bank) DESC LIMIT ?`,
+    `SELECT id, balance, bank, total_earned, display_name FROM users ORDER BY (balance + bank) DESC LIMIT ?`,
   ),
 
   getTransactions: db.prepare(
@@ -220,8 +229,17 @@ export const getUser = (/** @type {string} */ userId) => {
     balance: user.balance,
     bank: user.bank,
     totalEarned: user.total_earned,
+    displayName: user.display_name,
     createdAt: user.created_at,
   };
+};
+
+export const updateDisplayName = (/** @type {string} */ userId, displayName = '') => {
+  const id = jid.fromUser(userId);
+  const name = displayName.trim();
+  if (!id || !name) return false;
+
+  return statements.updateDisplayName.run(name, id).changes > 0;
 };
 
 export const addCoins = (/** @type {string} */ userId, /** @type {number} */ amount) => {
@@ -304,12 +322,13 @@ export const getLeaderboard = (/** @type {number} */ limit = 10) => {
     .all(limit)
     .map(
       (
-        /** @type {{ id: string, balance: number, bank: number, total_earned: number }} */ user,
+        /** @type {{ id: string, balance: number, bank: number, total_earned: number, display_name: string|null }} */ user,
       ) => ({
         id: user.id,
         balance: user.balance,
         bank: user.bank,
         totalEarned: user.total_earned,
+        displayName: user.display_name,
       }),
     );
 };
