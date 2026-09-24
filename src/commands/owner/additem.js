@@ -1,6 +1,7 @@
 import { emoji as e } from '../../config/config.js';
 import { getTarget, jid } from '../../utils/utils.js';
 import { addItem, getInventory } from '../../database/database.js';
+import { getShopItem } from '../economy/shop.js';
 import logger from '../../utils/logger.js';
 
 /** @type {import('../../../types/index.js').Command} */
@@ -10,7 +11,7 @@ export default {
   ownerOnly: true,
 
   run: async ({ text, sonic, msg }, args) => {
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
     if (!target) {
       return text(`${e.cross} Mention or reply to someone to give them items!`);
     }
@@ -29,7 +30,9 @@ export default {
       return text(`${e.cross} Quantity must be a positive whole number!`);
     }
 
-    addItem(target, itemName, quantity);
+    const item = getShopItem(itemName);
+    const storedItemName = item?.id || itemName;
+    addItem(target, storedItemName, quantity);
     const inventory = getInventory(target);
     const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0);
     const targetNum = jid.fromUser(target);
@@ -37,7 +40,7 @@ export default {
     logger.info('[economy:additem] Item added', {
       bot: sonic.user?.id,
       target,
-      itemName,
+      itemName: storedItemName,
       quantity,
       totalItems,
     });
@@ -47,11 +50,9 @@ export default {
 ${e.admin} *ITEM ADDED*
 
 ${e.user} Target: @${targetNum}
-${e.star} Item: ${itemName}
+${e.star} Item: ${item?.name || itemName}
 ${e.check} Quantity: +${quantity}
 ${e.menu} Inventory total: ${totalItems} item(s)
-
-${e.ring} Added by: Owner
 `.trim(),
     );
   },

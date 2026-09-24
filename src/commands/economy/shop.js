@@ -32,6 +32,22 @@ export const SHOP_ITEMS = [
   { id: 'vault', name: 'Safe', emoji: '🔒', price: 5000, desc: 'Double bank interest' },
 ];
 
+/**
+ * Find any shop item by its canonical ID or display name.
+ * @param {string} query
+ */
+export const getShopItem = (query) => {
+  const normalizedQuery = query.toLowerCase().trim();
+  return (
+    SHOP_ITEMS.find(
+      (item) =>
+        item.id.toLowerCase() === normalizedQuery || item.name.toLowerCase() === normalizedQuery,
+    ) ||
+    getBattleItem(normalizedQuery) ||
+    getArmourItem(normalizedQuery)
+  );
+};
+
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['shop'],
@@ -83,10 +99,9 @@ ${armourListing}
         return text(`${e.info} Provide an item ID! Example: !shop buy dragon_katana`);
       }
 
-      const utilityItem = SHOP_ITEMS.find((i) => i.id === itemId);
+      const item = getShopItem(itemId);
       const battleItem = getBattleItem(itemId);
       const armourItem = getArmourItem(itemId);
-      const item = utilityItem || battleItem || armourItem;
 
       if (!item) {
         return text(`${e.cross} Item not found! Use *!shop* to see available items.`);

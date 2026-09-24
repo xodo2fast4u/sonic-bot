@@ -48,7 +48,7 @@ Claim with: !bounty claim @user
     }
 
     if (subAction === 'place' || subAction === 'set' || subAction === 'add') {
-      const target = getTarget(msg);
+      const target = await getTarget(msg, sonic);
       if (!target) {
         return text(
           `${e.cross} Mention someone to place a bounty on!\nExample: !bounty place @user 500`,
@@ -97,7 +97,7 @@ Hunters, claim with: !bounty claim @${targetId}
     }
 
     if (subAction === 'claim' || subAction === 'hunt') {
-      const target = getTarget(msg);
+      const target = await getTarget(msg, sonic);
       if (!target) {
         return text(`${e.cross} Mention the target you are hunting!\nExample: !bounty claim @user`);
       }

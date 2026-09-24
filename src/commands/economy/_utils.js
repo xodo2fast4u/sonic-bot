@@ -1,5 +1,5 @@
 import { emoji as e } from '../../config/config.js';
-import { send, resolveSender } from '../../utils/utils.js';
+import { jid, send, resolveSender } from '../../utils/utils.js';
 import { checkCommandCooldown, formatCooldown } from '../../utils/cooldown.js';
 import { getUser, hasItem } from '../../database/database.js';
 
@@ -170,19 +170,19 @@ export const checkEconCooldown = async (sonic, msg, command, duration) => {
 
 /**
  * Helper to display profile/wallet information with automatic mention handling
- * @param {Pick<import('../../../types/index.js').CommandHelpers, 'text' | 'mention' | 'msg'>} helpers
+ * @param {Pick<import('../../../types/index.js').CommandHelpers, 'text' | 'mention' | 'msg' | 'sonic'>} helpers
  * @param {string} target
  * @param {string} selfContent
  * @param {string} [otherContent]
  */
 export const sendProfileDisplay = async (
-  { text, mention, msg },
+  { text, mention, msg, sonic },
   target,
   selfContent,
   otherContent,
 ) => {
-  const ownerJid = resolveSender(msg);
-  const isSelf = target === ownerJid;
+  const ownerJid = resolveSender(msg, sonic);
+  const isSelf = jid.fromUser(target) === jid.fromUser(ownerJid);
 
   if (isSelf) {
     return text(selfContent);

@@ -2,15 +2,15 @@ import { emoji as e } from '../../config/config.js';
 import { getTarget, resolveSender, jid } from '../../utils/utils.js';
 import logger from '../../utils/logger.js';
 
-/** @param {string[]} args @param {any} msg */
-const parseJids = (args, msg) => {
+/** @param {string[]} args @param {any} msg @param {any} sonic */
+const parseJids = async (args, msg, sonic) => {
   if (args.length)
     return args
       .map((/** @type {string} */ num) => num.replace(/[^0-9]/g, ''))
       .filter(Boolean)
       .map((/** @type {string} */ num) => jid.toUser(num));
 
-  const target = getTarget(msg);
+  const target = await getTarget(msg, sonic);
   return target ? [target] : [];
 };
 
@@ -37,7 +37,7 @@ export default {
         return;
       }
 
-      const participants = parseJids(args.slice(1), msg);
+      const participants = await parseJids(args.slice(1), msg, sonic);
       if (!participants.length) return text(`${e.warn} Mention or provide numbers to ${action}.`);
 
       const results = await sonic.groupRequestParticipantsUpdate(

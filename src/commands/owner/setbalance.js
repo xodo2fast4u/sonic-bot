@@ -10,7 +10,7 @@ export default {
   ownerOnly: true,
 
   run: async ({ text, sonic, msg }, args) => {
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
     if (!target) {
       return text(`${e.cross} Mention or reply to someone to set their balance!`);
     }

@@ -1,6 +1,7 @@
 import { emoji as e } from '../../config/config.js';
 import { getTarget, jid } from '../../utils/utils.js';
-import { removeItem, hasItem, getInventory } from '../../database/database.js';
+import { removeItem, getInventory } from '../../database/database.js';
+import { getShopItem } from '../economy/shop.js';
 import logger from '../../utils/logger.js';
 
 /** @type {import('../../../types/index.js').Command} */
@@ -10,7 +11,7 @@ export default {
   ownerOnly: true,
 
   run: async ({ text, sonic, msg }, args) => {
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
     if (!target) {
       return text(`${e.cross} Mention or reply to someone to remove items from them!`);
     }
@@ -29,19 +30,30 @@ export default {
       return text(`${e.cross} Quantity must be a positive whole number!`);
     }
 
-    if (!hasItem(target, itemName, quantity)) {
-      return text(`${e.cross} User doesn't have ${quantity}x ${itemName}!`);
+    const inventory = getInventory(target);
+    const item = getShopItem(itemName);
+    const normalizedItemName = itemName.toLowerCase();
+    const storedItem = inventory.find((entry) => {
+      const storedName = entry.item_name.toLowerCase();
+      return (
+        storedName === normalizedItemName ||
+        (item && (storedName === item.id.toLowerCase() || storedName === item.name.toLowerCase()))
+      );
+    });
+
+    if (!storedItem || storedItem.quantity < quantity) {
+      return text(`${e.cross} User doesn't have ${quantity}x ${item?.name || itemName}!`);
     }
 
-    removeItem(target, itemName, quantity);
-    const inventory = getInventory(target);
-    const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0);
+    removeItem(target, storedItem.item_name, quantity);
+    const updatedInventory = getInventory(target);
+    const totalItems = updatedInventory.reduce((sum, entry) => sum + entry.quantity, 0);
     const targetNum = jid.fromUser(target);
 
     logger.info('[economy:removeitem] Item removed', {
       bot: sonic.user?.id,
       target,
-      itemName,
+      itemName: storedItem.item_name,
       quantity,
       totalItems,
     });
@@ -51,11 +63,9 @@ export default {
 ${e.admin} *ITEM REMOVED*
 
 ${e.user} Target: @${targetNum}
-${e.cross} Item: ${itemName}
+${e.cross} Item: ${item?.name || storedItem.item_name}
 ${e.check} Quantity: -${quantity}
 ${e.menu} Inventory total: ${totalItems} item(s)
-
-${e.ring} Removed by: Owner
 `.trim(),
     );
   },

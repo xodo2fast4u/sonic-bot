@@ -2,10 +2,10 @@ import { emoji as e } from '../../config/config.js';
 import { getTarget, resolveSender, jid } from '../../utils/utils.js';
 import logger from '../../utils/logger.js';
 
-/** @param {string[]} args @param {any} msg */
-const parseTarget = (args, msg) => {
+/** @param {string[]} args @param {any} msg @param {any} sonic */
+const parseTarget = async (args, msg, sonic) => {
   if (args[1]) return jid.toUser(args[1].replace(/[^0-9]/g, ''));
-  return getTarget(msg);
+  return await getTarget(msg, sonic);
 };
 
 /** @type {import('../../../types/index.js').Command} */
@@ -26,7 +26,7 @@ export default {
         return text(`${e.check} Joined: ${result}`);
       }
 
-      const target = parseTarget(args, msg);
+      const target = await parseTarget(args, msg, sonic);
       if (!target) return text(`${e.warn} Mention or provide invited user number.`);
 
       const actor = resolveSender(msg);

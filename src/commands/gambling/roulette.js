@@ -19,8 +19,6 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'roulette', 60 * 1000))) return;
-
     const user = getUser(sender);
     if (!user) return text(`${e.cross} Could not load your balance.`);
 
@@ -44,6 +42,8 @@ export default {
     if (bet > user.balance) {
       return text(`${e.cross} You only have ${formatCoins(user.balance)}!`);
     }
+
+    if (!(await checkEconCooldown(sonic, msg, 'roulette', 60 * 1000))) return;
 
     const landed = random(0, 36);
     const landedColor = getColor(landed);

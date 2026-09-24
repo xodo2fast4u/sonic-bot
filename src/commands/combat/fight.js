@@ -18,7 +18,7 @@ export default {
 
   run: async ({ text, sonic, msg }) => {
     const sender = resolveSender(msg, sonic);
-    const target = getTarget(msg, sonic);
+    const target = await getTarget(msg, sonic);
 
     if (!target) {
       return text(

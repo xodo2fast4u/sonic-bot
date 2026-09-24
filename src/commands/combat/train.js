@@ -76,10 +76,6 @@ Choose a stat to train:
       );
     }
 
-    if (!(await checkEconCooldown(sonic, msg, 'train', COOLDOWN.TRAIN))) {
-      return;
-    }
-
     const currentStatVal = char[targetStat];
     const { cost, gain } = calculateTraining(currentStatVal, trainingAmount);
 
@@ -87,6 +83,10 @@ Choose a stat to train:
       return text(
         `${e.cross} Not enough coins! You need *${formatCoins(cost)}* coins to train but have *${formatCoins(user.balance)}*.`,
       );
+    }
+
+    if (!(await checkEconCooldown(sonic, msg, 'train', COOLDOWN.TRAIN))) {
+      return;
     }
 
     addCoins(sender, -cost);

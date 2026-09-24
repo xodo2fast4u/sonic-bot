@@ -33,7 +33,8 @@ export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false }
   if (admin) {
     const isAdmin = adminIds.some(
       (/** @type {string} */ id) =>
-        areJidsSameUser(id, sender) || jid.fromUser(id) === jid.fromUser(sender),
+        (typeof sender === 'string' && areJidsSameUser(id, sender)) ||
+        jid.fromUser(id) === jid.fromUser(sender),
     );
 
     if (!isAdmin) {
@@ -45,7 +46,8 @@ export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false }
   if (botAdmin) {
     const isBotAdmin = adminIds.some(
       (/** @type {string} */ id) =>
-        areJidsSameUser(id, botJid) || jid.fromUser(id) === jid.fromUser(botJid),
+        (typeof botJid === 'string' && areJidsSameUser(id, botJid)) ||
+        jid.fromUser(id) === jid.fromUser(botJid),
     );
 
     if (!isBotAdmin) {
@@ -62,7 +64,7 @@ export const checkPerms = async (sonic, msg, { admin = false, botAdmin = false }
  * @param {any} msg
  */
 export const requireTarget = async (sonic, msg) => {
-  const target = getTarget(msg);
+  const target = await getTarget(msg, sonic);
   if (!target) {
     await send.text(sonic, msg, `${e.cross} Mention or reply to a user!`);
     return null;

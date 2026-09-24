@@ -34,10 +34,10 @@ export default {
   cmd: ['mode'],
   ownerOnly: true,
   desc: 'View or change Sonic operating mode',
-  run: async ({ text, msg }, args) => {
+  run: async ({ text, sonic, msg }, args) => {
     const prefix = config.prefix;
     const chatJid = msg?.key?.remoteJid;
-    const sender = resolveSender(msg);
+    const sender = resolveSender(msg, sonic);
     const sub = (args[0] || '').toLowerCase();
     const detail = (args[1] || '').toLowerCase();
 
@@ -51,7 +51,7 @@ export default {
       return;
     }
 
-    if (!isOwner(sender)) {
+    if (!isOwner(sender, sonic, msg)) {
       await text(`${e.admin} Only the bot owner can change operating mode.`);
       return;
     }

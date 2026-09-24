@@ -54,11 +54,10 @@ export default {
 
     removeCoins(sender, bet);
 
-    const rand = Math.random();
-    let crashPoint = 1.0;
-    if (rand > 0.08) {
-      crashPoint = parseFloat((1.0 + Math.pow(Math.random() * 3, 2.2)).toFixed(2));
-    }
+    const instantCrash = Math.random() < 0.08;
+    const crashPoint = instantCrash
+      ? 1.0
+      : parseFloat((1.0 + Math.pow(Math.random(), 1.7) * 30).toFixed(2));
 
     const gameSession = {
       chatJid,
@@ -111,9 +110,8 @@ export default {
         return;
       }
 
-      const step =
-        session.currentMultiplier < 2.0 ? 0.2 : session.currentMultiplier < 5.0 ? 0.4 : 0.8;
-      const nextMultiplier = parseFloat((session.currentMultiplier + step).toFixed(2));
+      const growthRate = 1.05 + Math.random() * 0.35;
+      const nextMultiplier = parseFloat((session.currentMultiplier * growthRate).toFixed(2));
 
       if (nextMultiplier >= session.crashPoint) {
         session.status = 'crashed';

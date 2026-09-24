@@ -101,6 +101,30 @@ describe('End-to-End Command Flows', () => {
       expect(user.totalEarned).toBeGreaterThan(0);
     });
 
+    test('should reply to balance from a LID-based group message', async () => {
+      const userId = '9999999999@s.whatsapp.net';
+      addCoins(userId, 100);
+
+      const groupSonic = {
+        ...mockSonic,
+        user: {
+          ...mockSonic.user,
+          lid: '99887766554433@lid',
+        },
+      };
+      const balanceMsg = testUtils.createMockMessage({
+        key: {
+          remoteJid: '123456789-987654@g.us',
+          participant: '99887766554433@lid',
+        },
+        message: { conversation: commandText('balance') },
+      });
+
+      await messageRouter.processMessage(groupSonic, balanceMsg);
+
+      expect(sentText(groupSonic)).toContain('Your Balance');
+    });
+
     test('should handle transfer flow', async () => {
       const suffix = Date.now().toString().slice(-6);
       const fromUser = `77${suffix}@s.whatsapp.net`;

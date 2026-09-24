@@ -13,7 +13,7 @@ export default {
 
     if (!(await checkEconCooldown(sonic, msg, 'rob', 5 * 60 * 1000))) return;
 
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
     if (!target) {
       return text(`${e.cross} Tag someone to rob!\nExample: !rob @user`);
     }

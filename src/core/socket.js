@@ -33,30 +33,30 @@ let currentSocket = null;
 const baileysLogger = {
   level: 'trace',
   /** @param {unknown} obj @param {string} [msg] */
-  trace: (obj, msg) => logger.trace(msg ?? obj),
+  trace: (obj, msg) => logger.trace(obj, msg),
   /** @param {unknown} obj @param {string} [msg] */
-  debug: (obj, msg) => logger.debug(msg ?? obj),
+  debug: (obj, msg) => logger.debug(obj, msg),
   /** @param {unknown} obj @param {string} [msg] */
-  info: (obj, msg) => logger.info(msg ?? obj),
+  info: (obj, msg) => logger.info(obj, msg),
   /** @param {unknown} obj @param {string} [msg] */
-  warn: (obj, msg) => logger.warn(msg ?? obj),
+  warn: (obj, msg) => logger.warn(obj, msg),
   /** @param {unknown} obj @param {string} [msg] */
-  error: (obj, msg) => logger.error(msg ?? obj),
+  error: (obj, msg) => logger.error(obj, msg),
   /** @param {Record<string, unknown>} opts */
   child: (opts) => {
     const childLogger = logger.child(opts);
     return {
       level: 'trace',
       /** @param {unknown} obj @param {string} [msg] */
-      trace: (obj, msg) => childLogger.trace(msg ?? obj),
+      trace: (obj, msg) => childLogger.trace(obj, msg),
       /** @param {unknown} obj @param {string} [msg] */
-      debug: (obj, msg) => childLogger.debug(msg ?? obj),
+      debug: (obj, msg) => childLogger.debug(obj, msg),
       /** @param {unknown} obj @param {string} [msg] */
-      info: (obj, msg) => childLogger.info(msg ?? obj),
+      info: (obj, msg) => childLogger.info(obj, msg),
       /** @param {unknown} obj @param {string} [msg] */
-      warn: (obj, msg) => childLogger.warn(msg ?? obj),
+      warn: (obj, msg) => childLogger.warn(obj, msg),
       /** @param {unknown} obj @param {string} [msg] */
-      error: (obj, msg) => childLogger.error(msg ?? obj),
+      error: (obj, msg) => childLogger.error(obj, msg),
       /** @param {Record<string, unknown>} childOpts */
       child: (childOpts) => baileysLogger.child({ ...opts, ...childOpts }),
     };
@@ -84,8 +84,8 @@ export const startSocket = async () => {
     keepAliveIntervalMs: 25000,
     logger: baileysLogger,
     defaultQueryTimeoutMs: 45000,
-    retryRequestDelayMs: 250,
-    maxMsgRetryCount: 10,
+    retryRequestDelayMs: 150,
+    maxMsgRetryCount: 1,
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, baileysLogger),

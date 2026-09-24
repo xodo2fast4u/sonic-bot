@@ -16,8 +16,6 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'higherlower', 60 * 1000))) return;
-
     const user = getUser(sender);
     if (!user) return text(`${e.cross} Could not load your balance.`);
 
@@ -37,6 +35,8 @@ Example: !higherlower higher 100`);
     if (bet > user.balance) {
       return text(`${e.cross} You only have ${formatCoins(user.balance)}!`);
     }
+
+    if (!(await checkEconCooldown(sonic, msg, 'higherlower', 60 * 1000))) return;
 
     const firstCard = drawCard();
     const nextCard = drawCard();

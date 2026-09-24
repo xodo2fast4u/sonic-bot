@@ -158,7 +158,8 @@ export class MessageRouter extends EventEmitter {
 
   /** @param {import('../../types/index.js').WhatsAppMessage} msg @param {any} [sonic] */
   resolveSender(msg, sonic) {
-    return jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
+    const sender = jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
+    return typeof sender === 'string' ? sender : '';
   }
 
   /** @param {any} sonic @param {import('../../types/index.js').WhatsAppMessage} msg */

@@ -24,6 +24,18 @@ const userDigitsFromJid = (jidStr) => {
   return (jidStr.split('@').shift() ?? '').replace(/[^0-9]/g, '') || '';
 };
 
+/** @param {any} value @returns {string} */
+const stringJidFromValue = (value) => {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+
+  for (const key of ['jid', 'id', 'phoneNumber']) {
+    if (typeof value[key] === 'string') return value[key];
+  }
+
+  return '';
+};
+
 export const jid = {
   /** @param {any} rawJid */
   decode: (rawJid) => jidDecode(rawJid),
@@ -67,30 +79,28 @@ export const jid = {
   getSender: (msg, sonic) => {
     const key = /** @type {any} */ (msg.key || {});
 
-    let candidate = key.remoteJid;
+    if (key.fromMe) {
+      const ownJid = stringJidFromValue(sonic?.user?.id);
+      if (ownJid) return ownJid;
+    }
+
+    let candidate = stringJidFromValue(key.remoteJid);
     if (typeof key.remoteJid === 'string' && isJidGroup(key.remoteJid)) {
-      candidate = key.participantAlt || key.participant || key.remoteJid;
+      candidate = stringJidFromValue(key.participantAlt || key.participant || key.remoteJid);
       if (typeof key.participant === 'string' && isLidUser(key.participant) && key.participantAlt) {
-        candidate = key.participantAlt;
+        candidate = stringJidFromValue(key.participantAlt);
+      } else if (
+        typeof key.participant === 'string' &&
+        isLidUser(key.participant) &&
+        userDigitsFromJid(key.participant) === userDigitsFromJid(sonic?.user?.lid)
+      ) {
+        candidate = stringJidFromValue(sonic?.user?.id);
       }
     } else if (typeof key.remoteJid === 'string' && isLidUser(key.remoteJid) && key.remoteJidAlt) {
-      candidate = key.remoteJidAlt;
+      candidate = stringJidFromValue(key.remoteJidAlt);
     }
 
-    if (
-      typeof candidate === 'string' &&
-      isLidUser(candidate) &&
-      sonic?.signalRepository?.lidMapping?.getPNForLID
-    ) {
-      try {
-        const cachedPn = sonic.signalRepository.lidMapping.getPNForLID(candidate);
-        if (cachedPn) return cachedPn;
-      } catch (e) {
-        void e;
-      }
-    }
-
-    return typeof candidate === 'string' ? candidate : '';
+    return candidate;
   },
 
   /** @param {any} participant */
@@ -129,13 +139,51 @@ export const getText = (msg) => {
  */
 
 /**
+ * Resolve a LID JID to its real phone number JID by looking it up in the
+ * group's participant list. WhatsApp does not send a PN alongside a plain
+ * @mention the way it does for a quoted participant (quotedParticipantAlt),
+ * so a mentioned LID can only be resolved against cached group metadata.
+ * @param {any} lidJid
+ * @param {any} sonic
+ * @param {any} msg
+ */
+const resolveLidAgainstGroup = async (lidJid, sonic, msg) => {
+  if (!sonic || typeof sonic.groupMetadata !== 'function') return lidJid;
+
+  const groupJid = msg?.key?.remoteJid;
+  if (!groupJid || !isJidGroup(groupJid)) return lidJid;
+
+  try {
+    const metadata = await sonic.groupMetadata(groupJid);
+    const participant = metadata?.participants?.find(
+      (/** @type {any} */ p) =>
+        stringJidFromValue(p.id) === lidJid || stringJidFromValue(p.lid) === lidJid,
+    );
+
+    const resolved =
+      participant?.phoneNumber ||
+      participant?.jid ||
+      (isPnUser(stringJidFromValue(participant?.id)) ? participant.id : undefined);
+    if (resolved && typeof resolved === 'string' && !isLidUser(resolved)) {
+      return resolved;
+    }
+  } catch {
+    return lidJid;
+  }
+
+  return lidJid;
+};
+
+/**
  * Extract the target JID for an interactive message: the mentioned user or the sender
- * of the quoted message.
+ * of the quoted message. Pass sonic so a mentioned LID can be resolved to a real
+ * phone number JID via the group's participant list, otherwise a mention in an
+ * LID addressed group will return the LID instead of the user's number.
  * @param {any} msg
  * @param {any} [sonic]
  */
-export const getTarget = (msg, sonic) => {
-  const m = extractMessageContent(msg.message);
+export const getTarget = async (msg, sonic) => {
+  const m = extractMessageContent(msg?.message);
   const ctx = /** @type {IContextInfo|any} */ (m?.extendedTextMessage?.contextInfo);
 
   let target = null;
@@ -153,13 +201,8 @@ export const getTarget = (msg, sonic) => {
   if (target && isLidUser(target)) {
     if (ctx?.quotedParticipantAlt) {
       target = ctx.quotedParticipantAlt;
-    } else if (sonic?.signalRepository?.lidMapping?.getPNForLID) {
-      try {
-        const cachedPn = sonic.signalRepository.lidMapping.getPNForLID(target);
-        if (cachedPn) target = cachedPn;
-      } catch (e) {
-        void e;
-      }
+    } else {
+      target = await resolveLidAgainstGroup(target, sonic, msg);
     }
   }
 
@@ -181,34 +224,40 @@ export const isOwner = (userJid, sonic, msg) => {
     .map((num) => num.replace(/[^0-9]/g, ''))
     .filter(Boolean);
 
-  if (!userJid) return false;
+  const candidates = new Set();
 
-  let userNum = userDigitsFromJid(userJid);
+  if (userJid) {
+    candidates.add(userDigitsFromJid(userJid));
+    candidates.add(stringJidFromValue(userJid));
+  }
 
   if (msg?.key) {
-    if (msg.key.participantAlt) {
-      const altNum = userDigitsFromJid(msg.key.participantAlt);
-      if (ownerNumbers.includes(altNum)) return true;
+    const { participant, participantAlt, remoteJid, remoteJidAlt } = msg.key;
+    if (participant) {
+      candidates.add(userDigitsFromJid(participant));
+      candidates.add(stringJidFromValue(participant));
     }
-    if (msg.key.remoteJidAlt) {
-      const altNum = userDigitsFromJid(msg.key.remoteJidAlt);
-      if (ownerNumbers.includes(altNum)) return true;
+    if (participantAlt) {
+      candidates.add(userDigitsFromJid(participantAlt));
+      candidates.add(stringJidFromValue(participantAlt));
     }
-  }
-
-  if (isLidUser(userJid) && sonic?.signalRepository?.lidMapping?.getPNForLID) {
-    try {
-      const pnJid = sonic.signalRepository.lidMapping.getPNForLID(userJid);
-      if (pnJid) {
-        const pnNum = userDigitsFromJid(pnJid);
-        if (ownerNumbers.includes(pnNum)) return true;
-      }
-    } catch (e) {
-      void e;
+    if (remoteJid) {
+      candidates.add(userDigitsFromJid(remoteJid));
+      candidates.add(stringJidFromValue(remoteJid));
+    }
+    if (remoteJidAlt) {
+      candidates.add(userDigitsFromJid(remoteJidAlt));
+      candidates.add(stringJidFromValue(remoteJidAlt));
     }
   }
 
-  return ownerNumbers.includes(userNum);
+  const ownJids = [sonic?.user?.id, sonic?.user?.lid].map(stringJidFromValue).filter(Boolean);
+  for (const candidate of candidates) {
+    if (ownJids.includes(candidate)) return true;
+    if (ownerNumbers.includes(candidate)) return true;
+  }
+
+  return false;
 };
 
 /**
@@ -219,7 +268,13 @@ export const isOwner = (userJid, sonic, msg) => {
  * @param {any} [sonic]
  */
 export const resolveSender = (msg, sonic) => {
-  const sender = jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
+  let sender = jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
+
+  if (msg.key.fromMe && jid.isGroup(sender) && !sonic?.user?.id) {
+    const owner = getOwner();
+    if (owner) sender = jid.toUser(owner);
+  }
+
   return typeof sender === 'string' ? sender : '';
 };
 

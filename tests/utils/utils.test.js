@@ -101,7 +101,7 @@ describe('Utils', () => {
   });
 
   describe('target extraction', () => {
-    test('should extract mentioned user', () => {
+    test('should extract mentioned user', async () => {
       const msg = {
         message: {
           extendedTextMessage: {
@@ -112,11 +112,38 @@ describe('Utils', () => {
         },
       };
 
-      const result = getTarget(msg);
+      const result = await getTarget(msg);
       expect(result).toBe('1234567890@s.whatsapp.net');
     });
 
-    test('should extract quoted participant', () => {
+    test('should resolve a mentioned LID from PN and LID participant fields', async () => {
+      const msg = {
+        key: {
+          remoteJid: '123456789-987654@g.us',
+        },
+        message: {
+          extendedTextMessage: {
+            contextInfo: {
+              mentionedJid: ['99887766554433@lid'],
+            },
+          },
+        },
+      };
+      const sonic = {
+        groupMetadata: jest.fn(async () => ({
+          participants: [
+            {
+              id: '1234567890@s.whatsapp.net',
+              lid: '99887766554433@lid',
+            },
+          ],
+        })),
+      };
+
+      await expect(getTarget(msg, sonic)).resolves.toBe('1234567890@s.whatsapp.net');
+    });
+
+    test('should extract quoted participant', async () => {
       const msg = {
         message: {
           extendedTextMessage: {
@@ -127,18 +154,18 @@ describe('Utils', () => {
         },
       };
 
-      const result = getTarget(msg);
+      const result = await getTarget(msg);
       expect(result).toBe('1234567890@s.whatsapp.net');
     });
 
-    test('should return null for no target', () => {
+    test('should return null for no target', async () => {
       const msg = {
         message: {
           conversation: 'No target',
         },
       };
 
-      const result = getTarget(msg);
+      const result = await getTarget(msg);
       expect(result).toBeNull();
     });
   });
@@ -160,6 +187,17 @@ describe('Utils', () => {
     test('should identify non-owner correctly', () => {
       const result = isOwner('0987654321@s.whatsapp.net');
       expect(result).toBe(false);
+    });
+
+    test('should identify owner via participantAlt in group chats', () => {
+      const groupMsg = {
+        key: {
+          remoteJid: '123456789-987654@g.us',
+          participant: '99887766554433@lid',
+          participantAlt: '1234567890@s.whatsapp.net',
+        },
+      };
+      expect(isOwner('99887766554433@lid', null, groupMsg)).toBe(true);
     });
 
     test('should handle invalid JID', () => {
@@ -190,6 +228,53 @@ describe('Utils', () => {
 
       const result = resolveSender(msg);
       expect(result).toBe('1234567890@s.whatsapp.net');
+    });
+
+    test('should resolve self-authored group messages to the socket user', () => {
+      const msg = {
+        key: {
+          fromMe: true,
+          remoteJid: '123456789-987654@g.us',
+        },
+      };
+
+      const result = resolveSender(msg, {
+        user: { id: '1234567890:3@s.whatsapp.net' },
+      });
+
+      expect(result).toBe('1234567890:3@s.whatsapp.net');
+      expect(isOwner(result)).toBe(true);
+    });
+
+    test('should resolve self-authored groups to the configured owner without a socket', () => {
+      const msg = {
+        key: {
+          fromMe: true,
+          remoteJid: '123456789-987654@g.us',
+        },
+      };
+
+      const result = resolveSender(msg);
+
+      expect(result).toMatch(/^\d+@s\.whatsapp\.net$/);
+      expect(jid.isGroup(result)).toBe(false);
+    });
+
+    test('should resolve the owner LID when participantAlt is missing', () => {
+      const msg = {
+        key: {
+          remoteJid: '123456789-987654@g.us',
+          participant: '99887766554433@lid',
+        },
+      };
+      const sonic = {
+        user: {
+          id: '1234567890:3@s.whatsapp.net',
+          lid: '99887766554433@lid',
+        },
+      };
+
+      expect(resolveSender(msg, sonic)).toBe('1234567890:3@s.whatsapp.net');
     });
 
     test('should fallback to remoteJid', () => {

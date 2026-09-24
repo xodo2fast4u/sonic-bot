@@ -35,9 +35,9 @@ export default {
   cmd: ['networth'],
   desc: 'View comprehensive financial balance sheet and asset valuation',
 
-  run: async ({ text, mention, msg }) => {
+  run: async ({ text, mention, sonic, msg }) => {
     const sender = resolveSender(msg);
-    const target = getTarget(msg) || sender;
+    const target = (await getTarget(msg, sonic)) || sender;
     const isSelf = jid.fromUser(target) === jid.fromUser(sender);
 
     const user = getUser(target);

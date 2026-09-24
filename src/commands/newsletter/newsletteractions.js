@@ -5,10 +5,11 @@ import { getErrorMessage } from '../../utils/error-message.js';
 /**
  * @param {string[]} args
  * @param {import('../../../types/index.js').WhatsAppMessage} msg
+ * @param {any} sonic
  */
-const parseTarget = (args, msg) => {
+const parseTarget = async (args, msg, sonic) => {
   if (args[2]) return `${args[2].replace(/[^0-9]/g, '')}@s.whatsapp.net`;
-  return getTarget(msg);
+  return await getTarget(msg, sonic);
 };
 
 /** @type {import('../../../types/index.js').Command} */
@@ -53,7 +54,7 @@ export default {
 
       if (action === 'changeowner') {
         const jidArg = args[1];
-        const user = parseTarget(args, msg);
+        const user = await parseTarget(args, msg, sonic);
         if (!jidArg || !user)
           return text(`${e.warn} Use: newsletteractions changeowner <newsletterJid> <user>`);
         await sonic.newsletterChangeOwner(jidArg, user);
@@ -62,7 +63,7 @@ export default {
 
       if (action === 'demote') {
         const jidArg = args[1];
-        const user = parseTarget(args, msg);
+        const user = await parseTarget(args, msg, sonic);
         if (!jidArg || !user)
           return text(`${e.warn} Use: newsletteractions demote <newsletterJid> <user>`);
         await sonic.newsletterDemote(jidArg, user);

@@ -472,11 +472,12 @@ export class MiddlewarePipeline {
     const metadata = await sonic.groupMetadata(groupJid);
     const adminIds = metadata.participants
       .filter((/** @type {any} */ p) => p.admin)
-      .map((/** @type {any} */ p) => p.id);
+      .map((/** @type {any} */ p) => p.id)
+      .filter((/** @type {any} */ id) => typeof id === 'string');
 
     return adminIds.some(
       (/** @type {string} */ id) =>
-        areJidsSameUser(id, sender) ||
+        (typeof sender === 'string' && areJidsSameUser(id, sender)) ||
         areJidsSameUser(id, user) ||
         jid.fromUser(id) === jid.fromUser(sender),
     );

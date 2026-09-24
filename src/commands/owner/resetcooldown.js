@@ -11,7 +11,7 @@ export default {
 
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
     const command = args[0]?.toLowerCase();
 
     if (!target && !command) {

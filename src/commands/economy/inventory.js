@@ -10,8 +10,8 @@ export default {
   desc: 'View your inventory and battle gear',
 
   run: async (helpers) => {
-    const { text, msg } = helpers;
-    const target = getTarget(msg) || resolveSender(msg);
+    const { text, msg, sonic } = helpers;
+    const target = (await getTarget(msg, sonic)) || resolveSender(msg);
     const inventory = getInventory(target);
     const char = getCharacter(target, msg.pushName);
     const num = jid.fromUser(target);

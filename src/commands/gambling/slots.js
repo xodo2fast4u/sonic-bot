@@ -11,8 +11,6 @@ export default {
   run: async ({ text, edit, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'slots', 10 * 60 * 1000))) return;
-
     const user = getUser(sender);
     if (!user) {
       return text(`${e.cross} Could not load your balance.`);
@@ -28,12 +26,14 @@ export default {
       return text(`${e.cross} You only have ${formatCoins(user.balance)}!`);
     }
 
+    if (!(await checkEconCooldown(sonic, msg, 'slots', 10 * 60 * 1000))) return;
+
     removeCoins(sender, bet);
 
     const spinningMessage = await send.text(
       sonic,
       msg,
-      `🎰 *SONIC SLOTS*\n\n~~[ ❔ | ❔ | ❔ ]~~\n\n🎰 The reels are spinning...`,
+      `🎰 *SONIC SLOTS*\n\n~[ ❔ | ❔ | ❔ ]~\n\n🎰 The reels are spinning...`,
     );
     const slots = ['🍎', '🍊', '🍋', '🍇', '🍒', '💎', '7️⃣'];
     const result = [
@@ -68,8 +68,8 @@ export default {
       `
 🎰 *SONIC SLOTS*
 
-~~[ ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} ]~~
-~~[ ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} ]~~
+~[ ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} ]~
+~[ ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} | ${slots[random(0, slots.length - 1)]} ]~
 [ ${result.join(' | ')} ]
 
 ${status}

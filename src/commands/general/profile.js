@@ -27,9 +27,10 @@ export default {
   desc: 'View character stats, level, battle gear and profile',
 
   run: async ({ sonic, msg }) => {
-    const target = getTarget(msg) || resolveSender(msg);
+    const sender = resolveSender(msg, sonic);
+    const target = (await getTarget(msg, sonic)) || sender;
     const num = jid.fromUser(target);
-    const pushName = target === resolveSender(msg) ? msg.pushName || '' : '';
+    const pushName = target === sender ? msg.pushName || '' : '';
 
     const char = getCharacter(target, pushName);
     const user = getUser(target);

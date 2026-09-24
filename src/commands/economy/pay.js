@@ -12,9 +12,7 @@ export default {
   run: async ({ mention, text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'pay', COOLDOWN.PAY))) return;
-
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
     if (!target) {
       return text(`${e.cross} Mention or reply to someone to pay them!`);
     }
@@ -27,6 +25,8 @@ export default {
     if (!amount || amount <= 0) {
       return text(`${e.cross} Provide a valid amount! Example: !pay @user 100`);
     }
+
+    if (!(await checkEconCooldown(sonic, msg, 'pay', COOLDOWN.PAY))) return;
 
     const result = transferCoins(sender, target, amount);
 

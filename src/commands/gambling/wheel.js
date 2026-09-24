@@ -26,8 +26,6 @@ export default {
   run: async ({ text, sonic, msg }, args) => {
     const sender = resolveSender(msg);
 
-    if (!(await checkEconCooldown(sonic, msg, 'wheel', 2 * 60 * 1000))) return;
-
     const user = getUser(sender);
     if (!user) return text(`${e.cross} Could not load your balance.`);
 
@@ -39,6 +37,8 @@ export default {
     if (bet > user.balance) {
       return text(`${e.cross} You only have ${formatCoins(user.balance)} coins!`);
     }
+
+    if (!(await checkEconCooldown(sonic, msg, 'wheel', 2 * 60 * 1000))) return;
 
     const index = random(0, SEGMENTS.length - 1);
     const result = SEGMENTS[index] || SEGMENTS[0] || { label: '1.5x Win', mult: 1.5, emoji: '🟢' };

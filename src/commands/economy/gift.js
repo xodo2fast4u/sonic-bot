@@ -11,7 +11,7 @@ export default {
 
   run: async ({ text, mention, sonic, msg }, args) => {
     const sender = resolveSender(msg);
-    const target = getTarget(msg);
+    const target = await getTarget(msg, sonic);
 
     if (!target) {
       return text(`${e.cross} Mention someone to gift an item to!\nExample: !gift @user pickaxe 1`);
@@ -20,8 +20,6 @@ export default {
     if (jid.fromUser(target) === jid.fromUser(sender)) {
       return text(`${e.cross} You cannot gift items to yourself!`);
     }
-
-    if (!(await checkEconCooldown(sonic, msg, 'gift', 5 * 60 * 1000))) return;
 
     const user = getUser(sender);
     if (!user) return text(`${e.cross} Could not load your balance.`);
@@ -58,6 +56,8 @@ export default {
     if (!hasItem(sender, matched.item_name, qty)) {
       return text(`${e.cross} You only have ${matched.quantity}x of ${matched.item_name}!`);
     }
+
+    if (!(await checkEconCooldown(sonic, msg, 'gift', 5 * 60 * 1000))) return;
 
     removeItem(sender, matched.item_name, qty);
     addItem(target, matched.item_name, qty);
