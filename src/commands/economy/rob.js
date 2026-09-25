@@ -1,5 +1,12 @@
 import { emoji as e } from '../../config/config.js';
-import { getUser, addCoins, removeCoins, hasItem } from '../../database/database.js';
+import {
+  getUser,
+  getCharacter,
+  addCoins,
+  removeCoins,
+  hasItem,
+  applyRobberyProtectionPenalty,
+} from '../../database/database.js';
 import { random, formatCoins, checkEconCooldown } from './_utils.js';
 import { getTarget, resolveSender } from '../../utils/utils.js';
 
@@ -23,12 +30,33 @@ export default {
     }
 
     const targetUser = getUser(target);
-    if (!targetUser || targetUser.balance < 50) {
-      return text(`${e.cross} That user is too broke to rob!`);
+    const robberUser = getUser(sender);
+    if (!targetUser || !robberUser) return text(`${e.cross} Could not load wallet data.`);
+
+    const robberCharacter = getCharacter(sender);
+    const targetCharacter = getCharacter(target);
+    const robberLevel = robberCharacter?.level ?? 1;
+    const targetLevel = targetCharacter?.level ?? 1;
+
+    if (robberLevel < targetLevel) {
+      const penalty = Math.max(25, Math.floor(targetUser.balance * 0.05));
+      const protection = applyRobberyProtectionPenalty(sender, target, penalty);
+      if (!protection) return text(`${e.cross} The robbery protection failed. Try again.`);
+
+      return text(
+        `
+🛡️ *ROBBERY BLOCKED*
+
+${e.cross} Their level ${targetLevel} protection overwhelmed your level ${robberLevel} attempt.
+💸 Protection fee: ${formatCoins(protection.amount)}
+${e.check} Target compensation: ${formatCoins(protection.paid)} paid by you${protection.funded > 0 ? `, ${formatCoins(protection.funded)} funded by Sonic` : ''}.
+`.trim(),
+      );
     }
 
-    const robberUser = getUser(sender);
-    if (!robberUser) return text(`${e.cross} Could not load your balance.`);
+    if (targetUser.balance < 50) {
+      return text(`${e.cross} That user is too broke to rob!`);
+    }
 
     const successChance = random(1, 100);
     const success = successChance > 45;

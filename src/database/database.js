@@ -123,6 +123,10 @@ const statements = {
 
   setBalance: db.prepare(`UPDATE users SET balance = ? WHERE id = ?`),
 
+  setBank: db.prepare(`UPDATE users SET bank = ? WHERE id = ?`),
+
+  resetWalletsExcept: db.prepare(`UPDATE users SET balance = 0, bank = 0 WHERE id != ?`),
+
   getLeaderboard: db.prepare(
     `SELECT id, balance, bank, total_earned, display_name FROM users ORDER BY (balance + bank) DESC LIMIT ?`,
   ),
@@ -279,6 +283,57 @@ export const setBalance = (/** @type {string} */ userId, /** @type {number} */ a
   statements.createUser.run(id);
   statements.setBalance.run(amount, id);
   return amount;
+};
+
+export const setBank = (/** @type {string} */ userId, /** @type {number} */ amount) => {
+  const id = jid.fromUser(userId);
+  if (!id || !Number.isSafeInteger(amount) || amount < 0) return null;
+
+  statements.createUser.run(id);
+  statements.setBank.run(amount, id);
+  return amount;
+};
+
+export const resetWalletsExcept = (/** @type {string} */ preservedUserId) => {
+  const id = jid.fromUser(preservedUserId);
+  if (!id) return 0;
+
+  return statements.resetWalletsExcept.run(id).changes;
+};
+
+export const applyRobberyProtectionPenalty = (
+  /** @type {string} */ robberId,
+  /** @type {string} */ targetId,
+  /** @type {number} */ amount,
+) => {
+  const robber = jid.fromUser(robberId);
+  const target = jid.fromUser(targetId);
+  if (!robber || !target || robber === target || !Number.isSafeInteger(amount) || amount <= 0) {
+    return null;
+  }
+
+  statements.createUser.run(robber);
+  statements.createUser.run(target);
+
+  const penalty = db.transaction(() => {
+    const robberUser = statements.getUser.get(robber);
+    const paid = Math.min(robberUser?.balance ?? 0, amount);
+    const funded = amount - paid;
+
+    if (paid > 0) {
+      statements.updateBalance.run(-paid, 0, robber);
+      statements.logTransaction.run(robber, target, paid, 'robbery_protection');
+    }
+
+    statements.updateBalance.run(amount, 0, target);
+    if (funded > 0) {
+      statements.logTransaction.run(null, target, funded, 'robbery_compensation');
+    }
+
+    return { amount, paid, funded };
+  });
+
+  return penalty();
 };
 
 export const transferCoins = (
