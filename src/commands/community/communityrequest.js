@@ -1,0 +1,55 @@
+import { emoji as e } from '../../config/config.js';
+import { getTarget, jid } from '../../utils/utils.js';
+import { getErrorMessage } from '../../utils/error-message.js';
+
+/** @param {string[]} args @param {any} msg @param {any} sonic */
+const parseJids = async (args, msg, sonic) => {
+  if (args.length)
+    return args
+      .map((/** @type {string} */ num) => num.replace(/[^0-9]/g, ''))
+      .filter(Boolean)
+      .map((/** @type {string} */ num) => jid.toUser(num));
+
+  const target = await getTarget(msg, sonic);
+  return target ? [target] : [];
+};
+
+/** @type {import('../../../types/index.js').Command} */
+export default {
+  cmd: ['communityrequest'],
+  desc: 'List or manage community membership requests',
+
+  run: async ({ text, sonic, msg }, args) => {
+    const action = args[0]?.toLowerCase();
+    if (!action || !['list', 'approve', 'reject'].includes(action))
+      return text(`${e.warn} Use: communityrequest <list|approve|reject> [numbers or mention]`);
+
+    try {
+      if (action === 'list') {
+        const requests = await sonic.communityRequestParticipantsList(msg.key.remoteJid);
+        if (!requests.length) return text(`${e.check} No pending community requests.`);
+
+        return text(
+          `${e.check} Pending requests:\n${requests.map((/** @type {any} */ req) => req.jid).join('\n')}`,
+        );
+      }
+
+      const participants = await parseJids(args.slice(1), msg, sonic);
+      if (!participants.length) return text(`${e.warn} Mention or provide numbers to ${action}.`);
+
+      const results = await sonic.communityRequestParticipantsUpdate(
+        msg.key.remoteJid,
+        participants,
+        action,
+      );
+
+      await text(
+        `${e.check} Request ${action}ed:\n${results
+          .map((/** @type {any} */ res) => `${res.jid}: ${res.status}`)
+          .join('\n')}`,
+      );
+    } catch (err) {
+      await text(`${e.cross} Failed to ${action} requests. ${getErrorMessage(err) || ''}`);
+    }
+  },
+};

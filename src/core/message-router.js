@@ -6,7 +6,8 @@ import { MiddlewareContext } from '../commands/middleware-pipeline.js';
 import '../commands/command-registry.js';
 import '../commands/middleware-pipeline.js';
 import { getErrorMessage } from '../utils/error-message.js';
-import { jid, send } from '../utils/utils.js';
+import { isOwner, jid, send } from '../utils/utils.js';
+import { isUserBanned } from '../services/ban-service.js';
 
 export class MessageRouter extends EventEmitter {
   /** @param {{ commandRegistry?: any, middlewarePipeline?: any }} [options] */
@@ -89,12 +90,16 @@ export class MessageRouter extends EventEmitter {
       return;
     }
 
+    const sender = this.resolveSender(msg, sonic);
+    if (isUserBanned(sender) && !isOwner(sender, sonic, msg)) {
+      return;
+    }
+
     const command = await this.commandRegistry.get(cmdName?.toLowerCase());
     if (!command) {
       return;
     }
 
-    const sender = this.resolveSender(msg, sonic);
     const helpers = this.createHelpers(sonic, msg);
     const middlewareContext = new MiddlewareContext(helpers, args, command, sender, msg);
     middlewareContext.correlationId = correlationId;

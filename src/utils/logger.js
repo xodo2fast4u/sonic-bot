@@ -1,10 +1,12 @@
 import pino from 'pino';
 import { createRequire } from 'module';
+import { getEnvironmentProfile } from '../config/config-manager.js';
 
 const require = createRequire(import.meta.url);
 
+const logLevel = getEnvironmentProfile().logLevel;
 const fileStream = pino.destination({ dest: './sonic-logs.txt', sync: true });
-const streams = [{ level: 'trace', stream: fileStream }];
+const streams = [{ level: logLevel, stream: fileStream }];
 
 try {
   const prettyStream = require('pino-pretty')({
@@ -12,12 +14,12 @@ try {
     translateTime: 'SYS:standard',
     ignore: 'pid,hostname',
   });
-  streams.unshift({ level: 'info', stream: prettyStream });
+  streams.unshift({ level: logLevel, stream: prettyStream });
 } catch (error) {
   void error;
 }
 
-const fileLogger = pino({ level: 'trace' }, pino.multistream(streams));
+const fileLogger = pino({ level: logLevel }, pino.multistream(streams));
 
 /** @param {any} target @param {string} level @param {any} value @param {any[]} args */
 const write = (target, level, value, args) => {
@@ -45,7 +47,7 @@ const write = (target, level, value, args) => {
 
 /** @param {any} target */
 const createLogger = (target) => ({
-  level: 'trace',
+  level: logLevel,
   /** @param {any} value @param {...any} args */
   info: (value, ...args) => write(target, 'info', value, args),
   /** @param {any} value @param {...any} args */

@@ -2,12 +2,12 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   Browsers,
   makeCacheableSignalKeyStore,
-  DisconnectReason,
 } from 'baileys';
 import NodeCache from '@cacheable/node-cache';
 import readline from 'readline';
 import logger from '../utils/logger.js';
 import { ensureRuntimeInitialized, handleMessage } from '../core/handler.js';
+import { ConnectionSupervisor } from './connection-supervisor.js';
 import { useSqliteAuthState } from '../database/use-sqlite-file-auth-state.js';
 import { config, getOwner, setOwner } from '../config/config.js';
 import { getErrorMessage } from '../utils/error-message.js';
@@ -28,6 +28,13 @@ const ask = (q) =>
 
 /** @type {any|null} */
 let currentSocket = null;
+/** @type {Awaited<ReturnType<typeof useSqliteAuthState>>|null} */
+let currentAuthState = null;
+/** @type {ConnectionSupervisor|null} */
+let connectionSupervisor = null;
+let shuttingDown = false;
+/** @type {Promise<void>|null} */
+let shutdownPromise = null;
 
 /** @type {import('baileys').ILogger} */
 const baileysLogger = {
@@ -63,16 +70,25 @@ const baileysLogger = {
   },
 };
 
-export const startSocket = async () => {
+const startSocketAttempt = async () => {
+  if (shuttingDown) return;
+
   if (currentSocket) {
     currentSocket.ev.removeAllListeners();
-    currentSocket.ws.close();
+    try {
+      currentSocket.ws.close();
+    } catch (error) {
+      logger.debug('Previous socket was already closed', {
+        error: getErrorMessage(error),
+      });
+    }
     currentSocket = null;
   }
 
   await ensureRuntimeInitialized();
 
-  const { state, saveCreds } = await useSqliteAuthState(config.authDir);
+  currentAuthState ||= await useSqliteAuthState(config.authDir);
+  const { state, saveCreds } = currentAuthState;
   const { version, isLatest } = await fetchLatestBaileysVersion();
 
   baileysLogger.info(`🔌 WA v${version.join('.')} (latest: ${isLatest}), using Latest WA version`);
@@ -132,16 +148,12 @@ export const startSocket = async () => {
       if (connection === 'close') {
         const disconnectError = /** @type {any} */ (lastDisconnect?.error);
         const code = disconnectError?.output?.statusCode;
-        if (code === DisconnectReason.loggedOut) {
-          baileysLogger.error('🔴 Logged out. Delete sonic_session and restart.');
-          process.exit(1);
-        }
-        baileysLogger.info('🔄 Reconnecting');
-        startSocket();
+        connectionSupervisor?.handleDisconnect(code, disconnectError);
       }
 
       if (connection === 'open') {
         rl.close();
+        connectionSupervisor?.markOpen();
         baileysLogger.info(`🦔 ${config.botName.toUpperCase()} CONNECTED!`);
         baileysLogger.info(`Prefix: ${config.prefix}`);
         baileysLogger.info(`Owner: ${getOwner() || 'Not set'}`);
@@ -174,3 +186,77 @@ export const startSocket = async () => {
 
   return sonic;
 };
+
+const closeCurrentSocket = async () => {
+  const socket = currentSocket;
+  currentSocket = null;
+  if (!socket) return;
+
+  socket.ev.removeAllListeners();
+  const ws = socket.ws;
+  if (!ws) return;
+
+  if (ws.readyState !== 1) {
+    try {
+      ws.close();
+    } catch {
+      return;
+    }
+    return;
+  }
+
+  await new Promise((resolve) => {
+    const timeout = setTimeout(resolve, 2000);
+    timeout.unref?.();
+    ws.once('close', () => {
+      clearTimeout(timeout);
+      resolve(undefined);
+    });
+
+    try {
+      ws.close();
+    } catch {
+      clearTimeout(timeout);
+      resolve(undefined);
+    }
+  });
+};
+
+export const shutdownSocket = async () => {
+  if (shutdownPromise) return shutdownPromise;
+
+  shuttingDown = true;
+  connectionSupervisor?.shutdown();
+  rl.close();
+  shutdownPromise = closeCurrentSocket();
+  await shutdownPromise;
+  currentAuthState?.close();
+  currentAuthState = null;
+};
+
+connectionSupervisor = new ConnectionSupervisor({
+  connect: startSocketAttempt,
+  logger: baileysLogger,
+  onStop: async () => {
+    await shutdownSocket();
+    process.exit(1);
+  },
+});
+
+/** @param {'SIGINT'|'SIGTERM'} signal */
+const handleProcessSignal = (signal) => {
+  logger.info(`Received ${signal}; closing connection cleanly`);
+  void shutdownSocket()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      logger.error('Failed to close connection cleanly', {
+        error: getErrorMessage(error),
+      });
+      process.exit(1);
+    });
+};
+
+process.once('SIGINT', () => handleProcessSignal('SIGINT'));
+process.once('SIGTERM', () => handleProcessSignal('SIGTERM'));
+
+export const startSocket = () => connectionSupervisor.start();

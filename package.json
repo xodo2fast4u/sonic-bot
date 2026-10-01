@@ -1,6 +1,6 @@
 {
   "name": "sonic-bot",
-  "version": "3.6.0",
+  "version": "4.0.0",
   "description": "Sonic is a self-hosted WhatsApp community bot for group management, member engagement and admin automation with economy, mini-games and modular command tools.",
   "main": "src/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.3",
     "eslint": "^10.11.0",
     "jest": "^30.5.2",
     "jest-junit": "^17.0.0",

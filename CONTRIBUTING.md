@@ -31,7 +31,7 @@ We use automated tools to maintain consistent code:
 
 - **Prettier**: Handles code formatting automatically (`npm run format`)
 - **ESLint**: Flags unused variables and console usage (warnings, not errors)
-- **Husky**: Git hooks to run formatters before commits
+- **TypeScript**: Performs static type checking with `npm run typecheck`
 
 #### Key Practices
 
@@ -481,7 +481,7 @@ async function fetchUserData(userId) {
 5. Make your changes
 6. Run tests: `npm test`
 7. Format code: `npm run format`
-8. Type-check: `npm run type-check`
+8. Type-check: `npm run typecheck`
 9. Commit changes with a clear message explaining the intent
 10. Push to your fork: `git push origin feature/your-feature`
 11. Create pull request
@@ -508,7 +508,7 @@ npm start           # Start the bot
 npm test            # Run tests
 npm run format      # Format all files with Prettier
 npm run format:check # Check formatting without making changes
-npm run type-check  # Run TypeScript type checking
+npm run typecheck   # Run TypeScript type checking
 ```
 
 ### IDE Configuration

@@ -1,8 +1,71 @@
 import { readFileSync } from 'fs';
+import { container } from '../../core/container.js';
 import { config, emoji as e } from '../../config/config.js';
 import { format } from '../../utils/utils.js';
 
 const menuImage = readFileSync(new URL('../../assets/sonic-menu.png', import.meta.url));
+
+const SECTION_ORDER = [
+  { category: 'general', label: 'GENERAL', emoji: e.general },
+  { category: 'combat', label: 'RPG & COMBAT', emoji: e.combat },
+  { category: 'economy', label: 'ECONOMY', emoji: e.economy },
+  { category: 'gambling', label: 'GAMES', emoji: e.games },
+  { category: 'tools', label: 'TOOLS', emoji: e.tool },
+  { category: 'downloader', label: 'DOWNLOADER', emoji: e.downloader },
+  { category: 'maker', label: 'MAKER', emoji: e.maker },
+  { category: 'newsletter', label: 'NEWSLETTER', emoji: e.newsletter },
+  { category: 'business', label: 'BUSINESS', emoji: e.business },
+  { category: 'chats', label: 'CHATS', emoji: e.chats },
+  { category: 'community', label: 'COMMUNITY', emoji: e.community },
+  { category: 'group', label: 'GROUP', emoji: e.group },
+  { category: 'owner', label: 'OWNER', emoji: e.owner },
+];
+
+/** @param {any} command */
+const getPrimaryCommandName = (command) => {
+  if (!command) return null;
+
+  if (Array.isArray(command.cmd) && command.cmd.length > 0) {
+    const primary = String(command.cmd[0]).trim();
+    return primary || null;
+  }
+
+  if (typeof command.cmd === 'string' && command.cmd.trim()) {
+    return command.cmd.trim();
+  }
+
+  return null;
+};
+
+/**
+ * @param {string} categoryName
+ * @param {string} label
+ * @param {string} emoji
+ * @param {string} prefix
+ */
+const buildMenuSection = async (categoryName, label, emoji, prefix) => {
+  const registry = container.resolve('commandRegistry');
+  await registry.initialize?.();
+
+  const categoryCommands = await registry.getByCategory(categoryName);
+  const primaryNames = [];
+  const seen = new Set();
+
+  for (const command of categoryCommands.values()) {
+    const primaryName = getPrimaryCommandName(command);
+    if (!primaryName || seen.has(primaryName)) continue;
+    seen.add(primaryName);
+    primaryNames.push(primaryName);
+  }
+
+  if (primaryNames.length === 0) {
+    return '';
+  }
+
+  primaryNames.sort((a, b) => a.localeCompare(b));
+
+  return `\n${emoji} *${label}*\n${primaryNames.map((name) => `⚝ ${prefix}${name}`).join('\n')}`;
+};
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
@@ -12,60 +75,22 @@ export default {
   run: async ({ image }) => {
     const { prefix: p, botName, version } = config;
     const readMoreMarker = `\n${'\u200e'.repeat(4000)}\n`;
-    /** @param {...string} names */
-    const commands = (...names) => names.map((name) => `⚝ ${p}${name}`).join('\n');
+
+    const sections = [];
+
+    for (const section of SECTION_ORDER) {
+      const rendered = await buildMenuSection(section.category, section.label, section.emoji, p);
+      if (rendered) sections.push(rendered);
+    }
 
     const caption = `
 ${e.sonic} *${botName.toUpperCase()} BOT*
 ${e.star} Version: *${version}*
 ${e.time} Uptime: *${format.getUptime()}*
 ${e.bolt} Prefix: *${p}*${readMoreMarker}
+${sections.join('\n')}
 
-${e.info} *GENERAL*
-${commands('menu', 'ping', 'speed', 'info', 'runtime')}
-${commands('server', 'profile', 'owner', 'modestatus')}
-
-${e.rpg} *RPG & COMBAT*
-${commands('fight', 'train', 'equip', 'unequip', 'togglelevelup', 'profile')}
-
-${e.coin} *ECONOMY*
-${commands('balance', 'daily', 'weekly', 'monthly', 'yearly')}
-${commands('work', 'mine', 'fish', 'hunt', 'beg', 'rob', 'robbank', 'pay')}
-${commands('shop', 'deposit', 'withdraw', 'inventory', 'transactions')}
-${commands('leaderboard', 'sell', 'use', 'interest', 'gift', 'heist')}
-${commands('bounty', 'invest', 'networth', 'vault', 'career')}
-
-${e.gambling} *GAMES*
-${commands('slots', 'coinflip', 'dice', 'roulette', 'blackjack', 'crash')}
-${commands('higherlower', 'poker', 'baccarat', 'mines', 'plinko', 'derby')}
-${commands('keno', 'wheel', 'limbo', 'war', 'cups', 'cashout')}
-
-${e.tool} *TOOLS*
-${commands('calculate', 'weather', 'search', 'bible', 'decode', 'define')}
-${commands('directions', 'encode', 'image', 'name', 'songrecommendation')}
-${commands('wiki', 'wallpaper')}
-
-${e.download} *DOWNLOADER*
-${commands('play')}
-
-${e.maker} *MAKER*
-${commands('sticker', 'brat', 'hd')}
-
-${e.ring} *NEWSLETTER*
-${commands('newsletteractions', 'newslettermanage')}
-
-${e.group} *GROUP*
-${commands('kick', 'add', 'promote', 'demote', 'mute', 'unmute')}
-${commands('ginfo', 'admins', 'link', 'revoke', 'tagall', 'leave')}
-${commands('lock', 'unlock', 'setname', 'setdesc', 'ephemeral', 'join')}
-${commands('groupcreate', 'grouplist', 'groupmode', 'groupv4')}
-${commands('groupinviteinfo', 'grouprequest')}
-
-${e.admin} *OWNER*
-${commands('mode', 'welcomegoodbyeoff', 'welcomegoodbyeon')}
-${commands('promoterdemoteoff', 'promoterdemoteon', 'participantsoff', 'participantson')}
-
-${e.rocket} *Gotta go fast!* ${e.sonic}`.trim();
+${e.rocket} *Gotta go fast!*`.trim();
 
     await image(menuImage, caption);
   },

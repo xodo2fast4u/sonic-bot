@@ -26,6 +26,7 @@ module.exports = {
       statements: 85,
     },
   },
+  setupFiles: ['./tests/setup-env.cjs'],
   setupFilesAfterEnv: ['./tests/setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

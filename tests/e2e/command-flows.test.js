@@ -5,6 +5,7 @@ import { SessionManager } from '../../src/cache/session-manager.js';
 import { container } from '../../src/core/container.js';
 import { config as botConfig, setOwner } from '../../src/config/config.js';
 import { addCoins, addItem, getInventory, getUser } from '../../src/database/database.js';
+import { setUserBanned } from '../../src/services/ban-service.js';
 
 const commandText = (command) => `${botConfig.prefix}${command}`;
 
@@ -61,6 +62,7 @@ describe('End-to-End Command Flows', () => {
   });
 
   afterEach(async () => {
+    setUserBanned('2222222222', false);
     if (cache) {
       await cache.clear();
       cache.stopCleanupTimer();
@@ -274,6 +276,44 @@ describe('End-to-End Command Flows', () => {
 
       const ownerResponse = mockSonic.sendMessage.mock.calls.at(-1)?.[1]?.text || '';
       expect(ownerResponse).not.toContain('only available to the bot owner');
+    });
+
+    test('should silently ignore banned users until an owner unbans them', async () => {
+      const bannedUser = '2222222222@s.whatsapp.net';
+      setUserBanned(bannedUser, false);
+
+      const banMsg = testUtils.createMockMessage({
+        key: { participant: '1234567890@s.whatsapp.net' },
+        message: {
+          conversation: commandText('ban @2222222222'),
+          extendedTextMessage: {
+            contextInfo: { mentionedJid: [bannedUser] },
+          },
+        },
+      });
+      await messageRouter.processMessage(mockSonic, banMsg);
+      expect(sentText(mockSonic)).toContain('is now banned from using Sonic');
+
+      const callsAfterBan = mockSonic.sendMessage.mock.calls.length;
+      const blockedMsg = testUtils.createMockMessage({
+        key: { participant: bannedUser },
+        message: { conversation: commandText('balance') },
+      });
+      await messageRouter.processMessage(mockSonic, blockedMsg);
+      expect(mockSonic.sendMessage).toHaveBeenCalledTimes(callsAfterBan);
+
+      await cooldownManager.reset();
+      const unbanMsg = testUtils.createMockMessage({
+        key: { participant: '1234567890@s.whatsapp.net' },
+        message: { conversation: commandText('unban 2222222222') },
+      });
+      await messageRouter.processMessage(mockSonic, unbanMsg);
+      expect(sentText(mockSonic)).toContain('can use Sonic again');
+
+      await cooldownManager.reset();
+      await messageRouter.processMessage(mockSonic, blockedMsg);
+      expect(mockSonic.sendMessage).toHaveBeenCalledTimes(callsAfterBan + 2);
+      expect(sentText(mockSonic)).toContain('Your Balance');
     });
 
     test('should handle admin permissions in groups', async () => {

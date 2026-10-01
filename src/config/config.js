@@ -46,7 +46,7 @@ export const config = Object.freeze({
   prefix: loadEnvValue('SONIC_PREFIX') || '!',
   ownerNumber: loadEnvValue('OWNER_NUMBER') || '',
   botName: 'Sonic',
-  version: '3.6.0',
+  version: '4.0.0',
   authDir: 'sonic_session.db',
 });
 
@@ -61,6 +61,7 @@ export const emoji = Object.freeze({
   warn: '⚠️',
   info: 'ℹ️',
   menu: '📋',
+  general: '📘',
   group: '👥',
   admin: '👑',
   user: '👤',
@@ -73,6 +74,15 @@ export const emoji = Object.freeze({
   download: '⬇️',
   rpg: '⚔️',
   gambling: '🎰',
+  business: '🏢',
+  chats: '💬',
+  community: '🌐',
+  newsletter: '📣',
+  combat: '⚔️',
+  economy: '💰',
+  games: '🎮',
+  downloader: '📥',
+  owner: '🛡️',
 });
 
 let ownerNumber = config.ownerNumber;

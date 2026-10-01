@@ -30,7 +30,7 @@ const CONFIG_SCHEMA = {
     type: 'string',
     required: true,
     pattern: /^\d+\.\d+\.\d+$/,
-    default: '3.6.0',
+    default: '4.0.0',
   },
   authDir: {
     type: 'string',
@@ -84,13 +84,13 @@ export const CONSTANTS = Object.freeze({
 const ENVIRONMENT_CONFIGS = {
   development: {
     logLevel: 'debug',
-    dbPath: './data/sonic_dev.db',
+    dbPath: './src/data/sonic_dev.db',
     enableDebugCommands: true,
     enableHotReload: true,
   },
   production: {
     logLevel: 'info',
-    dbPath: './data/sonic.db',
+    dbPath: './src/data/sonic_database.db',
     enableDebugCommands: false,
     enableHotReload: false,
   },
@@ -100,6 +100,20 @@ const ENVIRONMENT_CONFIGS = {
     enableDebugCommands: true,
     enableHotReload: false,
   },
+};
+
+/**
+ * @param {string} [environment]
+ */
+export const getEnvironmentProfile = (environment = process.env['NODE_ENV'] || 'production') => {
+  if (!(environment in ENVIRONMENT_CONFIGS)) {
+    throw new Error(`Invalid NODE_ENV: ${environment}`);
+  }
+
+  return {
+    environment,
+    ...ENVIRONMENT_CONFIGS[/** @type {keyof typeof ENVIRONMENT_CONFIGS} */ (environment)],
+  };
 };
 
 class ConfigValidator {
@@ -184,14 +198,13 @@ export class ConfigManager {
     }
 
     const environment = validation.config['environment'];
-    const envKey =
-      typeof environment === 'string' && environment in ENVIRONMENT_CONFIGS
-        ? /** @type {keyof typeof ENVIRONMENT_CONFIGS} */ (environment)
-        : 'development';
+    const profile = getEnvironmentProfile(
+      typeof environment === 'string' ? environment : undefined,
+    );
 
     this.config = Object.freeze({
       ...validation.config,
-      ...ENVIRONMENT_CONFIGS[envKey],
+      ...profile,
       constants: CONSTANTS,
     });
 

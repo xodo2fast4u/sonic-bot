@@ -143,6 +143,7 @@ export interface Command {
   cmd: string[];
   desc: string;
   run: (helpers: CommandHelpers, args: string[]) => Promise<void>;
+  debug?: boolean;
   category?: string;
   ownerOnly?: boolean;
   adminOnly?: boolean;

@@ -48,7 +48,7 @@ const J = {
 /** @param {any} db */
 function applyMigrations(db) {
   db.pragma('journal_mode = WAL');
-  db.pragma('synchronous = NORMAL');
+  db.pragma('synchronous = FULL');
   db.pragma('foreign_keys = ON');
   db.pragma('cache_size = -64000');
   db.pragma('temp_store = MEMORY');
@@ -213,6 +213,13 @@ export function useSqliteAuthState(
     /** @type {{accountId?:string,accountLabel?:string|null}} */ (opts);
 
   const db = openDatabase(dbPath, { enableForeignKeyConstraints: true });
+  let databaseClosed = false;
+  const closeDatabase = () => {
+    if (databaseClosed) return;
+    databaseClosed = true;
+    db.close();
+  };
+
   applyMigrations(db);
   const st = prepareStatements(db);
 
@@ -292,6 +299,8 @@ export function useSqliteAuthState(
         st.upsertCreds.run(accountId, J.to(creds));
       })();
     },
+
+    close: closeDatabase,
 
     // Admin utilities for account management and debugging
     admin: {

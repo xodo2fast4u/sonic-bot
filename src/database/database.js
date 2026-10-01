@@ -1,6 +1,5 @@
-import { existsSync, mkdirSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { mkdirSync } from 'fs';
+import { dirname, resolve } from 'path';
 import { jid } from '../utils/utils.js';
 import logger from '../utils/logger.js';
 import {
@@ -8,13 +7,16 @@ import {
   getXpRequiredForNextLevel,
   resolveCharacterWithGodmode,
 } from '../services/rpg-service.js';
+import { getEnvironmentProfile } from '../config/config-manager.js';
 import { openDatabase } from './open-database.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '..', 'data');
-const DB_PATH = join(DATA_DIR, 'sonic_database.db');
+const configuredDbPath = getEnvironmentProfile().dbPath;
+const DB_PATH =
+  configuredDbPath === ':memory:' ? configuredDbPath : resolve(process.cwd(), configuredDbPath);
 
-if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+if (DB_PATH !== ':memory:') mkdirSync(dirname(DB_PATH), { recursive: true });
+
+export const databasePath = DB_PATH;
 
 const db = openDatabase(DB_PATH);
 db.pragma('journal_mode = WAL');
@@ -27,8 +29,8 @@ db.pragma('journal_mode = WAL');
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    balance INTEGER DEFAULT 0,
-    bank INTEGER DEFAULT 0,
+    balance INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0),
+    bank INTEGER NOT NULL DEFAULT 0 CHECK (bank >= 0),
     total_earned INTEGER DEFAULT 0,
     display_name TEXT,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
@@ -110,13 +112,34 @@ db.exec(`
   INSERT OR IGNORE INTO bot_settings (key, value) VALUES ('operating_mode', 'public');
 `);
 
+db.exec(`
+  UPDATE users
+  SET balance = MAX(COALESCE(balance, 0), 0),
+      bank = MAX(COALESCE(bank, 0), 0)
+  WHERE balance < 0 OR bank < 0 OR balance IS NULL OR bank IS NULL;
+
+  CREATE TRIGGER IF NOT EXISTS users_nonnegative_wallet_insert
+  BEFORE INSERT ON users
+  WHEN NEW.balance < 0 OR NEW.bank < 0
+  BEGIN
+    SELECT RAISE(ABORT, 'Wallet balances cannot be negative');
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS users_nonnegative_wallet_update
+  BEFORE UPDATE OF balance, bank ON users
+  WHEN NEW.balance < 0 OR NEW.bank < 0
+  BEGIN
+    SELECT RAISE(ABORT, 'Wallet balances cannot be negative');
+  END;
+`);
+
 const statements = {
   getUser: db.prepare(`SELECT * FROM users WHERE id = ?`),
 
   createUser: db.prepare(`INSERT OR IGNORE INTO users (id) VALUES (?)`),
 
   updateBalance: db.prepare(
-    `UPDATE users SET balance = balance + ?, total_earned = total_earned + MAX(0, ?) WHERE id = ?`,
+    `UPDATE users SET balance = MAX(0, balance + ?), total_earned = total_earned + MAX(0, ?) WHERE id = ?`,
   ),
 
   updateDisplayName: db.prepare(`UPDATE users SET display_name = ? WHERE id = ?`),
@@ -154,8 +177,13 @@ const statements = {
   ),
   deleteEmptyItems: db.prepare(`DELETE FROM inventory WHERE quantity <= 0`),
 
-  depositFunds: db.prepare(`UPDATE users SET balance = balance - ?, bank = bank + ? WHERE id = ?`),
-  withdrawFunds: db.prepare(`UPDATE users SET balance = balance + ?, bank = bank - ? WHERE id = ?`),
+  transferDebit: db.prepare(`UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?`),
+  depositFunds: db.prepare(
+    `UPDATE users SET balance = balance - ?, bank = bank + ? WHERE id = ? AND balance >= ?`,
+  ),
+  withdrawFunds: db.prepare(
+    `UPDATE users SET balance = balance + ?, bank = bank - ? WHERE id = ? AND bank >= ?`,
+  ),
 
   getCharacter: db.prepare(`SELECT * FROM characters WHERE user_id = ?`),
 
@@ -248,7 +276,7 @@ export const updateDisplayName = (/** @type {string} */ userId, displayName = ''
 
 export const addCoins = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
-  if (!id) return null;
+  if (!id || !Number.isSafeInteger(amount)) return null;
 
   statements.createUser.run(id);
   statements.updateBalance.run(amount, amount, id);
@@ -265,6 +293,7 @@ export const addCoins = (/** @type {string} */ userId, /** @type {number} */ amo
 
 export const removeCoins = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
+  if (!id || !Number.isSafeInteger(amount)) return false;
   const user = getUser(id);
 
   if (!user || user.balance < amount) return false;
@@ -280,6 +309,7 @@ export const removeCoins = (/** @type {string} */ userId, /** @type {number} */ 
 
 export const setBalance = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
+  if (!id || !Number.isSafeInteger(amount) || amount < 0) return null;
   statements.createUser.run(id);
   statements.setBalance.run(amount, id);
   return amount;
@@ -343,6 +373,9 @@ export const transferCoins = (
 ) => {
   const from = jid.fromUser(fromId);
   const to = jid.fromUser(toId);
+  if (!from || !to || !Number.isSafeInteger(amount) || amount <= 0) {
+    return { success: false, reason: 'invalid_amount_or_user' };
+  }
 
   const fromUser = getUser(from);
   if (!fromUser || fromUser.balance < amount) {
@@ -350,13 +383,16 @@ export const transferCoins = (
   }
 
   const transfer = db.transaction(() => {
-    statements.updateBalance.run(-amount, 0, from);
+    const debit = statements.transferDebit.run(amount, from, amount);
+    if (debit.changes === 0) return false;
+
     statements.createUser.run(to);
     statements.updateBalance.run(amount, 0, to);
     statements.logTransaction.run(from, to, amount, 'transfer');
+    return true;
   });
 
-  transfer();
+  if (!transfer()) return { success: false, reason: 'insufficient' };
 
   const fromUpdated = getUser(from);
   const toUpdated = getUser(to);
@@ -439,11 +475,15 @@ export const hasItem = (
 
 export const deposit = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
+  if (!id || !Number.isSafeInteger(amount) || amount < 0) {
+    return { success: false, reason: 'invalid_amount_or_user' };
+  }
   const user = getUser(id);
 
   if (!user || user.balance < amount) return { success: false, reason: 'insufficient' };
 
-  statements.depositFunds.run(amount, amount, id);
+  const result = statements.depositFunds.run(amount, amount, id, amount);
+  if (result.changes === 0) return { success: false, reason: 'insufficient' };
   statements.logTransaction.run(id, null, amount, 'deposit');
 
   const updated = getUser(id);
@@ -454,11 +494,15 @@ export const deposit = (/** @type {string} */ userId, /** @type {number} */ amou
 
 export const withdraw = (/** @type {string} */ userId, /** @type {number} */ amount) => {
   const id = jid.fromUser(userId);
+  if (!id || !Number.isSafeInteger(amount) || amount < 0) {
+    return { success: false, reason: 'invalid_amount_or_user' };
+  }
   const user = getUser(id);
 
   if (!user || user.bank < amount) return { success: false, reason: 'insufficient' };
 
-  statements.withdrawFunds.run(amount, amount, id);
+  const result = statements.withdrawFunds.run(amount, amount, id, amount);
+  if (result.changes === 0) return { success: false, reason: 'insufficient' };
   statements.logTransaction.run(null, id, amount, 'withdraw');
 
   const updated = getUser(id);
@@ -735,14 +779,6 @@ const closeDatabase = () => {
   db.close();
 };
 
-const shutdown = () => {
-  logger.info('💾 Closing database...');
-  closeDatabase();
-  process.exit();
-};
-
 process.on('exit', closeDatabase);
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
 
 logger.info('💾 Database initialized');

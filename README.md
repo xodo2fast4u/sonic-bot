@@ -72,6 +72,9 @@ Sonic combines several capabilities into one bot experience:
 
 Install the following before running Sonic locally:
 
+FFmpeg is also required if you plan to use Sonic's voice commands. See [FFmpeg
+for voice commands](#ffmpeg-for-voice-commands) for installation instructions.
+
 ### Windows
 
 - [Node.js & npm](https://nodejs.org/) (Download the installer)
@@ -104,6 +107,54 @@ git --version
 
 Once these are installed, you can proceed to clone the repository and follow the
 installation steps below.
+
+## FFmpeg for voice commands
+
+Sonic's voice commands need an FFmpeg executable built with the `libopus`
+encoder. The official [FFmpeg download page](https://ffmpeg.org/download.html)
+explains that FFmpeg provides source code and links to prebuilt packages. On
+Windows, [Gyan's FFmpeg builds](https://www.gyan.dev/ffmpeg/builds/) provide a
+release essentials ZIP that includes `libopus`.
+
+### Windows
+
+Download the `ffmpeg-release-essentials.zip` package from [Gyan's FFmpeg
+builds](https://www.gyan.dev/ffmpeg/builds/), extract it, and add its `bin`
+folder to your system `PATH`. Reopen the terminal after changing `PATH`.
+
+### macOS
+
+With [Homebrew](https://brew.sh/) installed, run:
+
+```bash
+brew install ffmpeg
+```
+
+### Linux
+
+Install FFmpeg using your distribution's package manager. The official
+[FFmpeg download page](https://ffmpeg.org/download.html) links to packages for
+common distributions.
+
+### Verify the `libopus` encoder
+
+On Windows PowerShell:
+
+```powershell
+ffmpeg -version
+ffmpeg -hide_banner -encoders | findstr /i libopus
+```
+
+On macOS or Linux:
+
+```bash
+ffmpeg -version
+ffmpeg -hide_banner -encoders | grep libopus
+```
+
+The encoder list should include `libopus`. Sonic defaults to `FFMPEG_PATH=ffmpeg`;
+if `ffmpeg` is not on your `PATH`, set `FFMPEG_PATH` in `.env` to the executable's
+full path.
 
 ## Quick Start
 
@@ -166,9 +217,36 @@ Sonic reads configuration from `.env` and a built-in config module.
 
 `NODE_ENV` accepts `development`, `production` or `test`:
 
-- `development`: enables debug commands and command hot reload, uses debug logging and stores the database in `./data/sonic_dev.db`.
-- `production`: disables debug commands and hot reload, uses info logging and stores the database in `./data/sonic.db`.
-- `test`: disables hot reload, uses error logging and uses an in-memory database.
+- `development`: enables commands marked with `debug: true`, enables command hot reload, uses debug-level logging and stores the application database in `./src/data/sonic_dev.db`.
+- `production`: excludes commands marked with `debug: true` and disables hot reload, uses info-level logging and stores the application database in `./src/data/sonic_database.db`.
+- `test`: enables commands marked with `debug: true`, disables hot reload, uses error-level logging and uses an in-memory application database.
+
+Only commands explicitly marked with `debug: true` are environment-specific. No current command modules use that marker, so the debug-command filter is available without hiding any existing commands.
+
+## Connection recovery
+
+Sonic retries temporary WhatsApp or startup/network failures with exponential
+backoff and jitter: up to 10 attempts, starting near 1 second and capped at 60
+seconds per attempt. A connection must stay open for 60 seconds before the retry
+budget resets. If the limit is reached, Sonic closes the socket and exits instead
+of retrying indefinitely. Restart Sonic after checking the internet connection,
+DNS, firewall, and WhatsApp service status.
+
+`restartRequired` is handled with an immediate reconnect, as Baileys requires.
+Logged-out, invalid-session, forbidden, multi-device-mismatch, and
+connection-replaced events stop the process because retrying cannot safely fix
+them. Check the linked device/session and make sure another Sonic instance is
+not using the same credentials before starting it again. `Ctrl+C` and service
+termination signals close the WebSocket before shutdown.
+
+A hard power loss, kernel crash, or forced process kill cannot be handled by
+Node.js while the machine is off. Authentication state is stored in SQLite with
+full synchronous durability, but no software can protect against disk or device
+failure; back up `sonic_session.db` while Sonic is stopped. To recover after
+power returns, configure the computer to power on after AC is restored and
+configure the operating system to start Sonic at boot. If the service manager
+also restarts failed processes, give it a restart delay and start-rate limit so
+it does not undo Sonic's bounded retry policy.
 
 ## Project structure
 
@@ -195,15 +273,19 @@ The command registry automatically loads command modules from the category folde
 
 - General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`, `!modestatus`
 - RPG & Combat: `!fight`, `!train`, `!equip`, `!unequip`, `!togglelevelup`, `!profile`
-- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!scavenge`, `!deliver`, `!craft`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!robbank`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
-- Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`, `!poker`, `!baccarat`, `!mines`, `!plinko`, `!derby`, `!keno`, `!wheel`, `!limbo`, `!war`, `!cups`
-- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
+- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!scavenge`, `!deliver`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!robbank`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
+- Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`, `!poker`, `!baccarat`, `!mines`, `!plinko`, `!derby`, `!keno`, `!wheel`, `!limbo`, `!war`, `!cups`, `!cashout`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
-- Voice changer: `!deep`, `!chipmunk`, `!robot`, `!echo`, `!reverb`, `!bass`, `!nightcore`, `!underwater`, `!radio`, `!megaphone`
 - Downloader: `!play`
 - Maker: `!sticker`, `!brat`, `!hd`
 - Newsletter: `!newslettermanage`, `!newsletteractions`
-- Owner: `!mode`, `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetbalances`, `!resetcooldown`
+- Business: `!businesscatalog`, `!businesscollections`, `!businessorder`, `!businessproduct`, `!businessprofile`
+- Chats: `!block`, `!botlist`, `!businessprofile`, `!calllink`, `!contact`, `!disappearing`, `!label`, `!presence`, `!privacy`, `!profilepicture`, `!quickreply`, `!star`, `!status`
+- Community: `!communitycreate`, `!communityinfo`, `!communityinvite`, `!communitylist`, `!communitymanage`, `!communityparticipants`, `!communityrequest`, `!communitysettings`
+- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
+- Owner: `!mode`, `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetbalances`, `!resetcooldown`, `!ban`, `!unban`
+
+The menu is generated from the live command registry, so newly added command files appear automatically without manual menu updates.
 
 ### Operating modes
 
@@ -280,12 +362,8 @@ deleted command aliases. Set `NODE_ENV=production` to disable this watcher.
 
 Voice commands process a sent or quoted audio message with the system `ffmpeg`
 executable or the executable configured with `FFMPEG_PATH`. FFmpeg must include
-the `libopus` encoder. On Linux, install the distribution's FFmpeg package and
-verify it with:
-
-```bash
-ffmpeg -encoders | grep libopus
-```
+the `libopus` encoder; see [FFmpeg for voice commands](#ffmpeg-for-voice-commands)
+for installation and verification steps by operating system.
 
 Each command sends a WhatsApp-compatible mono Opus voice note with a generated
 waveform. No `audio-decode` package is required.

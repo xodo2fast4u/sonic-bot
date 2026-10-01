@@ -41,7 +41,7 @@ export class UserRepository extends BaseRepository {
   /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async addCoins(userId, amount) {
     const id = this.normalizeUserId(userId);
-    if (!id || amount < 0) {
+    if (!id || !Number.isSafeInteger(amount) || amount < 0) {
       throw new InvalidTransactionError('Invalid coin amount or user ID');
     }
     if (amount === 0) {
@@ -68,22 +68,22 @@ export class UserRepository extends BaseRepository {
   /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async removeCoins(userId, amount) {
     const id = this.normalizeUserId(userId);
-    if (!id || amount < 0) {
+    if (!id || !Number.isSafeInteger(amount) || amount < 0) {
       throw new InvalidTransactionError('Invalid coin amount or user ID');
     }
-    const user = await this.getOrCreate(id);
-
-    if (user.balance < amount) {
-      throw new InsufficientFundsError(id, amount, user.balance);
-    }
+    await this.getOrCreate(id);
 
     const updateQuery = `
       UPDATE users 
       SET balance = balance - ?
-      WHERE id = ?
+      WHERE id = ? AND balance >= ?
     `;
 
-    await this.execute(updateQuery, [amount, id], 'removeCoins');
+    const result = await this.execute(updateQuery, [amount, id, amount], 'removeCoins');
+    if (result.changes === 0) {
+      const balance = await this.getBalance(id);
+      throw new InsufficientFundsError(id, amount, balance);
+    }
     await this.logTransaction(id, null, amount, 'spend');
 
     return await this.getBalance(id);
@@ -92,6 +92,9 @@ export class UserRepository extends BaseRepository {
   /** @param {any} userId @param {number} amount @returns {Promise<number>} */
   async setBalance(userId, amount) {
     const id = this.jidUtils.fromUser(userId);
+    if (!id || !Number.isSafeInteger(amount) || amount < 0) {
+      throw new InvalidTransactionError('Invalid balance or user ID');
+    }
     await this.getOrCreate(id);
 
     const updateQuery = `UPDATE users SET balance = ? WHERE id = ?`;
@@ -104,6 +107,9 @@ export class UserRepository extends BaseRepository {
   async transferCoins(fromId, toId, amount) {
     const from = this.normalizeUserId(fromId);
     const to = this.normalizeUserId(toId);
+    if (!from || !to || !Number.isSafeInteger(amount) || amount <= 0) {
+      throw new InvalidTransactionError('Invalid transfer amount or user ID');
+    }
 
     const fromUser = await this.getOrCreate(from);
 
@@ -112,11 +118,14 @@ export class UserRepository extends BaseRepository {
     }
 
     return await this.transaction(async () => {
-      await this.execute(
-        `UPDATE users SET balance = balance - ? WHERE id = ?`,
-        [amount, from],
+      const debit = await this.execute(
+        `UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?`,
+        [amount, from, amount],
         'transferFrom',
       );
+      if (debit.changes === 0) {
+        return { success: false, reason: 'insufficient' };
+      }
 
       await this.execute(
         `UPDATE users SET balance = balance + ? WHERE id = ?`,
@@ -144,20 +153,23 @@ export class UserRepository extends BaseRepository {
   /** @param {any} userId @param {number} amount @returns {Promise<any>} */
   async deposit(userId, amount) {
     const id = this.normalizeUserId(userId);
-    const user = await this.getOrCreate(id);
-
-    if (user.balance < amount) {
-      throw new InsufficientFundsError(id, amount, user.balance);
+    if (!id || !Number.isSafeInteger(amount) || amount < 0) {
+      throw new InvalidTransactionError('Invalid deposit amount or user ID');
     }
+    await this.getOrCreate(id);
 
     const updateQuery = `
       UPDATE users 
       SET balance = balance - ?, 
           bank = bank + ?
-      WHERE id = ?
+      WHERE id = ? AND balance >= ?
     `;
 
-    await this.execute(updateQuery, [amount, amount, id], 'deposit');
+    const result = await this.execute(updateQuery, [amount, amount, id, amount], 'deposit');
+    if (result.changes === 0) {
+      const balance = await this.getBalance(id);
+      throw new InsufficientFundsError(id, amount, balance);
+    }
     await this.logTransaction(id, null, amount, 'deposit');
     await this.cache.delete(`users:${id}`);
     await this.clearCache();
@@ -175,20 +187,23 @@ export class UserRepository extends BaseRepository {
   /** @param {any} userId @param {number} amount @returns {Promise<any>} */
   async withdraw(userId, amount) {
     const id = this.normalizeUserId(userId);
-    const user = await this.getOrCreate(id);
-
-    if (user.bank < amount) {
-      throw new InsufficientFundsError(id, amount, user.bank);
+    if (!id || !Number.isSafeInteger(amount) || amount < 0) {
+      throw new InvalidTransactionError('Invalid withdrawal amount or user ID');
     }
+    await this.getOrCreate(id);
 
     const updateQuery = `
       UPDATE users 
       SET balance = balance + ?, 
           bank = bank - ?
-      WHERE id = ?
+      WHERE id = ? AND bank >= ?
     `;
 
-    await this.execute(updateQuery, [amount, amount, id], 'withdraw');
+    const result = await this.execute(updateQuery, [amount, amount, id, amount], 'withdraw');
+    if (result.changes === 0) {
+      const user = await this.getOrCreate(id);
+      throw new InsufficientFundsError(id, amount, user.bank);
+    }
     await this.logTransaction(null, id, amount, 'withdraw');
     await this.cache.delete(`users:${id}`);
     await this.clearCache();

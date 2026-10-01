@@ -19,6 +19,12 @@ const getCommandList = (exports) => {
   return Object.values(exports || {});
 };
 
+/** @param {any} command */
+const isDebugCommand = (command) => command?.debug === true;
+
+const areDebugCommandsEnabled = () =>
+  container.resolve('configManager').isFeatureEnabled('enableDebugCommands');
+
 /**
  * Command metadata
  */
@@ -57,7 +63,9 @@ class CommandMetadata {
       const commandList = getCommandList(exports);
 
       for (const cmd of commandList) {
-        if (!cmd?.cmd || !cmd?.run) continue;
+        if (!cmd?.cmd || !cmd?.run || (isDebugCommand(cmd) && !areDebugCommandsEnabled())) {
+          continue;
+        }
 
         for (const alias of cmd.cmd) {
           this.commands.set(alias.toLowerCase(), {
@@ -208,7 +216,9 @@ export class CommandRegistry {
       const commandList = getCommandList(exports);
 
       for (const cmd of commandList) {
-        if (!cmd?.cmd || !cmd?.run) continue;
+        if (!cmd?.cmd || !cmd?.run || (isDebugCommand(cmd) && !areDebugCommandsEnabled())) {
+          continue;
+        }
 
         for (const alias of cmd.cmd) {
           aliases.push(alias.toLowerCase());

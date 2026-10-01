@@ -16,7 +16,6 @@ await import('../src/cache/cache-manager.js');
 await import('../src/database/connection-pool.js');
 await import('../src/commands/command-registry.js');
 
-process.env.NODE_ENV = 'test';
 global.jest = jest;
 
 import logger from '../src/utils/logger.js';

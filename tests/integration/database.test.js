@@ -175,6 +175,20 @@ describe('Database Integration', () => {
       await expect(userRepo.removeCoins(testUserId, 200)).rejects.toThrow('Insufficient funds');
     });
 
+    test('should not overdraw when concurrent debits exceed the available balance', async () => {
+      await userRepo.getOrCreate(testUserId);
+      await userRepo.addCoins(testUserId, 100);
+
+      const results = await Promise.allSettled([
+        userRepo.removeCoins(testUserId, 80),
+        userRepo.removeCoins(testUserId, 80),
+      ]);
+
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+      expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+      expect(await userRepo.getBalance(testUserId)).toBe(20);
+    });
+
     test('should transfer coins between users', async () => {
       const fromUser = '1234567890@s.whatsapp.net';
       const toUser = '0987654321@s.whatsapp.net';
