@@ -2,7 +2,7 @@ import { emoji as e } from '../../config/config.js';
 import { jid, getTarget, resolveSender } from '../../utils/utils.js';
 import { getInventory, getCharacter } from '../../database/database.js';
 import { sendProfileDisplay } from './_utils.js';
-import { getBattleItem } from '../../services/rpg-service.js';
+import { getBattleItem, getArmourItem, getAccessoryItem } from '../../services/rpg-service.js';
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
@@ -24,19 +24,49 @@ export default {
       );
     }
 
-    const equippedId = char?.equipped_item?.toLowerCase();
+    const equippedWeaponId = char?.equipped_item?.toLowerCase();
+    const equippedArmourId = char?.equipped_armour?.toLowerCase();
+    const equippedAccessoryId = char?.equipped_accessory?.toLowerCase();
 
     const items = inventory
       .map((i) => {
         const battle = getBattleItem(i.item_name);
-        const isEquipped =
-          equippedId &&
-          (i.item_name.toLowerCase() === equippedId ||
-            (battle && battle.id.toLowerCase() === equippedId));
+        const armour = getArmourItem(i.item_name);
+        const accessory = getAccessoryItem(i.item_name);
 
-        const equippedTag = isEquipped ? ' ⚔️ *[EQUIPPED]*' : '';
-        const statTag = battle ? ` (+${battle.attack} ATK)` : '';
-        const icon = battle ? battle.emoji : '📦';
+        const isEquippedWeapon =
+          equippedWeaponId &&
+          (i.item_name.toLowerCase() === equippedWeaponId ||
+            (battle && battle.id.toLowerCase() === equippedWeaponId));
+
+        const isEquippedArmour =
+          equippedArmourId &&
+          (i.item_name.toLowerCase() === equippedArmourId ||
+            (armour && armour.id.toLowerCase() === equippedArmourId));
+
+        const isEquippedAccessory =
+          equippedAccessoryId &&
+          (i.item_name.toLowerCase() === equippedAccessoryId ||
+            (accessory && accessory.id.toLowerCase() === equippedAccessoryId));
+
+        let equippedTag = '';
+        if (isEquippedWeapon) equippedTag = ' ⚔️ *[EQUIPPED WEAPON]*';
+        else if (isEquippedArmour) equippedTag = ' 🛡️ *[EQUIPPED ARMOUR]*';
+        else if (isEquippedAccessory) equippedTag = ' 💍 *[EQUIPPED ACCESSORY]*';
+
+        let statTag = '';
+        let icon = '📦';
+
+        if (battle) {
+          icon = battle.emoji;
+          statTag = ` (+${battle.attack} ATK)`;
+        } else if (armour) {
+          icon = armour.emoji;
+          statTag = ` (+${armour.defense} DEF, +${armour.hp} HP)`;
+        } else if (accessory) {
+          icon = accessory.emoji;
+          statTag = ` (+${accessory.critChance}% Crit, +${accessory.xpBoost}% XP)`;
+        }
 
         return `${icon} ${i.item_name}${statTag} x${i.quantity}${equippedTag}`;
       })
@@ -48,7 +78,7 @@ ${e.user} Your items:
 
 ${items}
 
-💡 Equip weapons with: *!equip <item>*
+💡 Equip gear with: *!equip <item>*
 `.trim();
 
     const otherContent = `

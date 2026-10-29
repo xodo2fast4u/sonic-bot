@@ -7,7 +7,11 @@ import {
   awardCommandXp,
   recordCombatResult,
 } from '../../database/database.js';
-import { simulateCombat } from '../../services/rpg-service.js';
+import {
+  simulateCombat,
+  getLevelGapPenalty,
+  getAccessoryItem,
+} from '../../services/rpg-service.js';
 import { COOLDOWN } from '../../utils/cooldown.js';
 import { checkEconCooldown, formatCoins, random } from '../economy/_utils.js';
 
@@ -47,6 +51,20 @@ export default {
     if (!attacker.isGod && !(await checkEconCooldown(sonic, msg, 'fight', COOLDOWN.FIGHT))) {
       return;
     }
+
+    let gapFactor = 1.0;
+    let gapReason = '';
+    if (!attacker.isGod && !defender.isGod) {
+      const attackerLevel = typeof attacker.level === 'number' ? attacker.level : 1;
+      const defenderLevel = typeof defender.level === 'number' ? defender.level : 1;
+      const gapCheck = getLevelGapPenalty(attackerLevel, defenderLevel);
+      if (gapCheck.blocked) {
+        return text(gapCheck.reason);
+      }
+      gapFactor = gapCheck.factor;
+      gapReason = gapCheck.reason;
+    }
+
     const attackerMention = `@${senderNum}`;
     const defenderMention = `@${targetNum}`;
     const mentions = [jid.toUser(senderNum), jid.toUser(targetNum)];
@@ -77,10 +95,14 @@ export default {
     const loserCash = Math.max(0, loserUser?.balance ?? 0);
     const stolenCash = loser.isGod ? 0 : Math.min(Math.floor(loserCash * 0.1), 400);
     const basePurse = random(150, 350);
-    const totalPurse = basePurse + stolenCash;
 
+    const winnerAccessory = getAccessoryItem(winner.equipped_accessory);
+    const coinBoostFactor = 1 + (winnerAccessory?.coinBoost ?? 0) / 100;
+    const xpBoostFactor = 1 + (winnerAccessory?.xpBoost ?? 0) / 100;
+
+    const totalPurse = Math.floor((basePurse + stolenCash) * gapFactor * coinBoostFactor);
     const defenderLevel = typeof loser.level === 'number' && loser.level < 999999 ? loser.level : 5;
-    const xpReward = random(50, 100) + defenderLevel * 5;
+    const finalXp = Math.floor((random(50, 100) + defenderLevel * 5) * gapFactor * xpBoostFactor);
 
     recordCombatResult(winnerNum, loserNum, totalPurse, {
       wonItem: result.itemWon,
@@ -89,7 +111,7 @@ export default {
 
     if (!winner.isGod) {
       addCoins(winnerNum, totalPurse);
-      awardCommandXp(winnerNum, xpReward);
+      awardCommandXp(winnerNum, finalXp);
     }
 
     if (!loser.isGod && totalPurse > 0) {
@@ -102,13 +124,15 @@ export default {
         ? `\n💥 Destroyed: ${result.itemDestroyed.emoji} *${result.itemDestroyed.name}*`
         : '';
 
+    const penaltyText = gapReason ? `\n${gapReason}` : '';
+
     const battleReport = `
 🏆 *BATTLE COMPLETE*
 Winner: *@${winnerNum}*
 Defeated: *@${loserNum}*
 
 🪙 Prize: *+${formatCoins(totalPurse)} coins*
-✨ XP: *+${xpReward}*${itemEventText}`.trim();
+✨ XP: *+${finalXp}*${itemEventText}${penaltyText}`.trim();
 
     const resultMentions = [jid.toUser(winnerNum), jid.toUser(loserNum)];
     await send.edit(sonic, msg, battleMessage.key, battleReport, resultMentions);

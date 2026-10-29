@@ -4,6 +4,8 @@ import { getCharacter, getUser } from '../../database/database.js';
 import {
   getBattleItem,
   getArmourItem,
+  getAccessoryItem,
+  CHARACTER_CLASSES,
   getXpRequiredForNextLevel,
 } from '../../services/rpg-service.js';
 import { formatCoins } from '../economy/_utils.js';
@@ -41,6 +43,10 @@ export default {
 
     const weapon = getBattleItem(char.equipped_item);
     const armour = getArmourItem(char.equipped_armour);
+    const accessory = getAccessoryItem(char.equipped_accessory);
+    const classData = char.character_class ? CHARACTER_CLASSES[char.character_class] : null;
+    const classDisplay = classData ? `${classData.emoji} ${classData.name}` : 'Novice (None)';
+
     const weaponAtkText = weapon ? `(+${weapon.attack} from ${weapon.emoji} ${weapon.name})` : '';
     const weaponDefText = weapon && weapon.defense ? `(+${weapon.defense})` : '';
     const equippedWeaponDisplay = weapon
@@ -49,6 +55,9 @@ export default {
     const equippedArmourDisplay = armour
       ? `${armour.emoji} ${armour.name} (+${armour.defense} DEF, +${armour.hp} HP, ${armour.magicResist}% MR)`
       : 'Unarmoured';
+    const equippedAccessoryDisplay = accessory
+      ? `${accessory.emoji} ${accessory.name} (+${accessory.critChance}% Crit, +${accessory.xpBoost}% XP)`
+      : 'None';
 
     let xpDisplay;
     if (char.isGod) {
@@ -62,11 +71,17 @@ export default {
 
     const coinsDisplay = char.isGod ? '∞ (Infinite)' : formatCoins(user?.balance ?? 0);
 
+    const monstersDefeatedDisplay =
+      typeof char.monsters_defeated === 'number'
+        ? ` | 🐺 *${char.monsters_defeated} Defeated*`
+        : '';
+
     const text = `
 ${e.user} *PROFILE*
 👤 Name: *${char.name || '+' + num}*
 📱 Number: +${num}
 👑 Status: *${char.isOwner ? 'Bot Owner' : 'Adventurer'}*
+🎭 Class: *${classDisplay}*
 
 🌟 Level: *${char.displayLevel}*
 📊 XP: ${xpDisplay}
@@ -77,9 +92,10 @@ ${e.user} *PROFILE*
 
 🗡️ Weapon: *${equippedWeaponDisplay}*
 🛡️ Armour: *${equippedArmourDisplay}*
+💍 Accessory: *${equippedAccessoryDisplay}*
 
 🪙 Wallet: *${coinsDisplay}* coins
-🏆 Record: *${char.battles_won} Won* | *${char.battles_lost} Lost*
+🏆 Battles: *${char.battles_won} Won* | *${char.battles_lost} Lost*${monstersDefeatedDisplay}
 🔔 Level Alerts: *${char.level_up_messages === 1 ? 'Enabled ✅' : 'Disabled ❌'}*
 `.trim();
 

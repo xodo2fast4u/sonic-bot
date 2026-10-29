@@ -5,21 +5,28 @@ import { getEnvironmentProfile } from '../config/config-manager.js';
 const require = createRequire(import.meta.url);
 
 const logLevel = getEnvironmentProfile().logLevel;
-const fileStream = pino.destination({ dest: './sonic-logs.txt', sync: true });
-const streams = [{ level: logLevel, stream: fileStream }];
 
-try {
-  const prettyStream = require('pino-pretty')({
-    colorize: true,
-    translateTime: 'SYS:standard',
-    ignore: 'pid,hostname',
-  });
-  streams.unshift({ level: logLevel, stream: prettyStream });
-} catch (error) {
-  void error;
-}
+/** @param {import('pino').LoggerOptions} [options] */
+export const createPinoLoggerWithStreams = (options = {}) => {
+  const level = options.level || logLevel;
+  const fileStream = pino.destination({ dest: './sonic-logs.txt', sync: true });
+  const streams = [{ level, stream: fileStream }];
 
-const fileLogger = pino({ level: logLevel }, pino.multistream(streams));
+  try {
+    const prettyStream = require('pino-pretty')({
+      colorize: true,
+      translateTime: 'SYS:standard',
+      ignore: 'pid,hostname',
+    });
+    streams.unshift({ level, stream: prettyStream });
+  } catch (error) {
+    void error;
+  }
+
+  return pino({ ...options, level }, pino.multistream(streams));
+};
+
+const fileLogger = createPinoLoggerWithStreams({ level: logLevel });
 
 /** @param {any} target @param {string} level @param {any} value @param {any[]} args */
 const write = (target, level, value, args) => {

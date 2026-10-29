@@ -10,6 +10,8 @@ export const COOLDOWN = {
   FIGHT: 15 * 60 * 1000,
   TRAIN: 15 * 60 * 1000,
   PAY: 10 * 60 * 1000,
+  RPG_HUNT: 3 * 60 * 1000,
+  RPG_BOSS: 10 * 60 * 1000,
 };
 
 /** @param {any} userId @returns {{lastCmd:number,spamAttempts:number,commands:Record<string,number>}} */

@@ -6,6 +6,7 @@ import {
   getCharacter,
   setEquippedItem,
   setEquippedArmour,
+  setEquippedAccessory,
 } from '../../database/database.js';
 import { formatCoins } from './_utils.js';
 import { resolveSender } from '../../utils/utils.js';
@@ -14,6 +15,8 @@ import {
   getBattleItem,
   ARMOUR_ITEMS,
   getArmourItem,
+  ACCESSORY_ITEMS,
+  getAccessoryItem,
 } from '../../services/rpg-service.js';
 
 /** @type {{ id: string, name: string, emoji: string, price: number, desc: string }[]} */
@@ -44,14 +47,15 @@ export const getShopItem = (query) => {
         item.id.toLowerCase() === normalizedQuery || item.name.toLowerCase() === normalizedQuery,
     ) ||
     getBattleItem(normalizedQuery) ||
-    getArmourItem(normalizedQuery)
+    getArmourItem(normalizedQuery) ||
+    getAccessoryItem(normalizedQuery)
   );
 };
 
 /** @type {import('../../../types/index.js').Command} */
 export default {
   cmd: ['shop'],
-  desc: 'Browse or buy items and battle weapons from the shop',
+  desc: 'Browse or buy items, battle weapons, armour and accessories from the shop',
 
   run: async ({ text, msg }, args) => {
     const sender = resolveSender(msg);
@@ -73,6 +77,11 @@ export default {
           `${item.emoji} *${item.name}* [Lvl ${item.minLevel}+] - ${formatCoins(item.price)} coins\n  ${item.desc} (ID: \`${item.id}\`)`,
       ).join('\n\n');
 
+      const accessoryListing = ACCESSORY_ITEMS.map(
+        (item) =>
+          `${item.emoji} *${item.name}* [Lvl ${item.minLevel}+] - ${formatCoins(item.price)} coins\n  ${item.desc} (ID: \`${item.id}\`)`,
+      ).join('\n\n');
+
       return text(
         `
 🏪 *SONIC SHOP*
@@ -86,9 +95,13 @@ ${battleListing}
 🛡️ *ARMOUR*
 ${armourListing}
 
+💍 *ACCESSORIES*
+${accessoryListing}
+
 💡 Buy with: *!shop buy <id>*
 💡 Equip weapons: *!equip <id>*
 💡 Equip armour: *!equip <id>*
+💡 Equip accessories: *!equip <id>*
 `.trim(),
       );
     }
@@ -102,6 +115,7 @@ ${armourListing}
       const item = getShopItem(itemId);
       const battleItem = getBattleItem(itemId);
       const armourItem = getArmourItem(itemId);
+      const accessoryItem = getAccessoryItem(itemId);
 
       if (!item) {
         return text(`${e.cross} Item not found! Use *!shop* to see available items.`);
@@ -124,6 +138,14 @@ ${armourListing}
         if (char.level < armourItem.minLevel) {
           return text(
             `${e.cross} *Level Locked!* You must be at least *Level ${armourItem.minLevel}* to purchase ${armourItem.emoji} *${armourItem.name}*!\nYour current level is *${char.level}*.`,
+          );
+        }
+      }
+
+      if (accessoryItem && !char.isGod) {
+        if (char.level < accessoryItem.minLevel) {
+          return text(
+            `${e.cross} *Level Locked!* You must be at least *Level ${accessoryItem.minLevel}* to purchase ${accessoryItem.emoji} *${accessoryItem.name}*!\nYour current level is *${char.level}*.`,
           );
         }
       }
@@ -156,6 +178,15 @@ ${armourListing}
           equippedNote = `\n🛡️ *Auto-Equipped:* ${armourItem.emoji} ${armourItem.name} (+${armourItem.defense} DEF, +${armourItem.hp} HP)`;
         } else {
           equippedNote = `\n💡 Equip it anytime with: *!equip ${armourItem.id}*`;
+        }
+      }
+
+      if (accessoryItem) {
+        if (!char.equipped_accessory) {
+          setEquippedAccessory(sender, accessoryItem.id);
+          equippedNote = `\n💍 *Auto-Equipped:* ${accessoryItem.emoji} ${accessoryItem.name} (+${accessoryItem.critChance}% Crit, +${accessoryItem.xpBoost}% XP)`;
+        } else {
+          equippedNote = `\n💡 Equip it anytime with: *!equip ${accessoryItem.id}*`;
         }
       }
 

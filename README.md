@@ -101,7 +101,13 @@ for voice commands](#ffmpeg-for-voice-commands) for installation instructions.
 
 ```bash
 node --version
+```
+
+```bash
 npm --version
+```
+
+```bash
 git --version
 ```
 
@@ -119,7 +125,7 @@ release essentials ZIP that includes `libopus`.
 ### Windows
 
 Download the `ffmpeg-release-essentials.zip` package from [Gyan's FFmpeg
-builds](https://www.gyan.dev/ffmpeg/builds/), extract it, and add its `bin`
+builds](https://www.gyan.dev/ffmpeg/builds/), extract it and add its `bin`
 folder to your system `PATH`. Reopen the terminal after changing `PATH`.
 
 ### macOS
@@ -142,6 +148,9 @@ On Windows PowerShell:
 
 ```powershell
 ffmpeg -version
+```
+
+```powershell
 ffmpeg -hide_banner -encoders | findstr /i libopus
 ```
 
@@ -149,6 +158,9 @@ On macOS or Linux:
 
 ```bash
 ffmpeg -version
+```
+
+```bash
 ffmpeg -hide_banner -encoders | grep libopus
 ```
 
@@ -162,6 +174,9 @@ full path.
 
 ```bash
 git clone https://github.com/xodo2fast4u/sonic-bot.git
+```
+
+```bash
 cd sonic-bot
 ```
 
@@ -173,13 +188,17 @@ npm install
 
 ### 3. **Configure environment**
 
-```bash
-# Sonic doesn't create a .env file automatically
-# You must create one manually with:
-# For Linux And Mac OS
-touch .env
+## Linux and Mac OS
 
-# For Windows
+Sonic doesn't create a .env file automatically. You must create one manually with:
+
+```bash
+touch .env
+```
+
+# Windows
+
+```bash
 > .env
 ```
 
@@ -223,31 +242,6 @@ Sonic reads configuration from `.env` and a built-in config module.
 
 Only commands explicitly marked with `debug: true` are environment-specific. No current command modules use that marker, so the debug-command filter is available without hiding any existing commands.
 
-## Connection recovery
-
-Sonic retries temporary WhatsApp or startup/network failures with exponential
-backoff and jitter: up to 10 attempts, starting near 1 second and capped at 60
-seconds per attempt. A connection must stay open for 60 seconds before the retry
-budget resets. If the limit is reached, Sonic closes the socket and exits instead
-of retrying indefinitely. Restart Sonic after checking the internet connection,
-DNS, firewall, and WhatsApp service status.
-
-`restartRequired` is handled with an immediate reconnect, as Baileys requires.
-Logged-out, invalid-session, forbidden, multi-device-mismatch, and
-connection-replaced events stop the process because retrying cannot safely fix
-them. Check the linked device/session and make sure another Sonic instance is
-not using the same credentials before starting it again. `Ctrl+C` and service
-termination signals close the WebSocket before shutdown.
-
-A hard power loss, kernel crash, or forced process kill cannot be handled by
-Node.js while the machine is off. Authentication state is stored in SQLite with
-full synchronous durability, but no software can protect against disk or device
-failure; back up `sonic_session.db` while Sonic is stopped. To recover after
-power returns, configure the computer to power on after AC is restored and
-configure the operating system to start Sonic at boot. If the service manager
-also restarts failed processes, give it a restart delay and start-rate limit so
-it does not undo Sonic's bounded retry policy.
-
 ## Project structure
 
 The main code lives under [src](src) and the folders are organized like this:
@@ -272,8 +266,8 @@ The main code lives under [src](src) and the folders are organized like this:
 The command registry automatically loads command modules from the category folders in [src/commands](src/commands). The currently implemented command families are:
 
 - General: `!ping`, `!info`, `!menu`, `!about`, `!profile`, `!runtime`, `!server`, `!speed`, `!owner`, `!modestatus`
-- RPG & Combat: `!fight`, `!train`, `!equip`, `!unequip`, `!togglelevelup`, `!profile`
-- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!scavenge`, `!deliver`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!robbank`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`
+- RPG & Combat: `!fight`, `!rpghunt`, `!classselect`, `!train`, `!equip`, `!unequip`, `!togglelevelup`, `!profile`
+- Economy: `!balance`, `!daily`, `!weekly`, `!monthly`, `!yearly`, `!work`, `!beg`, `!scavenge`, `!deliver`, `!deposit`, `!withdraw`, `!pay`, `!inventory`, `!transactions`, `!leaderboard`, `!shop`, `!fish`, `!hunt`, `!mine`, `!rob`, `!robbank`, `!stats`, `!sell`, `!use`, `!interest`, `!gift`, `!heist`, `!bounty`, `!invest`, `!networth`, `!vault`, `!career`, `!craft`
 - Gambling: `!coinflip`, `!dice`, `!roulette`, `!slots`, `!crash`, `!blackjack`, `!higherlower`, `!poker`, `!baccarat`, `!mines`, `!plinko`, `!derby`, `!keno`, `!wheel`, `!limbo`, `!war`, `!cups`, `!cashout`
 - Tools: `!bible`, `!calculate`, `!decode`, `!define`, `!directions`, `!encode`, `!image`, `!name`, `!search`, `!songrecommendation`, `!wallpaper`, `!weather`, `!wiki`
 - Downloader: `!play`
@@ -282,7 +276,7 @@ The command registry automatically loads command modules from the category folde
 - Business: `!businesscatalog`, `!businesscollections`, `!businessorder`, `!businessproduct`, `!businessprofile`
 - Chats: `!block`, `!botlist`, `!businessprofile`, `!calllink`, `!contact`, `!disappearing`, `!label`, `!presence`, `!privacy`, `!profilepicture`, `!quickreply`, `!star`, `!status`
 - Community: `!communitycreate`, `!communityinfo`, `!communityinvite`, `!communitylist`, `!communitymanage`, `!communityparticipants`, `!communityrequest`, `!communitysettings`
-- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
+- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!diversity` (`!membercountries`), `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Owner: `!mode`, `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetbalances`, `!resetcooldown`, `!ban`, `!unban`
 
 The menu is generated from the live command registry, so newly added command files appear automatically without manual menu updates.
@@ -309,6 +303,9 @@ Run the full test suite and lint checks locally:
 
 ```bash
 npm test
+```
+
+```bash
 npm run lint
 ```
 
@@ -395,18 +392,23 @@ Run Sonic on your Android device using Termux:
 
    ```bash
    pkg update && pkg upgrade
-   pkg install nodejs-lts git ffmpeg
    ```
 
-   Confirm your Node version is at least 22.17 (`node -v`). If Termux’s LTS package is older, install a newer Node build that meets the requirement.
+   ```bash
+   pkg install nodejs-lts git ffmpeg
+   ```
 
 3. **Clone and setup Sonic**
 
    ```bash
    git clone https://github.com/xodo2fast4u/sonic-bot.git
+   ```
+
+   ```bash
    cd sonic-bot
-   npm install
-   #or
+   ```
+
+   ```bash
    npm i
    ```
 
@@ -414,6 +416,9 @@ Run Sonic on your Android device using Termux:
 
    ```bash
    touch .env
+   ```
+
+   ```bash
    printf 'SONIC_PREFIX=.\nOWNER_NUMBER=\nFFMPEG_PATH=ffmpeg\n' > .env
    ```
 
@@ -425,13 +430,11 @@ Run Sonic on your Android device using Termux:
 
 5. **Keep Termux active**
 
-   Before starting Sonic, acquire a wake lock so Android is less likely to suspend the Termux process while you switch to other apps or turn the screen off:
+   Before starting Sonic, acquire a wake lock so Android is less likely to suspend the Termux process while you switch to other apps or turn the screen off. This helps keep Sonic active while it is running in the background.
 
    ```bash
    termux-wake-lock
    ```
-
-   This helps keep Sonic active while it is running.
 
 6. **Run Sonic**
 
@@ -504,10 +507,34 @@ We welcome contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) gui
 Quick start:
 
 1. Fork the repository
-2. Install dependencies: `npm install`
-3. Create a feature branch: `git checkout -b feature/your-feature`
-4. Make your changes and test: `npm test`
-5. Format and type-check: `npm run format && npm run type-check`
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Create a feature branch:
+
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+
+4. Make your changes and test:
+
+   ```bash
+   npm test
+   ```
+
+5. Format and type-check:
+
+   ```bash
+   npm run format
+   ```
+
+   ```bash
+   npm run type-check
+   ```
+
 6. Submit a pull request
 
 For detailed guidance, see [CONTRIBUTING.md](CONTRIBUTING.md).

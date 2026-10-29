@@ -270,8 +270,8 @@ export const isOwner = (userJid, sonic, msg) => {
 export const resolveSender = (msg, sonic) => {
   let sender = jid.getSender(msg, sonic) || msg.key.participant || msg.key.remoteJid;
 
-  if (msg.key.fromMe && jid.isGroup(sender) && !sonic?.user?.id) {
-    const owner = getOwner();
+  if (msg.key.fromMe && jid.isGroup(msg.key.remoteJid) && !sonic?.user?.id) {
+    const owner = process.env['OWNER_NUMBER']?.trim() || getOwner();
     if (owner) sender = jid.toUser(owner);
   }
 

@@ -102,7 +102,7 @@ describe('New economy features', () => {
     );
 
     expect(getUser(sender)?.balance).toBe(0);
-    expect(text).toHaveBeenCalledWith(expect.stringContaining('local, express, or overnight'));
+    expect(text).toHaveBeenCalledWith(expect.stringContaining('local, express or overnight'));
   });
 
   test('craft explains the free-material path when materials are missing', async () => {

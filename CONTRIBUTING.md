@@ -29,15 +29,14 @@ project.
 
 We use automated tools to maintain consistent code:
 
-- **Prettier**: Handles code formatting automatically (`npm run format`)
-- **ESLint**: Flags unused variables and console usage (warnings, not errors)
+- **Prettier**: The repository defines `npm run format` and `npm run format:check`; both require Prettier to be available as a global install on your machine `npm i -g prettier`. Prettier is not currently declared in `package.json`.
+- **ESLint**: Run with `npm run lint`. The configuration treats several safety rules as errors and several style or code-quality rules as warnings; unused-variable checking is disabled.
 - **TypeScript**: Performs static type checking with `npm run typecheck`
 
 #### Key Practices
 
 - Use 2 spaces for indentation
-- Prettier normalizes quote style and spacing automatically
-- Semicolons are optional (left to Prettier)
+- Follow the formatting already used in the surrounding file
 - Use const by default, let when needed, avoid var
 - Use trailing commas in multi-line objects/arrays
 - One variable declaration per line where practical
@@ -98,35 +97,13 @@ types/             # TypeScript definitions (root level)
 
 ### File Naming
 
-- Use kebab-case for file names: `user-repository.js`
+- Follow the naming pattern of the surrounding directory. Both kebab-case files (for example, `user-repository.js`) and compact category filenames (for example, `businesscatalog.js`) are present.
 - Use descriptive names that indicate purpose
 - Keep files focused on a single responsibility
 
 ### Module Structure
 
-```javascript
-/* Good module structure */
-import { container } from '../core/container.js';
-import { Logger } from '../utils/logger.js';
-
-/**
- * Brief description of what this module does
- */
-export class UserService {
-  constructor() {
-    this.logger = container.resolve('logger');
-  }
-
-  /**
-   * Method description
-   * @param {string} userId - User identifier
-   * @returns {Promise<User>} User object
-   */
-  async getUser(userId) {
-    /* Implementation */
-  }
-}
-```
+The project uses ES modules. Command modules are generally default-exported command objects; service and database modules export the functions or classes used by those commands. Follow the established structure of the closest related module rather than introducing a new pattern.
 
 ## Naming Conventions
 
@@ -206,7 +183,7 @@ class UserService {
 
 ### JSDoc Guidelines
 
-All public functions, classes and modules should have JSDoc comments:
+Use JSDoc to document public contracts when parameter, return, or error details are not clear from the code. The project is JavaScript checked by TypeScript (`checkJs`); JSDoc types are also used to express types and connect modules.
 
 ```javascript
 /**
@@ -279,15 +256,18 @@ npm test
 ```
 
 `npm test` runs the full Jest suite without collecting coverage and exits after
-the test process completes. Use the coverage-threshold check separately:
+the test process completes. `npm run test:coverage` collects coverage and enforces
+the thresholds configured in Jest: 80% globally, 90% for `src/core/`, and 85%
+for `src/database/`.
 
 ```bash
 npm run lint
 npm run test:coverage
 ```
 
-Run `npm run lint` before submitting changes. The lint command must complete
-without errors or warnings.
+Run `npm run lint` before submitting changes. Resolve lint errors and review
+warnings that are relevant to the change; the configuration intentionally
+allows some warnings.
 
 ### Test Naming
 
@@ -297,9 +277,8 @@ without errors or warnings.
 
 ### Coverage Requirements
 
-- Aim for >80% code coverage
-- Critical paths should have >95% coverage
-- All public APIs must be tested
+- Keep the configured thresholds passing: 80% globally, 90% for `src/core/`, and 85% for `src/database/`.
+- Add or update tests for changed behavior, especially public command, service, and database behavior.
 
 ## Git Workflow
 
@@ -467,7 +446,7 @@ async function fetchUserData(userId) {
 ### Review Process
 
 1. Create pull request with clear description
-2. Request review from at least one team member
+2. Request review according to the repository's contribution and hosting policies
 3. Address all feedback before merge
 4. Ensure all tests pass
 5. Update documentation if needed
@@ -480,11 +459,12 @@ async function fetchUserData(userId) {
 4. Create a feature branch: `git checkout -b feature/your-feature`
 5. Make your changes
 6. Run tests: `npm test`
-7. Format code: `npm run format`
-8. Type-check: `npm run typecheck`
-9. Commit changes with a clear message explaining the intent
-10. Push to your fork: `git push origin feature/your-feature`
-11. Create pull request
+7. Run lint: `npm run lint`
+8. Check formatting: `npm run format:check` (requires Prettier; see Tools and Configuration)
+9. Type-check: `npm run typecheck`
+10. Commit changes with a clear message explaining the intent
+11. Push to your fork: `git push origin feature/your-feature`
+12. Create pull request
 
 ## Tools and Configuration
 
@@ -496,8 +476,8 @@ async function fetchUserData(userId) {
 
 ### Development Tools
 
-- **ESLint**: Code linting (loose config by design; warns on unused variables)
-- **Prettier**: Code formatting (enforces consistency automatically)
+- **ESLint**: Code linting; some rules are errors and others are warnings
+- **Prettier**: Used by the format scripts but not currently declared in `package.json`; it must be made available in the local environment
 - **Jest**: Testing framework (runs on ESM with `node --experimental-vm-modules`)
 - **TypeScript**: Type checking via `tsc --noEmit -p jsconfig.json`
 
@@ -506,8 +486,10 @@ async function fetchUserData(userId) {
 ```bash
 npm start           # Start the bot
 npm test            # Run tests
+npm run test:coverage # Run tests with coverage thresholds
+npm run lint        # Lint the project
 npm run format      # Format all files with Prettier
-npm run format:check # Check formatting without making changes
+npm run format:check # Check formatting without making changes (requires Prettier)
 npm run typecheck   # Run TypeScript type checking
 ```
 

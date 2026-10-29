@@ -6,6 +6,18 @@ import {
   calculateTraining,
   BATTLE_ITEMS,
   getBattleItem,
+  ARMOUR_ITEMS,
+  getArmourItem,
+  ACCESSORY_ITEMS,
+  getAccessoryItem,
+  CHARACTER_CLASSES,
+  applyClassGrowth,
+  MONSTERS,
+  BOSSES,
+  pickMonsterForLevel,
+  pickBossForLevel,
+  simulateMonsterCombat,
+  getLevelGapPenalty,
 } from '../../src/services/rpg-service.js';
 
 describe('RPG Service', () => {
@@ -64,6 +76,127 @@ describe('RPG Service', () => {
       const byName = getBattleItem('Holy Sword Excalibur');
       expect(byName).toBeDefined();
       expect(byName?.id).toBe('excalibur');
+    });
+
+    test('finds armour items and verifies stats', () => {
+      expect(ARMOUR_ITEMS.length).toBeGreaterThanOrEqual(8);
+      const ironPlate = getArmourItem('iron_plate');
+      expect(ironPlate).toBeDefined();
+      expect(ironPlate?.defense).toBe(45);
+      expect(ironPlate?.hp).toBe(50);
+    });
+  });
+
+  describe('Accessory Items', () => {
+    test('all accessories have positive bonuses and pricing', () => {
+      expect(ACCESSORY_ITEMS.length).toBeGreaterThanOrEqual(5);
+      for (const acc of ACCESSORY_ITEMS) {
+        expect(acc.type).toBe('accessory');
+        expect(acc.minLevel).toBeGreaterThanOrEqual(1);
+        expect(acc.price).toBeGreaterThan(0);
+        expect(acc.critChance).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    test('finds accessory item by id or name', () => {
+      const ring = getAccessoryItem('iron_ring');
+      expect(ring).toBeDefined();
+      expect(ring?.critChance).toBe(3);
+    });
+  });
+
+  describe('Classes and Growth', () => {
+    test('all character classes are defined with stat multipliers', () => {
+      const classes = ['warrior', 'mage', 'rogue'];
+      for (const name of classes) {
+        const cls = CHARACTER_CLASSES[name];
+        expect(cls).toBeDefined();
+        expect(cls.atkMult).toBeGreaterThan(0);
+        expect(cls.defMult).toBeGreaterThan(0);
+        expect(cls.magMult).toBeGreaterThan(0);
+      }
+    });
+
+    test('applies class growth multipliers properly', () => {
+      const base = { atkGain: 3, defGain: 3, magGain: 3 };
+      const warriorGains = applyClassGrowth('warrior', base);
+      expect(warriorGains.atkGain).toBeGreaterThan(base.atkGain);
+      expect(warriorGains.hpBonus).toBe(10);
+
+      const mageGains = applyClassGrowth('mage', base);
+      expect(mageGains.magGain).toBeGreaterThan(base.magGain);
+
+      const noviceGains = applyClassGrowth(null, base);
+      expect(noviceGains.atkGain).toBe(3);
+      expect(noviceGains.hpBonus).toBe(0);
+    });
+  });
+
+  describe('PvE Monsters and Hunting', () => {
+    test('all monsters and bosses have valid configurations', () => {
+      expect(MONSTERS.length).toBeGreaterThanOrEqual(5);
+      expect(BOSSES.length).toBeGreaterThanOrEqual(3);
+
+      for (const monster of MONSTERS) {
+        expect(monster.hp).toBeGreaterThan(0);
+        expect(monster.attack).toBeGreaterThan(0);
+        expect(monster.defense).toBeGreaterThan(0);
+        expect(monster.xpReward).toBeGreaterThan(0);
+      }
+    });
+
+    test('picks appropriate monster for level', () => {
+      const monsterLvl1 = pickMonsterForLevel(1);
+      expect(monsterLvl1).toBeDefined();
+      expect(monsterLvl1.minLevel).toBeLessThanOrEqual(1);
+
+      const bossLvl10 = pickBossForLevel(10);
+      expect(bossLvl10).toBeDefined();
+      expect(bossLvl10.isBoss).toBe(true);
+    });
+
+    test('simulates PvE combat against a monster', () => {
+      const char = {
+        user_id: 'hero',
+        level: 10,
+        hp: 300,
+        max_hp: 300,
+        attack: 100,
+        defense: 80,
+        magical_power: 90,
+        magical_power_name: 'Chaos Blast',
+        equipped_item: 'wooden_sword',
+        equipped_armour: 'leather_vest',
+        equipped_accessory: 'iron_ring',
+      };
+
+      const monster = MONSTERS[0];
+      const result = simulateMonsterCombat(char, monster);
+
+      expect(result).toBeDefined();
+      expect(typeof result.playerWon).toBe('boolean');
+      expect(Array.isArray(result.narrative)).toBe(true);
+      expect(result.narrative.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Anti-farming Level Gap Protection', () => {
+    test('blocks rewards when gap is 25 levels or greater', () => {
+      const check = getLevelGapPenalty(30, 2);
+      expect(check.blocked).toBe(true);
+      expect(check.factor).toBe(0);
+    });
+
+    test('penalizes rewards when gap is 15-24 levels', () => {
+      const check = getLevelGapPenalty(20, 3);
+      expect(check.blocked).toBe(false);
+      expect(check.factor).toBe(0.25);
+    });
+
+    test('allows full rewards when gap is small', () => {
+      const check = getLevelGapPenalty(10, 8);
+      expect(check.blocked).toBe(false);
+      expect(check.factor).toBe(1.0);
     });
   });
 

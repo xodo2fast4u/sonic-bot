@@ -1,9 +1,6 @@
-import pino from 'pino';
 import { AsyncLocalStorage } from 'async_hooks';
-import { createRequire } from 'module';
 import { container } from '../core/container.js';
-
-const require = createRequire(import.meta.url);
+import { createPinoLoggerWithStreams } from './logger.js';
 
 /**
  * @typedef {{count:number,totalTime:number,errors:number}} Metric
@@ -139,7 +136,6 @@ export class EnhancedLogger {
     const pinoConfig = {
       level: this.config.level,
       formatters: {
-        level: (/** @type {any} */ label) => ({ level: label }),
         log: (/** @type {any} */ object) => {
           const { correlationId, ...rest } = object;
           return {
@@ -152,23 +148,7 @@ export class EnhancedLogger {
       },
     };
 
-    if (this.config.prettyPrint) {
-      try {
-        require.resolve('pino-pretty');
-        pinoConfig.transport = {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'SYS:standard',
-            ignore: 'pid,hostname',
-          },
-        };
-      } catch {
-        // pino-pretty is unavailable; fall back to the default transport.
-      }
-    }
-
-    return pino(pinoConfig);
+    return createPinoLoggerWithStreams(pinoConfig);
   }
 
   /** @param {string} level @param {string} message @param {object} [data] @param {string|null} [correlationId] */

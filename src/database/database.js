@@ -6,6 +6,7 @@ import {
   generateRandomStartingStats,
   getXpRequiredForNextLevel,
   resolveCharacterWithGodmode,
+  applyClassGrowth,
 } from '../services/rpg-service.js';
 import { getEnvironmentProfile } from '../config/config-manager.js';
 import { openDatabase } from './open-database.js';
@@ -98,6 +99,24 @@ db.exec(`
 
 try {
   db.exec(`ALTER TABLE characters ADD COLUMN equipped_armour TEXT DEFAULT NULL`);
+} catch (e) {
+  void e;
+}
+
+try {
+  db.exec(`ALTER TABLE characters ADD COLUMN equipped_accessory TEXT DEFAULT NULL`);
+} catch (e) {
+  void e;
+}
+
+try {
+  db.exec(`ALTER TABLE characters ADD COLUMN character_class TEXT DEFAULT NULL`);
+} catch (e) {
+  void e;
+}
+
+try {
+  db.exec(`ALTER TABLE characters ADD COLUMN monsters_defeated INTEGER DEFAULT 0`);
 } catch (e) {
   void e;
 }
@@ -210,6 +229,16 @@ const statements = {
   setEquippedItem: db.prepare(`UPDATE characters SET equipped_item = ? WHERE user_id = ?`),
 
   setEquippedArmour: db.prepare(`UPDATE characters SET equipped_armour = ? WHERE user_id = ?`),
+
+  setEquippedAccessory: db.prepare(
+    `UPDATE characters SET equipped_accessory = ? WHERE user_id = ?`,
+  ),
+
+  setCharacterClass: db.prepare(`UPDATE characters SET character_class = ? WHERE user_id = ?`),
+
+  recordMonsterDefeat: db.prepare(
+    `UPDATE characters SET monsters_defeated = COALESCE(monsters_defeated, 0) + 1 WHERE user_id = ?`,
+  ),
 
   toggleLevelUp: db.prepare(`
     UPDATE characters SET level_up_messages = CASE WHEN level_up_messages = 1 THEN 0 ELSE 1 END WHERE user_id = ?
@@ -596,11 +625,17 @@ export const awardCommandXp = (
     xp -= required;
     level += 1;
     levelsGained += 1;
-    maxHp += 20;
+    const baseGains = {
+      atkGain: Math.floor(Math.random() * 4) + 2,
+      defGain: Math.floor(Math.random() * 4) + 2,
+      magGain: Math.floor(Math.random() * 4) + 2,
+    };
+    const classGrowth = applyClassGrowth(dbChar.character_class, baseGains);
+    maxHp += 20 + (classGrowth.hpBonus || 0);
     hp = maxHp;
-    attack += Math.floor(Math.random() * 4) + 2;
-    defense += Math.floor(Math.random() * 4) + 2;
-    magicalPower += Math.floor(Math.random() * 4) + 2;
+    attack += classGrowth.atkGain;
+    defense += classGrowth.defGain;
+    magicalPower += classGrowth.magGain;
     required = getXpRequiredForNextLevel(level);
     leveledUp = true;
   }
@@ -659,6 +694,37 @@ export const setEquippedArmour = (
   getCharacter(id);
   statements.setEquippedArmour.run(armourId, id);
   return getCharacter(id);
+};
+
+export const setEquippedAccessory = (
+  /** @type {string} */ userId,
+  /** @type {string|null} */ accessoryId,
+) => {
+  const id = jid.fromUser(userId);
+  if (!id) return null;
+
+  getCharacter(id);
+  statements.setEquippedAccessory.run(accessoryId, id);
+  return getCharacter(id);
+};
+
+export const setCharacterClass = (
+  /** @type {string} */ userId,
+  /** @type {string|null} */ className,
+) => {
+  const id = jid.fromUser(userId);
+  if (!id) return null;
+
+  getCharacter(id);
+  statements.setCharacterClass.run(className, id);
+  return getCharacter(id);
+};
+
+export const recordMonsterDefeat = (/** @type {string} */ userId) => {
+  const id = jid.fromUser(userId);
+  if (!id) return;
+  getCharacter(id);
+  statements.recordMonsterDefeat.run(id);
 };
 
 export const toggleLevelUpSetting = (/** @type {string} */ userId) => {
