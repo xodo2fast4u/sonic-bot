@@ -257,7 +257,7 @@ npm test
 
 `npm test` runs the full Jest suite without collecting coverage and exits after
 the test process completes. `npm run test:coverage` collects coverage and enforces
-the thresholds configured in Jest: 80% globally, 90% for `src/core/`, and 85%
+the thresholds configured in Jest: 80% globally, 90% for `src/core/` and 85%
 for `src/database/`.
 
 ```bash
@@ -277,8 +277,8 @@ allows some warnings.
 
 ### Coverage Requirements
 
-- Keep the configured thresholds passing: 80% globally, 90% for `src/core/`, and 85% for `src/database/`.
-- Add or update tests for changed behavior, especially public command, service, and database behavior.
+- Keep the configured thresholds passing: 80% globally, 90% for `src/core/` and 85% for `src/database/`.
+- Add or update tests for changed behavior, especially public command, service and database behavior.
 
 ## Git Workflow
 

@@ -4,7 +4,7 @@
   "description": "Sonic is a self-hosted WhatsApp community bot for group management, member engagement and admin automation with economy, mini-games and modular command tools.",
   "main": "src/index.js",
   "scripts": {
-    "start": "node --env-file=.env src/index.js",
+    "start": "node --max-http-header-size=65536 --env-file=.env src/index.js",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config=jest.config.cjs --runInBand --coverage=false --forceExit",
     "test:coverage": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config=jest.config.cjs --runInBand --forceExit",
     "format": "prettier --write .",

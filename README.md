@@ -276,7 +276,7 @@ The command registry automatically loads command modules from the category folde
 - Business: `!businesscatalog`, `!businesscollections`, `!businessorder`, `!businessproduct`, `!businessprofile`
 - Chats: `!block`, `!botlist`, `!businessprofile`, `!calllink`, `!contact`, `!disappearing`, `!label`, `!presence`, `!privacy`, `!profilepicture`, `!quickreply`, `!star`, `!status`
 - Community: `!communitycreate`, `!communityinfo`, `!communityinvite`, `!communitylist`, `!communitymanage`, `!communityparticipants`, `!communityrequest`, `!communitysettings`
-- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!diversity` (`!membercountries`), `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
+- Group: `!ginfo`, `!groupcreate`, `!grouplist`, `!tagall`, `!mute`, `!unmute`, `!promote`, `!demote`, `!kick`, `!leave`, `!link`, `!groupmode`, `!join`, `!admins`, `!setname`, `!setdesc`, `!lock`, `!unlock`, `!add`, `!ephemeral`, `!revoke`, `!groupinvite`, `!grouprequest`, `!groupv4`
 - Owner: `!mode`, `!participantson`, `!participantsoff`, `!promoterdemoteon`, `!promoterdemoteoff`, `!welcomegoodbyeon`, `!welcomegoodbyeoff`, `!additem`, `!removeitem`, `!setbalance`, `!resetbalances`, `!resetcooldown`, `!ban`, `!unban`
 
 The menu is generated from the live command registry, so newly added command files appear automatically without manual menu updates.

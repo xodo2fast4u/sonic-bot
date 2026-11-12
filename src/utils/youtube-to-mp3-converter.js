@@ -12,7 +12,6 @@ const API_HOSTS = [
 ];
 const FORMAT = 'mp3';
 const UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0';
-const bunRuntime = /** @type {any} */ (globalThis)['Bun'];
 
 function browserHeaders(extra = {}) {
   return {
@@ -34,10 +33,6 @@ function browserHeaders(extra = {}) {
  * @returns {Promise<void>}
  */
 function sleep(ms) {
-  if (bunRuntime && typeof bunRuntime.sleep === 'function') {
-    return bunRuntime.sleep(ms);
-  }
-
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
@@ -634,23 +629,6 @@ export async function download(downloadURL, videoId, title, outputDir = process.
 
   const filename = exactFilename(title, videoId);
   const destination = join(outputDir, filename);
-
-  if (bunRuntime && typeof bunRuntime.file === 'function') {
-    const writer = bunRuntime.file(destination).writer();
-    const reader = response.body.getReader();
-
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        writer.write(value);
-      }
-    } finally {
-      await writer.end();
-    }
-
-    return { filename, filePath: destination };
-  }
 
   const buffer = Buffer.from(await response.arrayBuffer());
   const firstBytes = buffer.subarray(0, Math.min(buffer.length, 256)).toString('utf8');

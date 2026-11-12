@@ -333,6 +333,16 @@ describe('End-to-End Command Flows', () => {
 
       expect(sentText(mockSonic)).toContain('Admin only');
 
+      const lidUser = '155500000001@lid';
+      const phoneUser = '2222222222@s.whatsapp.net';
+      mockSonic.groupMetadata.mockResolvedValue({
+        subject: 'Test group',
+        participants: [
+          { id: adminUser, admin: 'admin', name: 'Alice Example' },
+          { id: lidUser, phoneNumber: phoneUser, notify: 'Bobby Profile' },
+        ],
+      });
+
       const adminMsg = testUtils.createMockMessage({
         key: {
           remoteJid: groupId,
@@ -345,6 +355,9 @@ describe('End-to-End Command Flows', () => {
 
       const lastCall = mockSonic.sendMessage.mock.calls.at(-1);
       expect(lastCall?.[1]?.text || '').not.toContain('Admin only');
+      expect(lastCall?.[1]?.text).toContain('@1111111111');
+      expect(lastCall?.[1]?.text).toContain('@2222222222');
+      expect(lastCall?.[1]?.mentions).toEqual([adminUser, lidUser]);
     });
   });
 
